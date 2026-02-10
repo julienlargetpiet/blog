@@ -900,33 +900,6 @@ code {
 }
 
 /* ================================
-   Code blocks
-   ================================ */
-
-pre {
-  margin: 1.4em 0;
-  padding: 1em 1.2em;
-
-  background: var(--code-bg);
-  color: var(--code-text);
-
-  border: 1px solid var(--border-soft);
-  border-radius: 8px;
-
-  overflow-x: auto;
-  font-size: 0.9em;
-  line-height: 1.5;
-}
-
-pre > code {
-  padding: 0;
-  border: none;
-  background: transparent;
-  color: inherit;
-  font-size: inherit;
-}
-
-/* ================================
    Prism syntax highlighting
    ================================ */
 
@@ -983,3 +956,46 @@ th {
 tbody tr:nth-child(even) {
   background: rgba(0, 0, 0, 0.03);
 }
+
+
+/* ================================
+   Code blocks
+   ================================ */
+
+.code-block {
+  position: relative;
+  margin: 1.4em 0;
+}
+
+.code-block pre {
+  margin: 0;
+  padding: 1em 3em 1em 1.2em;
+
+  background: var(--code-bg);
+  color: var(--code-text);
+
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+
+  overflow-x: auto;
+  font-size: 0.9em;
+  line-height: 1.5;
+}
+
+.code-block pre > code {
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-size: inherit;
+}
+
+/* Copy button */
+
+.code-block .copy-btn {
+  position: absolute;
+  top: 0.6em;
+  right: 0.6em;
+  z-index: 2;
+}
+
