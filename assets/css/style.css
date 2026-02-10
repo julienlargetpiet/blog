@@ -940,4 +940,46 @@ pre > code {
 .token.operator    { color: var(--syntax-operator); }
 
 
+/* ================================
+   Responsive tables (fixed)
+   ================================ */
 
+table {
+  border-collapse: collapse;
+  margin: 1.5em 0;
+  font-size: 0.95em;
+
+  /* 🔑 key lines */
+  width: max-content;
+  max-width: 100%;
+}
+
+/* Scroll only when needed */
+@media (max-width: 768px) {
+  table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Cells */
+th,
+td {
+  padding: 0.6em 0.8em;
+  border: 1px solid var(--border-soft);
+  white-space: nowrap;
+}
+
+/* Header */
+th {
+  background: var(--bg-soft);
+  color: var(--text-strong);
+  font-weight: 600;
+  text-align: left;
+}
+
+/* Zebra */
+tbody tr:nth-child(even) {
+  background: rgba(0, 0, 0, 0.03);
+}
