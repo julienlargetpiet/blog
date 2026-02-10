@@ -1,0 +1,25 @@
+{{ define "title" }}
+{{ .Title }}
+{{ end }}
+
+{{ define "content" }}
+
+<article class="article-page">
+
+  <header class="article-header">
+    <h1>{{ .Title }}</h1>
+
+    {{ if .CreatedAt }}
+      <time class="article-date">
+        {{ .CreatedAt.Format "January 2, 2006" }}
+      </time>
+    {{ end }}
+  </header>
+
+  <div class="article-content">
+    {{ .HTML }}
+  </div>
+
+</article>
+
+{{ end }}

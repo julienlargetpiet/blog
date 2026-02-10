@@ -1,0 +1,104 @@
+{{ define "title" }}
+Admin — Edit article
+{{ end }}
+
+{{ define "content" }}
+
+<main class="admin-page admin-form-wide">
+
+  <header class="admin-header">
+    <h1>Edit article #{{ .ID }}</h1>
+    <p>Update the article content and rebuild the site.</p>
+  </header>
+
+  <form method="post" action="/admin/articles/{{ .ID }}">
+
+    <!-- Article metadata -->
+    <fieldset class="form-section">
+      <legend>Article metadata</legend>
+
+      <div class="form-group">
+        <label for="title">Title</label>
+        <input
+          id="title"
+          type="text"
+          name="title"
+          value="{{ .Title }}"
+          required
+        >
+      </div>
+    </fieldset>
+
+    <!-- HTML content -->
+    <fieldset class="form-section">
+      <legend>Article content (HTML)</legend>
+
+      <div class="form-group editor-preview-container">
+        <label for="editor">
+          HTML body
+          <button
+            type="button"
+            class="preview-toggle toggle-btn"
+            onclick="togglePreview()"
+          >
+            Preview
+          </button>
+        </label>
+
+        <!-- CodeMirror textarea -->
+        <textarea
+          id="description-editor"
+          name="html"
+          rows="22"
+        >        
+        {{ .HTML }}
+        </textarea>
+
+        <!-- HTML preview -->
+        <div
+          id="description-preview"
+          class="html-preview"
+        ></div>
+      </div>
+    </fieldset>
+
+    <!-- Actions -->
+    <div class="admin-actions">
+      <button type="submit" class="btn primary">
+        💾 Save
+      </button>
+
+      <a href="/admin" class="btn">
+        Cancel
+      </a>
+    </div>
+  </form>
+
+  <!-- Danger zone -->
+  <hr class="admin-separator">
+
+  <section class="admin-danger-zone">
+    <h2>Danger zone</h2>
+    <p>This action is irreversible. The article will be deleted and the site rebuilt.</p>
+
+    <form method="post" action="/admin/delete/{{ .ID }}">
+      <button
+        type="submit"
+        class="btn-danger"
+        onclick="return confirm('Delete this article permanently?')"
+      >
+        🗑 Delete article
+      </button>
+    </form>
+  </section>
+
+</main>
+
+<!-- Admin logic + CodeMirror -->
+<script type="module" src="/assets/js/editor.bundle.js"></script>
+
+<script src="/assets/js/admin.js"></script>
+
+{{ end }}
+
+

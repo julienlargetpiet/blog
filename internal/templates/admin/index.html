@@ -1,0 +1,55 @@
+{{ define "title" }}
+Admin — Articles
+{{ end }}
+
+{{ define "content" }}
+<h1>Articles</h1>
+
+<p>
+  <a href="/admin/new" class="btn primary">➕ New article</a>
+  <a href="/admin/files" class="btn">See files</a>
+</p>
+
+<table class="admin-table">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Title</th>
+      <th>Created</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{ range . }}
+    <tr>
+      <td>
+        <code>#{{ .ID }}</code>
+      </td>
+
+      <td>
+        {{ .Title }}
+      </td>
+
+      <td>
+        <small>{{ .CreatedAt.Format "2006-01-02 15:04" }}</small>
+      </td>
+
+      <td>
+        <a href="/admin/articles/{{ .ID }}">✏️ Edit</a>
+        &nbsp;·&nbsp;
+        <a href="/articles/{{ .ID }}.html" target="_blank">👁 View</a>
+      </td>
+    </tr>
+    {{ else }}
+    <tr>
+      <td colspan="4">
+        <em>No articles yet.</em>
+      </td>
+    </tr>
+    {{ end }}
+  </tbody>
+</table>
+
+{{ end }}
+
+

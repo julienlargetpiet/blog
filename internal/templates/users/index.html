@@ -1,0 +1,24 @@
+{{ define "title" }}Home{{ end }}
+
+{{ define "content" }}
+
+<section class="container">
+  <div class="card-grid">
+
+    {{ range $i, $a := . }}
+      <a
+        href="/articles/{{ $a.ID }}.html"
+        class="doc-card card-variant-{{ add (mod $i 4) 1 }}"
+      >
+        <h3>{{ $a.Title }}</h3>
+
+        <p>{{ excerpt $a.HTML 22 }}</p>
+
+        <span class="btn">Read →</span>
+      </a>
+    {{ end }}
+
+  </div>
+</section>
+
+{{ end }}

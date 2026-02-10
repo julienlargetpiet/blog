@@ -1,0 +1,103 @@
+
+<!doctype html>
+<html>
+<head>
+
+
+        <script>
+          (function () {
+            const theme = localStorage.getItem("theme");
+            if (theme) {
+              document.documentElement.dataset.theme = theme;
+            }
+          })();
+        </script>
+
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+        <link rel="preload"
+      	    href="/assets/Luciole_webfonts/Luciole-Regular/Luciole-Regular.woff2"
+      	    as="font"
+      	    type="font/woff2"
+      	    crossorigin>
+
+        <title>
+pppAA
+</title>
+        <link rel="stylesheet" href="/assets/css/style.css">
+
+        <link rel="icon" href="/assets/favicon.ico" type="image/x-icon">
+
+</head>
+<body>
+
+      
+        <header class="topbar">
+            <div class="topbar-inner">
+                <div class="logo">
+                    <a href="/">
+                        HOME
+                    </a>
+                </div>
+
+                <nav>
+                    <button id="theme-toggle" class="theme-toggle" aria-label="Toggle dark mode">
+                      ☾
+                    </button>
+                </nav>
+            </div>
+        </header>
+
+        <main id="page-content">
+          
+
+<article class="article-page">
+
+  <header class="article-header">
+    <h1>pppAA</h1>
+
+    
+      <time class="article-date">
+        February 9, 2026
+      </time>
+    
+  </header>
+
+  <div class="article-content">
+            
+                
+                      <p><b><i>Designed for engineers who need predictable performance, explicit execution, and full control over data pipelines.</i></b></p>
+
+            <p>
+             At its core, VisonDF is a C++ execution engine that exposes explicit control over evaluation, memory, and parallelism. It combines a hybrid lazy–eager execution model with full user control over execution cost and memory behavior. Every operation is designed to scale: multithreaded by default, vectorized across SSE, AVX2, and AVX-512 when available, and extensible down to the kernel level.            </p>
+            <p>
+              Nothing is hidden, nothing is forced ⇒ you decide what runs, when it
+              runs, and what it costs. 3
+            </p>
+
+        
+        
+  </div>
+
+</article>
+
+
+        </main>
+
+        <script src="/assets/js/main.js"></script>
+        <script src="/assets/js/agressive_cacher.js"></script>
+
+        <script defer src="/assets/prism/prism.min.js"></script>
+        <script defer src="/assets/prism/components/prism-clike.min.js"></script>
+        <script defer src="/assets/prism/components/prism-c.min.js"></script>
+        <script defer src="/assets/prism/components/prism-cpp.min.js"></script>
+
+        <footer class="site-footer">
+          <span class="architecture-note">
+            Statically served. Dynamically authored.
+          </span>
+        </footer>
+
+</body>
+</html>

@@ -1,0 +1,962 @@
+/* ================================
+   Fonts
+   ================================ */
+/* @import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono&display=swap"); */
+
+@font-face {
+  font-family: 'Luciole';
+  src: url('../Luciole_webfonts/Luciole-Bold/Luciole-Bold.woff2') format('woff2'),
+       url('../Luciole_webfonts/Luciole-Bold/Luciole-Bold.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Luciole';
+  src: url('../Luciole_webfonts/Luciole-Italic/Luciole-Italic.woff2') format('woff2'),
+       url('../Luciole_webfonts/Luciole-Italic/Luciole-Italic.woff') format('woff');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Luciole';
+  src: url('../Luciole_webfonts/Luciole-BoldItalic/Luciole-BoldItalic.woff2') format('woff2'),
+       url('../Luciole_webfonts/Luciole-BoldItalic/Luciole-BoldItalic.woff') format('woff');
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Luciole';
+  src: url('../Luciole_webfonts/Luciole-Regular/Luciole-Regular.woff2') format('woff2'),
+       url('../Luciole_webfonts/Luciole-Regular/Luciole-Regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ================================
+   Theme / Design Tokens
+   ================================ */
+
+:root {
+  /* Typography */
+  --font-main: "Luciole", system-ui, sans-serif;
+  --line-height-base: 1.6;
+
+  /* Backgrounds */
+  --bg-main: #cce0d6;
+  --bg-soft: #f1f1f1;
+  --bg-hover: #b5d2c4;
+
+  /* Text */
+  --text-main: #53635d;
+  --text-strong: #313d39;
+
+  /* Accent */
+  --accent: #5d8f80;
+  --accent-hover: #3e6a5d;
+
+  /* Borders */
+  --border-soft: #9bbfb2;
+  --border-strong: #000;
+
+  /* Cards */
+  --card-1: #e8f2ee;
+  --card-2: #f1efe8;
+  --card-3: #e9eff3;
+  --card-4: #f0e9ef;
+
+ /* Code block */
+  --code-bg: #cce0d6;
+  --code-border: #e0d9c7;
+  --code-text: #333;
+
+  /* Syntax highlighting */
+  --syntax-comment: #6a7f78;
+  --syntax-keyword: #2f6f8f;
+  --syntax-string:  #8a3e1f;
+  --syntax-number:  #7a5a00;
+  --syntax-function:#3b6b4b;
+  --syntax-type:    #5a4fa3;
+  --syntax-operator:#444;
+
+  --text-code: #333;
+
+  --btn-primary-hover-bg: #000;     /* black */
+  --btn-primary-hover-text: #fff;   /* white */
+
+  color-scheme: light;
+}
+
+/* ================================
+   Dark Theme
+   ================================ */
+
+/* ================================
+   Dark theme (manual)
+   ================================ */
+
+:root[data-theme="dark"] {
+  --bg-main: #0f1513;
+  --bg-soft: #151c19;
+  --bg-hover: #1f2a26;
+
+  --text-main: #cfd8d5;
+  --text-strong: #e7f0ec;
+
+  --accent: #7fb3a2;
+  --accent-hover: #9fcbbd;
+
+  --border-soft: #2a3a35;
+  --border-strong: #3d524b;
+
+  --card-1: #16201d;
+  --card-2: #1b201a;
+  --card-3: #182022;
+  --card-4: #201a20;
+
+  --code-bg: #0d1311;
+  --code-border: #24332e;
+  --code-text: #d6e0dc;
+
+  --syntax-comment: #7f9b92;
+  --syntax-keyword: #8fbfdc;
+  --syntax-string:  #d4a37c;
+  --syntax-number:  #c2b27f;
+  --syntax-function:#9ecfa3;
+  --syntax-type:    #b4a7e6;
+  --syntax-operator:#cfd8d5;
+
+  --btn-primary-hover-bg: #fff;     /* white */
+  --btn-primary-hover-text: #000;   /* black */
+
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --bg-main: #0f1513;
+    --bg-soft: #151c19;
+    --bg-hover: #1f2a26;
+
+    --text-main: #cfd8d5;
+    --text-strong: #e7f0ec;
+
+    --accent: #7fb3a2;
+    --accent-hover: #9fcbbd;
+
+    --border-soft: #2a3a35;
+    --border-strong: #3d524b;
+
+    --card-1: #16201d;
+    --card-2: #1b201a;
+    --card-3: #182022;
+    --card-4: #201a20;
+
+    --code-bg: #0d1311;
+    --code-border: #24332e;
+    --code-text: #d6e0dc;
+
+    --syntax-comment: #7f9b92;
+    --syntax-keyword: #8fbfdc;
+    --syntax-string:  #d4a37c;
+    --syntax-number:  #c2b27f;
+    --syntax-function:#9ecfa3;
+    --syntax-type:    #b4a7e6;
+    --syntax-operator:#cfd8d5;
+
+  --btn-primary-hover-bg: #fff;     /* white */
+  --btn-primary-hover-text: #000;   /* black */
+
+    color-scheme: dark;
+  }
+}
+
+
+/* ================================
+   Base / Reset
+   ================================ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  overflow-y: scroll;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-main);
+  line-height: var(--line-height-base);
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  font-synthesis: none;
+}
+
+/* ================================
+   Typography
+   ================================ */
+
+h1 { font-size: 2.2em; margin: 1em 0 0.5em; }
+h2 { font-size: 1.3em; margin: 1em 0 0.5em; }
+h3 { font-size: 1.1em; margin: 1em 0 0.5em; }
+h4 { font-size: 0.95em; margin: 1em 0 0.5em; }
+
+p {
+  margin: 0.5em 0 1em;
+}
+
+a {
+  color: var(--text-strong);
+  text-decoration: none;
+}
+
+a:hover {
+  background-color: var(--bg-hover);
+}
+
+
+/* ================================
+   Top bar layout
+   ================================ */
+
+:root {
+  --page-max-width: 72rem; /* ≈ 1152px desktop */
+}
+
+.topbar {
+  border-bottom: 1px solid var(--border-soft);
+}
+
+/*.topbar-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  width: 100%;
+  padding: 1.4em 1.5em;
+}*/
+
+.topbar-inner {
+  max-width: 70em;
+  margin: 0 auto;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  padding: 1.4em 1.5em;
+}
+
+@media (max-width: 600px) {
+  .topbar-inner {
+    padding-left: 0.75rem;
+    padding-right: 2rem;
+  }
+}
+
+/* ================================
+   Navigation links
+   ================================ */
+
+.topbar nav {
+  display: flex;
+  align-items: center;
+  gap: 2.5em;              /* more space between links */
+  font-size: 1.05em;      /* make links bigger */
+}
+
+/* Individual links */
+.topbar a {
+  position: relative;
+
+  display: flex;                 /* 🔑 makes it a box */
+  align-items: center;
+
+  padding: 0.4em 1em;            /* vertical + horizontal */
+  border-radius: 6px;
+
+  line-height: 1.2;
+  text-decoration: none;
+  color: var(--text-strong);
+
+  transition: background-color 0.15s ease;
+}
+
+.topbar nav a:hover {
+  background-color: var(--bg-hover);
+}
+
+/* Separator */
+.topbar nav a:not(:last-child)::after {
+  content: "|";
+  position: absolute;
+  right: -1.25em;
+  top: 50%;
+  transform: translateY(-50%);
+
+  color: var(--border-soft);
+  opacity: 0.7;
+}
+
+/* ================================
+   Layout
+   ================================ */
+
+.container,
+section,
+.hero {
+  margin: 3em auto;
+  padding: 0;
+}
+
+section {
+  margin: 3em auto;
+}
+
+/* ================================
+   Buttons
+   ================================ */
+
+.btn {
+  display: inline-block;
+  padding: 0.6em 1.2em;
+  border: 1px solid var(--text-main);
+  border-radius: 6px;
+  color: var(--text-main);
+}
+
+.btn.primary {
+  background-color: var(--text-main);
+  color: var(--bg-main);
+}
+
+.btn.primary:hover {
+  background-color: var(--btn-primary-hover-bg);
+  color: var(--btn-primary-hover-text);
+  border-color: var(--btn-primary-hover-bg);
+}
+
+.btn:hover {
+  background-color: var(--bg-hover);
+}
+
+
+/* ================================
+   Code & Pre (Prism-friendly)
+   ================================ */
+
+pre {
+  margin: 0;
+}
+
+/* ================================
+   Code block (base)
+   ================================ */
+
+.code-block {
+  position: relative;
+
+  border-radius: 22px;
+  border: 1px solid var(--border-soft);
+  background-color: var(--bg-main);
+
+  outline: none;
+
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease,
+    border-color 150ms ease;
+
+  /* Subtle grounding shadow */
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.08);
+
+  overflow: auto;
+
+}
+
+.code-block:hover,
+.code-block:focus-within {
+  transform: translateY(-4px);
+  border-color: var(--accent);
+
+  /* Soft, desaturated elevation */
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.12),
+    0 14px 32px rgba(0, 0, 0, 0.08);
+}
+
+.code-block-normal {
+  position: relative;
+
+  border-radius: 22px;
+  border: 1px solid var(--border-soft);
+  background-color: var(--bg-main);
+
+  outline: none;
+
+  max-height: 480px;
+
+  overflow: auto;
+
+}
+
+/* ================================
+   Code typography
+   ================================ */
+
+.code-block code {
+
+  font-family: 
+    "JetBrains Mono",
+    "Fira Code",
+    "Source Code Pro",
+    monospace;
+
+
+  font-size: 0.95em;
+  color: inherit; /* inherit container color, preserve Prism tokens */
+}
+
+.code-block {
+  transition:
+    transform 150ms ease,
+    border-color 150ms ease;
+}
+
+/* ================================
+   Prism syntax tokens (themed via :root)
+   ================================ */
+
+.code-block .token.comment  { color: var(--syntax-comment); }
+.code-block .token.keyword  { color: var(--syntax-keyword); font-weight: 600; }
+.code-block .token.string   { color: var(--syntax-string); }
+.code-block .token.number   { color: var(--syntax-number); }
+.code-block .token.function { color: var(--syntax-function); }
+.code-block .token.class-name,
+.code-block .token.type     { color: var(--syntax-type); }
+.code-block .token.operator { color: var(--syntax-operator); }
+
+.code-block-normal .token.comment  { color: var(--syntax-comment); }
+.code-block-normal .token.keyword  { color: var(--syntax-keyword); font-weight: 600; }
+.code-block-normal .token.string   { color: var(--syntax-string); }
+.code-block-normal .token.number   { color: var(--syntax-number); }
+.code-block-normal .token.function { color: var(--syntax-function); }
+.code-block-normal .token.class-name,
+.code-block-normal .token.type     { color: var(--syntax-type); }
+.code-block-normal .token.operator { color: var(--syntax-operator); }
+
+
+/* Copy button */
+.copy-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: var(--bg-main);
+  color: var(--text-main);
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.copy-btn:hover {
+  background: var(--bg-hover);
+}
+
+/* ================================
+   Docs Card Grid
+   ================================ */
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18em, 1fr));
+  gap: 1.5em;
+  margin-top: 2em;
+}
+
+/* ================================
+   Doc Card
+   ================================ */
+
+.doc-card {
+  background: var(--bg-soft);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 1.2em;
+
+  display: flex;
+  flex-direction: column;
+
+  min-height: 16em; /* 🔑 tune this value */
+
+  transition:
+    transform 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.doc-card p {
+  margin: 0 0 1.1em;
+  font-size: 0.95em;
+  color: var(--text-main);
+}
+
+.doc-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-4px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.10);
+}
+
+/* Card content */
+.doc-card h3 {
+  margin: 0 0 0.6em;
+  color: var(--text-strong);
+  font-size: 1.1em;
+}
+
+.doc-card p {
+  margin: 0 0 1.1em;
+  font-size: 0.95em;
+  color: var(--text-main);
+}
+
+/* Button inside cards */
+.doc-card a.btn {
+  align-self: flex-start; /* 🔑 prevents full-width stretch */
+  margin-top: auto;       /* pushes button to bottom */
+  font-size: 0.9em;
+}
+
+/* ================================
+   Docs Card Subtle Variants
+   ================================ */
+
+.card-variant-1 { background-color: var(--card-1); }
+.card-variant-2 { background-color: var(--card-2); }
+.card-variant-3 { background-color: var(--card-3); }
+.card-variant-4 { background-color: var(--card-4); }
+
+
+/* ================================
+   Theme toggle button
+   ================================ */
+
+.theme-toggle {
+  margin-left: 1.5em;
+
+  background: none;
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+
+  padding: 0.35em 0.6em;
+
+  color: var(--text-main);
+  font-size: 0.9em;
+
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.theme-toggle:hover {
+  background-color: var(--bg-hover);
+  border-color: var(--accent);
+}
+
+/* ================================
+   HTML Preview
+   ================================ */
+
+.editor-preview-container {
+  position: relative;
+}
+
+.html-preview {
+  border: 1px solid var(--border-color, #ccc);
+  padding: 1em;
+  min-height: 200px;
+  background: var(--bg-alt, #fafafa);
+}
+
+.hidden {
+  display: none;
+}
+
+.preview-toggle {
+  margin-bottom: 0.5em;
+}
+
+.toggle-btn {
+  font-size: 0.85em;
+}
+
+/* =========================
+   Danger zone
+   ========================= */
+
+.admin-separator {
+  margin: 3em 0;
+  border: none;
+  border-top: 1px solid var(--border-soft);
+}
+
+.admin-danger-zone {
+  background: rgba(220, 38, 38, 0.05);
+  border: 1px solid rgba(220, 38, 38, 0.25);
+  border-radius: 8px;
+  padding: 1.5em;
+}
+
+.admin-danger-zone h2 {
+  margin-top: 0;
+  color: #b91c1c;
+}
+
+.admin-danger-zone p {
+  color: var(--text-main);
+  margin-bottom: 1em;
+}
+
+.btn-danger {
+  background: #dc2626;
+  color: white;
+  border: none;
+  padding: 0.6em 1.1em;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-danger:hover {
+  background: #b91c1c;
+}
+
+.admin-form-wide {
+  max-width: 980px;
+}
+
+.form-section {
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 1.4em 1.6em;
+  margin-bottom: 2em;
+  background: var(--bg-soft);
+}
+
+.form-section legend {
+  padding: 0 0.6em;
+  font-size: 0.9em;
+  color: var(--text-muted);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.4em;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 0.4em;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 0.6em 0.7em;
+  border-radius: 6px;
+  border: 1px solid var(--border-soft);
+  background: var(--bg-main);
+  font-size: 0.95em;
+}
+
+
+/* =========================
+   Admin tables
+   ========================= */
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--bg-soft);
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  overflow: hidden;
+  font-size: 0.95rem;
+}
+
+/* Header */
+.admin-table thead {
+  background: linear-gradient(
+    to bottom,
+    var(--bg-elevated),
+    var(--bg-soft)
+  );
+}
+
+.admin-table th {
+  text-align: left;
+  padding: 0.9em 1em;
+  font-weight: 600;
+  color: var(--text-strong);
+  border-bottom: 1px solid var(--border-soft);
+  white-space: nowrap;
+}
+
+/* Body cells */
+.admin-table td {
+  padding: 0.85em 1em;
+  vertical-align: top;
+  border-bottom: 1px solid var(--border-soft);
+  color: var(--text-main);
+}
+
+/* Zebra striping */
+.admin-table tbody tr:nth-child(even) {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+/* Hover highlight */
+.admin-table tbody tr:hover {
+  background: rgba(0, 0, 0, 0.045);
+}
+
+/* Last row cleanup */
+.admin-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Small text */
+.admin-table small {
+  color: var(--text-muted);
+  font-size: 0.8em;
+}
+
+/* Code inside tables */
+.admin-table code {
+  background: var(--bg-code);
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+  font-size: 0.8em;
+}
+
+/* Empty state (—) */
+.admin-table em {
+  color: var(--text-muted);
+}
+
+/* Action links */
+.admin-table a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.admin-table a:hover {
+  text-decoration: underline;
+}
+
+/* Action column spacing */
+.admin-table td:last-child {
+  white-space: nowrap;
+}
+
+
+/* ================================
+   Utilities
+   ================================ */
+
+.hidden { display: none; }
+.left { float: left; }
+.right { float: right; }
+.avatar { border-radius: 50%; }
+
+/* ================================
+   Scrollbars
+   ================================ */
+
+::-webkit-scrollbar {
+  width: 13px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-main);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--accent);
+  border-radius: 12px;
+  border: 3px solid var(--bg-main);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--accent-hover);
+}
+
+* {
+  scrollbar-color: var(--accent) var(--bg-main);
+}
+
+
+.site-footer {
+  margin-top: 4rem;
+  padding: 2rem 1rem;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--text-muted, #777);
+  text-align: center;
+}
+
+.architecture-note {
+  display: inline-block;
+  opacity: 0.8;
+}
+
+
+.admin-actions {
+  display: flex;
+  gap: 1em;
+  margin-top: 1.5em;
+}
+
+/* ================================
+   Editor + Preview wrapper
+   ================================ */
+
+.editor-preview-wrapper {
+  position: relative;
+  margin-top: 0.5em;
+}
+
+/* ================================
+   Preview toggle button (admin)
+   ================================ */
+
+.preview-toggle {
+  margin-left: 0.6em;
+  padding: 0.25em 0.6em;
+
+  font-size: 0.75rem;
+  font-weight: 500;
+
+  background: var(--bg-main);
+  color: var(--text-main);
+
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+
+  cursor: pointer;
+  vertical-align: middle;
+
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.preview-toggle:hover {
+  background-color: var(--bg-hover);
+  border-color: var(--accent);
+  color: var(--text-strong);
+}
+
+/* ================================
+   HTML preview box
+   ================================ */
+
+.html-preview {
+  margin-top: 0.8em;
+
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+
+  padding: 1em;
+  min-height: 200px;
+
+  background: var(--bg-soft);
+  color: var(--text-main);
+
+  line-height: var(--line-height-base);
+}
+
+/* Make preview visually distinct from editor */
+.html-preview h1,
+.html-preview h2,
+.html-preview h3 {
+  margin-top: 1.2em;
+}
+
+#description-preview {
+  background-color: var(--bg-main);
+}
+
+@media (max-width: 640px) {
+
+  /* Reduce horizontal padding everywhere */
+  main,
+  .admin-page {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  /* Typography scale */
+  h1 {
+    font-size: 1.6rem;
+  }
+
+  h2 {
+    font-size: 1.25rem;
+  }
+
+  /* Stack admin action buttons */
+  .admin-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-actions .btn {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+}
+
+main {
+  max-width: 70em;
+  margin: auto;
+  padding: 0 1.5em;
+}
+
+.admin-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+@media (max-width: 600px) {
+  .theme-toggle {
+    margin-left: 0;
+  }
+}

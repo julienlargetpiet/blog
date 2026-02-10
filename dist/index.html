@@ -1,0 +1,123 @@
+
+<!doctype html>
+<html>
+<head>
+
+
+        <script>
+          (function () {
+            const theme = localStorage.getItem("theme");
+            if (theme) {
+              document.documentElement.dataset.theme = theme;
+            }
+          })();
+        </script>
+
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+        <link rel="preload"
+      	    href="/assets/Luciole_webfonts/Luciole-Regular/Luciole-Regular.woff2"
+      	    as="font"
+      	    type="font/woff2"
+      	    crossorigin>
+
+        <title>Home</title>
+        <link rel="stylesheet" href="/assets/css/style.css">
+
+        <link rel="icon" href="/assets/favicon.ico" type="image/x-icon">
+
+</head>
+<body>
+
+      
+        <header class="topbar">
+            <div class="topbar-inner">
+                <div class="logo">
+                    <a href="/">
+                        HOME
+                    </a>
+                </div>
+
+                <nav>
+                    <button id="theme-toggle" class="theme-toggle" aria-label="Toggle dark mode">
+                      ☾
+                    </button>
+                </nav>
+            </div>
+        </header>
+
+        <main id="page-content">
+          
+
+<section class="container">
+  <div class="card-grid">
+
+    
+      <a
+        href="/articles/5.html"
+        class="doc-card card-variant-1"
+      >
+        <h3>HELLO</h3>
+
+        <p>Hello ds</p>
+
+        <span class="btn">Read →</span>
+      </a>
+    
+      <a
+        href="/articles/3.html"
+        class="doc-card card-variant-2"
+      >
+        <h3>sggf</h3>
+
+        <p>gdf</p>
+
+        <span class="btn">Read →</span>
+      </a>
+    
+      <a
+        href="/articles/2.html"
+        class="doc-card card-variant-3"
+      >
+        <h3>pppAA</h3>
+
+        <p>Designed for engineers who need predictable performance, explicit execution, and full control over data pipelines. At its core, VisonDF is a C&#43;&#43;…</p>
+
+        <span class="btn">Read →</span>
+      </a>
+    
+      <a
+        href="/articles/1.html"
+        class="doc-card card-variant-4"
+      >
+        <h3>First post</h3>
+
+        <p>Hello from the database.</p>
+
+        <span class="btn">Read →</span>
+      </a>
+    
+
+  </div>
+</section>
+
+
+        </main>
+
+        <script src="/assets/js/main.js"></script>
+        <script src="/assets/js/agressive_cacher.js"></script>
+
+        <script defer src="/assets/prism/prism.min.js"></script>
+        <script defer src="/assets/prism/components/prism-clike.min.js"></script>
+        <script defer src="/assets/prism/components/prism-c.min.js"></script>
+        <script defer src="/assets/prism/components/prism-cpp.min.js"></script>
+
+        <footer class="site-footer">
+          <span class="architecture-note">
+            Statically served. Dynamically authored.
+          </span>
+        </footer>
+
+</body>
+</html>

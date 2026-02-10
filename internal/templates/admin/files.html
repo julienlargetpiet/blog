@@ -1,0 +1,104 @@
+{{ define "title" }}
+Admin — Files
+{{ end }}
+
+{{ define "content" }}
+
+<main class="admin-page admin-form-wide">
+
+  <header class="admin-header">
+    <h1>Files</h1>
+    <p>Upload static files that can be linked from articles.</p>
+  </header>
+
+  <!-- Upload form -->
+  <form
+    method="post"
+    action="/admin/files"
+    enctype="multipart/form-data"
+  >
+
+    <fieldset class="form-section">
+      <legend>Upload files</legend>
+
+      <div class="form-group">
+        <label for="files">
+          Select files
+        </label>
+
+        <input
+          id="files"
+          type="file"
+          name="files"
+          multiple
+          required
+          onchange="updateFileName(this)"
+        >
+
+        <small id="dataset-file-name">
+          No file selected
+        </small>
+      </div>
+    </fieldset>
+
+    <div class="admin-actions">
+      <button type="submit" class="btn primary">
+        ⬆ Upload
+      </button>
+
+      <a href="/admin" class="btn">
+        Back
+      </a>
+    </div>
+  </form>
+
+  <!-- Existing files -->
+  <section class="form-section">
+    <legend>Available files</legend>
+
+    {{ if .Files }}
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Size</th>
+            <th>URL</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{ range .Files }}
+          <tr>
+            <td>{{ .Name }}</td>
+            <td><small>{{ .Size }}</small></td>
+            <td>
+              <code>/assets/common_files/{{ .Name }}</code>
+            </td>
+            <td>
+              <form
+                method="post"
+                action="/admin/files/delete/{{ .Name }}"
+                style="display:inline"
+                onsubmit="return confirm('Delete {{ .Name }} ?');"
+              >
+                <button type="submit" class="btn btn-danger">
+                  🗑 Delete
+                </button>
+              </form>
+            </td>
+          </tr>
+          {{ end }}
+        </tbody>
+      </table>
+    {{ else }}
+      <p><em>No files uploaded yet.</em></p>
+    {{ end }}
+  </section>
+
+</main>
+
+<script src="/assets/js/admin.js"></script>
+
+{{ end }}
+
+

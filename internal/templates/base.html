@@ -1,0 +1,77 @@
+{{ define "base" }}
+<!doctype html>
+<html>
+<head>
+
+
+        <script>
+          (function () {
+            const theme = localStorage.getItem("theme");
+            if (theme) {
+              document.documentElement.dataset.theme = theme;
+            }
+          })();
+        </script>
+
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+        <link rel="preload"
+      	    href="/assets/Luciole_webfonts/Luciole-Regular/Luciole-Regular.woff2"
+      	    as="font"
+      	    type="font/woff2"
+      	    crossorigin>
+
+        <title>{{ block "title" . }}My Blog{{ end }}</title>
+        <link rel="stylesheet" href="/assets/css/style.css">
+
+        <link rel="icon" href="/assets/favicon.ico" type="image/x-icon">
+
+</head>
+<body>
+
+      <!-- =========================
+       Top Navigation
+       ========================= -->
+        <header class="topbar">
+            <div class="topbar-inner">
+                <div class="logo">
+                    <a href="/">
+                        HOME
+                    </a>
+                </div>
+
+                <nav>
+                    <button id="theme-toggle" class="theme-toggle" aria-label="Toggle dark mode">
+                      ☾
+                    </button>
+                </nav>
+            </div>
+        </header>
+
+        <main id="page-content">
+          {{ block "content" . }}{{ end }}
+        </main>
+
+        <script src="/assets/js/main.js"></script>
+        <script src="/assets/js/agressive_cacher.js"></script>
+
+        <script defer src="/assets/prism/prism.min.js"></script>
+        <script defer src="/assets/prism/components/prism-clike.min.js"></script>
+        <script defer src="/assets/prism/components/prism-c.min.js"></script>
+        <script defer src="/assets/prism/components/prism-cpp.min.js"></script>
+
+        <footer class="site-footer">
+          <span class="architecture-note">
+            Statically served. Dynamically authored.
+          </span>
+        </footer>
+
+</body>
+</html>
+{{ end }}
+
+
+
+
+
