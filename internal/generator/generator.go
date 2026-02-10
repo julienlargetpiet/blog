@@ -105,12 +105,17 @@ func (g *Generator) buildIndex() error {
     	},
     }
 	
+    sort.Slice(g.Articles, func(i, j int) bool {
+    	return g.Articles[i].ID > g.Articles[j].ID
+    })
+
     tmpl, err := template.New("base").
 		Funcs(funcs).
 		ParseFiles(
 			"internal/templates/base.html",
 			"internal/templates/users/index.html",
 		)
+
 	if err != nil {
 		return err
 	}
