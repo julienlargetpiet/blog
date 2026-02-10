@@ -372,26 +372,6 @@ section {
 .code-block-normal .token.operator { color: var(--syntax-operator); }
 
 
-/* Copy button */
-.copy-btn {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  background: var(--bg-soft);
-  border: 1px solid var(--border-soft);
-
-  color: var(--text-main);
-  border: none;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  cursor: pointer;
-}
-
-.copy-btn:hover {
-  background: var(--bg-hover);
-}
-
 /* ================================
    Docs Card Grid
    ================================ */
@@ -992,10 +972,32 @@ tbody tr:nth-child(even) {
 
 /* Copy button */
 
+/* Default: do nothing */
+.copy-btn {
+  display: none;
+}
+
 .code-block .copy-btn {
+  display: inline-block;
+
   position: absolute;
   top: 0.6em;
   right: 0.6em;
   z-index: 2;
+
+  background: var(--bg-soft);
+  border: 1px solid var(--border-soft);
+  color: var(--text-main);
+
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  cursor: pointer;
 }
+
+.code-block .copy-btn:hover {
+  background: var(--bg-hover);
+}
+
+
 
