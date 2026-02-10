@@ -44,10 +44,9 @@ func (g *Generator) Build() error {
 		return err
 	}
 
-	// Generator owns ordering
-	sort.Slice(g.Articles, func(i, j int) bool {
-		return g.Articles[i].CreatedAt.After(g.Articles[j].CreatedAt)
-	})
+    sort.Slice(g.Articles, func(i, j int) bool {
+    	return g.Articles[i].ID > g.Articles[j].ID
+    })
 
 	if err := g.buildIndex(); err != nil {
 		return err
@@ -105,10 +104,6 @@ func (g *Generator) buildIndex() error {
     	},
     }
 	
-    sort.Slice(g.Articles, func(i, j int) bool {
-    	return g.Articles[i].ID > g.Articles[j].ID
-    })
-
     tmpl, err := template.New("base").
 		Funcs(funcs).
 		ParseFiles(
@@ -130,6 +125,10 @@ func (g *Generator) buildIndex() error {
 			CreatedAt: a.CreatedAt,
 		})
 	}
+
+    sort.Slice(views, func(i, j int) bool {
+		return views[i].ID > views[j].ID
+	})
 
 	filename := filepath.Join(g.OutDir, "index.html")
 	f, err := os.Create(filename)

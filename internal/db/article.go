@@ -14,7 +14,7 @@ func (r *ArticleRepo) ListAll() ([]model.Article, error) {
 	rows, err := r.DB.Query(`
 		SELECT id, title, html, created_at
 		FROM articles
-		ORDER BY created_at DESC
+		ORDER BY id DESC
 	`)
 	if err != nil {
 		return nil, err
