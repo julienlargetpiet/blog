@@ -65,6 +65,21 @@
         <script defer src="/assets/prism/components/prism-go.min.js"></script>
         <script defer src="/assets/prism/components/prism-r.min.js"></script>
 
+        <link rel="stylesheet" href="/assets/katex/katex.min.css">        
+        <script defer src="/assets/katex/katex.min.js"></script>
+        <script defer src="/assets/katex/contrib/auto-render.min.js"></script>
+
+        <script defer>
+          document.addEventListener("DOMContentLoaded", function () {
+            renderMathInElement(document.body, {
+              delimiters: [
+                { left: "$$", right: "$$", display: true },
+                { left: "$", right: "$", display: false }
+              ]
+            });
+          });
+        </script>
+
         <footer class="site-footer">
           <span class="architecture-note">
             Statically served. Dynamically authored.
