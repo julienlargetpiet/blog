@@ -902,22 +902,26 @@ code {
    Responsive tables (fixed)
    ================================ */
 
+/*table {
+  border-collapse: collapse;
+  margin: 1.5em 0;
+  font-size: 0.95em;
+  width: max-content;
+  max-width: 100%;
+} */
+
 table {
   border-collapse: collapse;
   margin: 1.5em 0;
   font-size: 0.95em;
-
-  /* 🔑 key lines */
-  width: max-content;
-  max-width: 100%;
+  width: 100%;
 }
 
-/* Scroll only when needed */
 @media (max-width: 768px) {
   table {
     display: block;
     overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
   }
 }
 
