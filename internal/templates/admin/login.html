@@ -1,12 +1,37 @@
 {{ define "title" }}Admin login{{ end }}
 
 {{ define "content" }}
-<h1>Admin login</h1>
 
-<form method="post">
-  <input type="password" name="password" autofocus required>
-  <button type="submit">Login</button>
-</form>
+<main class="admin-page">
+
+  <div class="login-wrapper">
+    <div class="login-card">
+
+      <h1>Admin login</h1>
+      <p class="login-subtitle">Enter your administrator password.</p>
+
+      <form method="post" class="login-form">
+
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input
+            id="password"
+            type="password"
+            name="password"
+            required
+            autofocus
+          >
+        </div>
+
+        <button type="submit" class="btn primary login-btn">
+          Login
+        </button>
+
+      </form>
+
+    </div>
+  </div>
+
+</main>
+
 {{ end }}
-
-
