@@ -50,6 +50,41 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 
+(function () {
+  const top = document.querySelector('.admin-table-scroll-top');
+  const topInner = document.querySelector('.admin-table-scroll-inner');
+  const wrapper = document.querySelector('.admin-table-wrapper');
+  const table = wrapper?.querySelector('.admin-table');
+
+  if (!top || !topInner || !wrapper || !table) return;
+
+  function updateWidth() {
+    topInner.style.width = table.scrollWidth + 'px';
+  }
+
+  let syncing = false;
+
+  top.addEventListener('scroll', () => {
+    if (syncing) return;
+    syncing = true;
+    wrapper.scrollLeft = top.scrollLeft;
+    syncing = false;
+  });
+
+  wrapper.addEventListener('scroll', () => {
+    if (syncing) return;
+    syncing = true;
+    top.scrollLeft = wrapper.scrollLeft;
+    syncing = false;
+  });
+
+  updateWidth();
+  window.addEventListener('resize', updateWidth);
+
+  if ('ResizeObserver' in window) {
+    new ResizeObserver(updateWidth).observe(table);
+  }
+})();
 
 
 
