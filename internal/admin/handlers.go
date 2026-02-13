@@ -248,7 +248,7 @@ func (s *Server) handleNewArticle(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleDumpDb(w http.ResponseWriter, r *http.Request) {
-    if r.Method != http.MethodPost {
+    if r.Method != http.MethodGet {
         http.Error(w, "bad request", http.StatusBadRequest)
         return
     }
