@@ -26,6 +26,7 @@ func NewRouter(db *sql.DB, adminPass string) http.Handler {
 
     mux.HandleFunc("/admin/files",         s.requireAuth(s.handleFiles))
 	mux.HandleFunc("/admin/files/delete/", s.requireAuth(s.handleDeleteFile))
+    mux.HandleFunc("/admin/files/dump",    s.requireAuth(s.handleDeleteFile))
 
     mux.Handle(
     	"/assets/",

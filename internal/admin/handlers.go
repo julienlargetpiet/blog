@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+    "os/exec"
+    "io"
 
 	"blog/internal/db"
 	"blog/internal/generator"
@@ -94,6 +96,11 @@ func (s *Server) handleEditArticle(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		if err := gen.BuildSitemap(); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
 		// 4. Redirect back to admin
 		http.Redirect(w, r, "/admin", http.StatusSeeOther)
 		return
@@ -162,6 +169,11 @@ func (s *Server) handleDeleteArticle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := gen.BuildSitemap(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	// 4. Redirect back to admin
 	http.Redirect(w, r, "/admin", http.StatusSeeOther)
 }
@@ -209,6 +221,11 @@ func (s *Server) handleNewArticle(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		if err := gen.BuildSitemap(); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
 		// 4. Redirect back to admin list
 		http.Redirect(w, r, "/admin", http.StatusSeeOther)
 		return
@@ -228,6 +245,38 @@ func (s *Server) handleNewArticle(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+}
+
+func (s *Server) handleDumpDb(w http.ResponseWriter, r *http.Request) {
+    if r.Method != http.MethodPost {
+        http.Error(w, "bad request", http.StatusBadRequest)
+        return
+    }
+
+    cmd := exec.Command(
+        "mysqldump",
+        "-u", "root",
+        "-p m",
+        "go_blog",
+    )
+
+    stdout, err := cmd.StdoutPipe()
+    if err != nil {
+        http.Error(w, "failed to create pipe", 500)
+        return
+    }
+
+    if err := cmd.Start(); err != nil {
+        http.Error(w, "failed to start dump", 500)
+        return
+    }
+
+    w.Header().Set("Content-Type", "application/sql")
+    w.Header().Set("Content-Disposition", "attachment; filename=\"go_blog.sql\"")
+
+    io.Copy(w, stdout)
+
+    cmd.Wait()
 }
 
 func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {

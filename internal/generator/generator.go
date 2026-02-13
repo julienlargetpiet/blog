@@ -9,6 +9,9 @@ import (
     "strings"
     "regexp"
     "html"
+    "encoding/xml"
+    "time"
+    "fmt"
 
 	"blog/internal/model"
 )
@@ -138,6 +141,50 @@ func (g *Generator) buildIndex() error {
 	defer f.Close()
 
 	return tmpl.ExecuteTemplate(f, "base", views)
+}
+
+func (g *Generator) BuildSitemap() error {
+    type URL struct {
+        Loc     string `xml:"loc"`
+        LastMod string `xml:"lastmod,omitempty"`
+    }
+
+    type URLSet struct {
+        XMLName xml.Name `xml:"urlset"`
+        Xmlns   string   `xml:"xmlns,attr"`
+        URLs    []URL    `xml:"url"`
+    }
+
+    base := "https://julienlargetpiet.tech"
+
+    urls := []URL{
+        {
+            Loc:     base + "/",
+            LastMod: time.Now().Format("2006-01-02"),
+        },
+    }
+
+    for _, a := range g.Articles {
+        urls = append(urls, URL{
+            Loc:     fmt.Sprintf("%s/articles/%d.html", base, a.ID),
+            LastMod: a.CreatedAt.Format("2006-01-02"),
+        })
+    }
+
+    sitemap := URLSet{
+        Xmlns: "http://www.sitemaps.org/schemas/sitemap/0.9",
+        URLs:  urls,
+    }
+
+    data, err := xml.MarshalIndent(sitemap, "", "  ")
+    if err != nil {
+        return err
+    }
+
+    data = append([]byte(xml.Header), data...)
+
+    filename := filepath.Join(g.OutDir, "sitemap.xml")
+    return os.WriteFile(filename, data, 0644)
 }
 
 
