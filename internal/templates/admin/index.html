@@ -8,9 +8,14 @@ Admin — Articles
 <p>
   <a href="/admin/new" class="btn primary">➕ New article</a>
   <a href="/admin/files" class="btn">See files</a>
-  <a href="/admin/dump" class="btn">Dup db</a>
+  <a href="/admin/dump" class="btn">Dump db</a>
 </p>
 
+<section class="form-section">
+<div class="admin-table-scroll-top">
+  <div class="admin-table-scroll-inner"></div>
+</div>
+<div class="admin-table-wrapper">
 <table class="admin-table">
   <thead>
     <tr>
@@ -50,6 +55,10 @@ Admin — Articles
     {{ end }}
   </tbody>
 </table>
+</div>
+</section>
+
+<script src="/assets/js/admin.js"></script>
 
 {{ end }}
 

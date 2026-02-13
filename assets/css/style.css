@@ -592,92 +592,74 @@ section {
    Admin tables
    ========================= */
 
+.admin-table-scroll-top {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  height: 14px;          /* height of scrollbar track */
+  margin-bottom: 6px;
+}
+
+.admin-table-scroll-inner {
+  height: 1px;           /* invisible element that defines width */
+}
+
+/* Wrapper handles horizontal scroll */
+.admin-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+/* Table base */
 .admin-table {
   width: 100%;
+  min-width: 600px; /* optional: forces scroll on small screens */
   border-collapse: collapse;
+
   background: var(--bg-soft);
-  border: 1px solid var(--border-soft);
-  border-radius: 10px;
-  overflow: hidden;
   font-size: 0.95rem;
 }
 
 /* Header */
-.admin-table thead {
-  background: linear-gradient(
-    to bottom,
-    var(--bg-elevated),
-    var(--bg-soft)
-  );
-}
-
 .admin-table th {
-  text-align: left;
-  padding: 0.9em 1em;
-  font-weight: 600;
+  background: var(--bg-soft);
   color: var(--text-strong);
+  font-weight: 600;
+
+  padding: 0.8em 1em;
+  text-align: left;
+
   border-bottom: 1px solid var(--border-soft);
   white-space: nowrap;
 }
 
 /* Body cells */
 .admin-table td {
-  padding: 0.85em 1em;
-  vertical-align: top;
+  padding: 0.8em 1em;
   border-bottom: 1px solid var(--border-soft);
   color: var(--text-main);
+  white-space: nowrap;
 }
 
-/* Zebra striping */
+/* Zebra */
 .admin-table tbody tr:nth-child(even) {
-  background: rgba(0, 0, 0, 0.02);
+  background: rgba(0, 0, 0, 0.03);
 }
 
-/* Hover highlight */
+/* Hover */
 .admin-table tbody tr:hover {
-  background: rgba(0, 0, 0, 0.045);
+  background: rgba(0, 0, 0, 0.06);
 }
 
-/* Last row cleanup */
-.admin-table tbody tr:last-child td {
-  border-bottom: none;
-}
-
-/* Small text */
-.admin-table small {
-  color: var(--text-muted);
-  font-size: 0.8em;
-}
-
-/* Code inside tables */
-.admin-table code {
-  background: var(--bg-code);
-  padding: 0.15em 0.4em;
-  border-radius: 4px;
-  font-size: 0.8em;
-}
-
-/* Empty state (—) */
-.admin-table em {
-  color: var(--text-muted);
-}
-
-/* Action links */
+/* Links */
 .admin-table a {
   color: var(--accent);
   text-decoration: none;
-  font-weight: 500;
 }
 
 .admin-table a:hover {
   text-decoration: underline;
 }
-
-/* Action column spacing */
-.admin-table td:last-child {
-  white-space: nowrap;
-}
-
 
 /* ================================
    Utilities
@@ -837,6 +819,7 @@ section {
   }
 }
 
+/*
 @media (max-width: 768px) {
   .admin-table {
     display: block;
@@ -844,7 +827,7 @@ section {
     overflow-x: auto;
     white-space: nowrap;
   }
-}
+}*/
 
 main {
   max-width: 70em;

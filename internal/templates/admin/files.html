@@ -57,6 +57,12 @@ Admin — Files
     <legend>Available files</legend>
 
     {{ if .Files }}
+
+<div class="admin-table-scroll-top">
+  <div class="admin-table-scroll-inner"></div>
+</div>
+
+      <div class="admin-table-wrapper">
       <table class="admin-table">
         <thead>
           <tr>
@@ -90,6 +96,8 @@ Admin — Files
           {{ end }}
         </tbody>
       </table>
+      </div>
+
     {{ else }}
       <p><em>No files uploaded yet.</em></p>
     {{ end }}
