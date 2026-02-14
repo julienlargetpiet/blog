@@ -48,8 +48,8 @@ Install Go:
 On Linux:
 
 ```
-$ wget https://go.dev/dl/go1.22.0.linux-amd64.tar.gz
-$ sudo tar -C /usr/local -xzf go1.22.0.linux-amd64.tar.gz
+$ wget https://go.dev/dl/go1.23.0.linux-amd64.tar.gz
+$ sudo tar -C /usr/local -xzf go1.23.0.linux-amd64.tar.gz
 $ export PATH=$PATH:/usr/local/go/bin
 ```
 
@@ -529,6 +529,247 @@ $$
 $$
 </p>
 ```
+
+## 📊 Shiny Log Analyzer (Optional Module)
+
+The `RShiny/` directory contains a complete **R Shiny dashboard** for analyzing your NGINX access logs.
+
+It provides:
+
+- Bot filtering (User-Agent + rate heuristics)
+- RegEx-based page filtering
+- Traffic evolution over time
+- Top visited pages (Top N + Other)
+- Dark / Light mode
+- Authentication via `shinymanager`
+- Reverse proxy support
+- systemd service deployment
+
+This module is optional and intended for internal analytics.
+
+---
+
+### 1️⃣ Install R (Ubuntu / Debian)
+
+```bash
+sudo apt update
+sudo apt install r-base
+sudo apt install -y libcurl4-openssl-dev libssl-dev libxml2-dev
+```
+
+The development libraries are required for packages like `curl`, `httr`, and `plotly`.
+
+---
+
+### 2️⃣ Install Required R Packages
+
+Start R:
+
+```bash
+R
+```
+
+(Optional but recommended) use a user-level library:
+
+```r
+.libPaths("~/.local/share/R/library")
+```
+
+Install all required packages:
+
+```r
+install.packages(c(
+  "shiny",
+  "plotly",
+  "dplyr",
+  "lubridate",
+  "bslib",
+  "readr",
+  "shinymanager",
+  "shinycssloaders",
+  "DT",
+  "stringr",
+  "curl",
+  "httr"
+))
+```
+
+Exit R:
+
+```r
+q()
+```
+
+---
+
+### -- Mandatory Step --
+
+Edit `Rshiny/global.R` and modify you admin password.
+
+⚠ Never commit real credentials to version control.
+
+---
+
+### 3️⃣ Run the App Manually (Optional Test)
+
+Before configuring systemd, you can test locally:
+
+```bash
+R
+```
+
+```r
+shiny::runApp('/var/www/R_Shiny_NGINX', host='127.0.0.1', port=7665)
+```
+
+Then open:
+
+```
+http://127.0.0.1:7665
+```
+
+---
+
+### 4️⃣ Configure NGINX Reverse Proxy
+
+To expose the dashboard at:
+
+```
+https://yourdomain.com/shiny/
+```
+
+Edit:
+
+```
+/etc/nginx/sites-available/example.com
+```
+
+Add this block inside your `server` configuration:
+
+```nginx
+# --- R Shiny app ---
+location /shiny/ {
+    proxy_pass http://127.0.0.1:7665/;
+
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+
+    proxy_read_timeout 86400;
+}
+```
+
+Validate configuration:
+
+```bash
+sudo nginx -t
+```
+
+Reload NGINX:
+
+```bash
+sudo systemctl reload nginx
+```
+
+---
+
+## 5️⃣ Create a systemd Service
+
+Create:
+
+```
+/etc/systemd/system/shiny.service
+```
+
+```ini
+[Unit]
+Description=Shiny Log Analyzer
+After=network.target
+
+[Service]
+Type=simple
+User=julien
+WorkingDirectory=/var/www/R_Shiny_NGINX
+
+ExecStart=/usr/bin/R --no-save --no-restore -e "shiny::runApp('/var/www/R_Shiny_NGINX', host='127.0.0.1', port=7665)"
+
+Restart=always
+RestartSec=5
+
+# Basic hardening
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Enable and start:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable shiny
+sudo systemctl start shiny
+```
+
+Check status:
+
+```bash
+sudo systemctl status shiny
+```
+
+View logs:
+
+```bash
+journalctl -u shiny -f
+```
+
+---
+
+## 6️⃣ Security Considerations
+
+- The app listens only on `127.0.0.1`
+- It is exposed externally via NGINX reverse proxy
+- Authentication is handled via `shinymanager`
+- Consider additional protections:
+  - IP allowlists
+  - NGINX rate limiting
+  - Firewall restrictions
+  - Dedicated system user (e.g., `shiny`)
+  - Restrictive permissions on log files
+
+---
+
+## 7️⃣ Access the Dashboard
+
+Once running, open:
+
+```
+https://yourdomain.com/shiny/
+```
+
+Login using your configured credentials.
+
+---
+
+## ✅ Result
+
+You now have a self-hosted NGINX log analytics dashboard featuring:
+
+- Intelligent bot filtering
+- Page-based traffic analysis
+- Time-window aggregation
+- Interactive charts (Plotly)
+- Dark mode support
+- systemd-managed background service
+- Secure reverse proxy exposure
+
+Clean, reproducible, production-ready.
 
 # Final Verification Checklist
 
