@@ -88,7 +88,7 @@ document.addEventListener("DOMContentLoaded", () => {
     previewId: "description-preview",
     fontSize: "16px",
     minHeight: "140px",
-    maxHeight: "400px"
+    maxHeight: "800px"
   });
 
   // Signature editor (small, compact, no preview)
