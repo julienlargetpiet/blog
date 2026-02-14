@@ -10,6 +10,7 @@ It covers:
 - Database setup (MySQL or MariaDB)
 - Proper Linux permissions
 - systemd service configuration
+- Global NGINX configuration
 - NGINX reverse proxy
 - HTTPS (Let’s Encrypt)
 - Optional Cloudflare integration
@@ -271,7 +272,36 @@ journalctl -u go_blog -f
 
 ---
 
-# 10. NGINX Reverse Proxy
+# 10. Global NGINX Configuration
+
+The main NGINX configuration file is:
+
+```
+/etc/nginx/nginx.conf
+```
+
+In most installations, the default configuration is sufficient.
+
+Verify that inside the `http {}` block you have:
+
+```nginx
+include /etc/nginx/conf.d/*.conf;
+include /etc/nginx/sites-enabled/*;
+```
+
+These directives are required so that your site configuration
+(`/etc/nginx/sites-available/example.com`) is loaded.
+
+After any modification:
+
+```bash
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+---
+
+# 11. NGINX Reverse Proxy (Site Configuration)
 
 Create:
 
@@ -330,7 +360,7 @@ sudo systemctl reload nginx
 
 ---
 
-# 11. HTTPS (Let’s Encrypt)
+# 12. HTTPS (Let’s Encrypt)
 
 Install:
 
@@ -346,9 +376,9 @@ sudo certbot --nginx -d example.com -d www.example.com
 
 ---
 
-# 12. Optional: Cloudflare Real IP Support
+# 13. Optional: Cloudflare Real IP Support
 
-Inside `nginx.conf` → `http {}` block:
+Inside `/etc/nginx/nginx.conf` → `http {}` block:
 
 ```nginx
 set_real_ip_from 173.245.48.0/20;
@@ -371,9 +401,16 @@ real_ip_header CF-Connecting-IP;
 real_ip_recursive on;
 ```
 
+Reload NGINX after editing:
+
+```bash
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
 ---
 
-# 13. Updating the Application (Safe Procedure)
+# 14. Updating the Application (Safe Procedure)
 
 Build new binary:
 
@@ -408,10 +445,13 @@ journalctl -u go_blog -xe
 - [ ] goblog backup user created
 - [ ] Schema imported
 - [ ] systemd service running
-- [ ] NGINX valid configuration
+- [ ] nginx.conf verified
+- [ ] Site configuration enabled
 - [ ] HTTPS enabled
 
 Statix should now be accessible at:
 
 https://example.com  
 https://example.com/admin
+
+
