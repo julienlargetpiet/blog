@@ -1,7 +1,19 @@
 # Statix (Go) — Production Deployment Guide  
-NGINX Reverse Proxy + MySQL + systemd
+NGINX Reverse Proxy + MariaDB/MySQL + systemd
 
-This guide explains how to deploy the Statix static site generator and its Go admin backend behind NGINX, with MySQL and a hardened systemd service.
+This document describes the complete production deployment of **Statix**,  
+a Go-based static website generator with an admin backend.
+
+It covers:
+
+- Building the Go binary
+- Database setup (MySQL or MariaDB)
+- Proper Linux permissions
+- systemd service configuration
+- NGINX reverse proxy
+- HTTPS (Let’s Encrypt)
+- Optional Cloudflare integration
+- Safe update procedure
 
 Domain placeholder used in this guide:
 
@@ -11,126 +23,152 @@ Replace it with your real domain.
 
 ---
 
-# Architecture
+# 1. Prerequisites
 
-Client → (Cloudflare optional) → NGINX (HTTPS)
-                           ├── /            → static site (/dist)
-                           ├── /assets/     → static assets
-                           └── /admin       → Go backend (127.0.0.1:8080)
-                                                     ↓
-                                                   MySQL
+Server: Debian / Ubuntu  
+Privileges: sudo access  
+Go version: 1.23+  
 
----
+Install required packages:
 
-# 1) Install Dependencies (Debian/Ubuntu)
-
+```bash
 sudo apt update
-sudo apt install -y nginx mariadb-server
+sudo apt install -y nginx mysql-server
+```
 
-Install Go 1.23+ from:
+If using MariaDB instead:
+
+```bash
+sudo apt install -y mariadb-server
+```
+
+Install Go from:
+
 https://go.dev/dl/
 
 Verify:
 
+```bash
 go version
+```
 
 ---
 
-# 2) Create System User
+# 2. Build the Go Admin Binary
 
-sudo useradd -r -s /bin/false goblog
+From the root of your project (where `go.mod` is located):
 
----
-
-# 3) Build the Go Admin Binary (IMPORTANT)
-
-From the root of your project (where go.mod is located):
-
+```bash
 go mod tidy
-go build -o go_blog_admin
-
-This produces the binary:
-
-    ./go_blog_admin
-
-For a clean production build (recommended):
-
 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o go_blog_admin
+```
 
-You should now have:
+This produces:
 
-    go_blog_admin
+```
+./go_blog_admin
+```
+
+The binary is now ready for production.
 
 ---
 
-# 4) Deploy Project Files
+# 3. Create System User
 
-Recommended production layout:
+Create a dedicated system user for security:
 
+```bash
+sudo useradd -r -s /bin/false goblog
+```
+
+---
+
+# 4. Deploy Project Files
+
+Create production directory:
+
+```bash
+sudo mkdir -p /var/www/go_blog
+```
+
+Move binary:
+
+```bash
+sudo mv ./go_blog_admin /var/www/go_blog/go_blog_admin
+```
+
+Your final layout should be:
+
+```
 /var/www/go_blog/
     go_blog_admin
     dist/
     assets/
         common_files/
     _uploads/
-
-Create directory:
-
-sudo mkdir -p /var/www/go_blog
-
-Move binary:
-
-sudo mv ./go_blog_admin /var/www/go_blog/go_blog_admin
-
-Make executable:
-
-sudo chmod 0755 /var/www/go_blog/go_blog_admin
+```
 
 ---
 
-# 5) Permissions (CRITICAL)
+# 5. Set Permissions (Critical Step)
 
-Run:
+Ensure everything belongs to the `goblog` user:
 
+```bash
 sudo chown -R goblog:goblog /var/www/go_blog
+```
 
-The goblog user must own:
-- binary
-- dist/
-- assets/common_files/
-- _uploads/
+Make binary executable:
+
+```bash
+sudo chmod 0755 /var/www/go_blog/go_blog_admin
+```
+
+This ensures:
+- The service can execute the binary
+- The app can write to `_uploads`
+- Static files are readable
 
 ---
 
-# 6) MySQL Setup
+# 6. Database Setup (MySQL or MariaDB)
 
 Login:
 
-sudo mariadb -u root -p
+```bash
+sudo mysql -u root -p
+```
 
-Create database:
+## Create Database
 
+```sql
 CREATE DATABASE go_blog;
+```
 
-Create main application user (used in config.go):
+## Create Main Application User
 
+```sql
 CREATE USER 'blog_user'@'localhost' IDENTIFIED BY 'your_secure_password';
 GRANT ALL PRIVILEGES ON go_blog.* TO 'blog_user'@'localhost';
 FLUSH PRIVILEGES;
+```
 
-Create restricted mysqldump user:
+## Create Restricted Backup User
 
+```sql
 CREATE USER 'goblog'@'localhost' IDENTIFIED BY 'm';
 GRANT SELECT, SHOW VIEW, TRIGGER, LOCK TABLES
 ON go_blog.* TO 'goblog'@'localhost';
 FLUSH PRIVILEGES;
+```
 
 ---
 
-# 7) Create Initial Schema
+# 7. Initialize Schema
 
-Create file database.sql:
+Create a file named `database.sql`:
 
+```sql
 CREATE TABLE articles (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     title TEXT NOT NULL,
@@ -144,21 +182,27 @@ VALUES (
   '<p>Hello from the database.</p>',
   NOW()
 );
+```
 
-Import it:
+Import schema:
 
-mariadb -p go_blog -u blog_user < database.sql
+```bash
+mysql -u blog_user -p go_blog < database.sql
+```
 
 ---
 
-# 8) Configure Credentials (Hardcoded Preferred)
+# 8. Configure Credentials
 
 Edit:
 
+```
 internal/config/config.go
+```
 
 Example hardcoded configuration:
 
+```go
 cfg := Config{
     DB: db.Config{
         User:     "blog_user",
@@ -168,24 +212,23 @@ cfg := Config{
         DBName:   "go_blog",
     },
     AdminAddr: ":8080",
-    AdminPass: "your_admin_password",  // for admin panel connection on the website
+    AdminPass: "your_admin_password",
 }
+```
 
-If using environment variables instead, ensure:
-
-BLOG_DB_PASSWORD
-BLOG_ADMIN_PASSWORD
-
-are set, or the app will exit intentionally.
+⚠ Never commit real credentials to version control.
 
 ---
 
-# 9) systemd Service
+# 9. systemd Service
 
 Create:
 
+```
 /etc/systemd/system/go_blog.service
+```
 
+```ini
 [Unit]
 Description=Go Blog Admin Server
 After=network.target
@@ -209,26 +252,34 @@ Environment=GIN_MODE=release
 
 [Install]
 WantedBy=multi-user.target
+```
 
 Enable and start:
 
+```bash
 sudo systemctl daemon-reload
 sudo systemctl enable go_blog
 sudo systemctl start go_blog
 sudo systemctl status go_blog
+```
 
 View logs:
 
+```bash
 journalctl -u go_blog -f
+```
 
 ---
 
-# 10) NGINX Configuration
+# 10. NGINX Reverse Proxy
 
 Create:
 
+```
 /etc/nginx/sites-available/example.com
+```
 
+```nginx
 server {
     listen 80;
     server_name example.com www.example.com;
@@ -267,27 +318,39 @@ server {
         add_header Cache-Control "public, immutable";
     }
 }
+```
 
 Enable site:
 
+```bash
 sudo ln -s /etc/nginx/sites-available/example.com /etc/nginx/sites-enabled/
 sudo nginx -t
 sudo systemctl reload nginx
+```
 
 ---
 
-# 11) HTTPS with Let’s Encrypt
+# 11. HTTPS (Let’s Encrypt)
 
+Install:
+
+```bash
 sudo apt install -y certbot python3-certbot-nginx
+```
 
+Generate certificate:
+
+```bash
 sudo certbot --nginx -d example.com -d www.example.com
+```
 
 ---
 
-# 12) Optional: Cloudflare Real IP Support
+# 12. Optional: Cloudflare Real IP Support
 
-Add inside nginx.conf → http {} block:
+Inside `nginx.conf` → `http {}` block:
 
+```nginx
 set_real_ip_from 173.245.48.0/20;
 set_real_ip_from 103.21.244.0/22;
 set_real_ip_from 103.22.200.0/22;
@@ -306,26 +369,49 @@ set_real_ip_from 131.0.72.0/22;
 
 real_ip_header CF-Connecting-IP;
 real_ip_recursive on;
+```
 
 ---
 
-# Final Checklist
+# 13. Updating the Application (Safe Procedure)
 
-[ ] Go binary built (go_blog_admin exists)  
-[ ] Binary moved to /var/www/go_blog  
-[ ] Correct ownership applied  
-[ ] MySQL database created  
-[ ] blog_user created  
-[ ] goblog backup user created  
-[ ] Schema imported  
-[ ] systemd service running  
-[ ] NGINX configuration valid  
-[ ] HTTPS enabled  
+Build new binary:
 
-Your site should now be accessible at:
+```bash
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o go_blog_admin
+```
+
+Deploy update:
+
+```bash
+sudo systemctl stop go_blog
+sudo mv go_blog_admin /var/www/go_blog/go_blog_admin
+sudo chown goblog:goblog /var/www/go_blog/go_blog_admin
+sudo chmod 0755 /var/www/go_blog/go_blog_admin
+sudo systemctl start go_blog
+```
+
+If something fails:
+
+```bash
+journalctl -u go_blog -xe
+```
+
+---
+
+# Final Verification Checklist
+
+- [ ] Binary built (`go_blog_admin`)
+- [ ] Permissions applied
+- [ ] Database created
+- [ ] blog_user created
+- [ ] goblog backup user created
+- [ ] Schema imported
+- [ ] systemd service running
+- [ ] NGINX valid configuration
+- [ ] HTTPS enabled
+
+Statix should now be accessible at:
 
 https://example.com  
 https://example.com/admin
-
-
-
