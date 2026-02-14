@@ -40,7 +40,7 @@ function(input, output, session) {
   
   })
 
-  file_path <- "access.log"
+  file_path <- "/var/log/nginx/access.log"
 
   raw_data <- reactive({
     fp <- file_path
@@ -64,16 +64,18 @@ function(input, output, session) {
 
     parsed <- tibble(
       ip = df[[1]],
-      date_raw = df[[4]],
+      date_raw = paste(df[[4]], df[[5]]),
       request_raw = df[[6]],
-      ua = ua_col
+      ua = df[[(ncol(df))]]  # safer: last column
     )
-
+    
     parsed <- parsed %>%
       mutate(
-        date = as.POSIXct(substring(date_raw, 2),
-                          format = "%d/%b/%Y:%H:%M:%S",
-                          tz = "UTC"),
+        date = as.POSIXct(
+          gsub("\\[|\\]", "", date_raw),
+          format = "%d/%b/%Y:%H:%M:%S %z",
+          tz = "UTC"
+        ),
         target = extract_url(request_raw)
       ) %>%
       select(ip, date, target, ua)
@@ -108,18 +110,18 @@ function(input, output, session) {
                                  ignore.case = TRUE,
                                  perl = TRUE))
   
-      df <- df %>%
-        group_by(ip, sec = floor_date(date, "second")) %>%
-        mutate(req_per_sec = n()) %>%
-        ungroup() %>%
-        mutate(is_bot_rate = req_per_sec > 10)
+      #df <- df %>%
+      #  group_by(ip, sec = floor_date(date, "second")) %>%
+      #  mutate(req_per_sec = n()) %>%
+      #  ungroup() %>%
+      #  mutate(is_bot_rate = req_per_sec > 10)
   
-      df <- df %>%
-        mutate(is_bot = is_bot_ua | is_bot_rate) %>%
-        filter(!is_bot) %>%
-        select(-is_bot_ua, -req_per_sec, -is_bot_rate, -is_bot)
+      #df <- df %>%
+      #  mutate(is_bot = is_bot_ua | is_bot_rate) %>%
+      #  filter(!is_bot) %>%
+      #  select(-is_bot_ua, -req_per_sec, -is_bot_rate, -is_bot)
     }
-  
+
     # -----------------------------
     # STATIC ASSET FILTER
     # -----------------------------
@@ -131,9 +133,10 @@ function(input, output, session) {
           ignore.case = TRUE
         ))
     }
-  
+
     df <- df %>%
-      mutate(target = sub("\\?.*$", "", target)) %>%
+      mutate(target = sub("\\?.*$", "", target),
+	     target = trimws(target)) %>%
       filter(
         target == "/" |
         target == "/articles/" |
@@ -147,6 +150,7 @@ function(input, output, session) {
     cutoff <- max(df$date) - last
   
     df %>% filter(date >= cutoff)
+
   })  
   
   # KPIs
@@ -293,13 +297,17 @@ function(input, output, session) {
 
   output$mytable <- renderDT({
     df <- filtered_data()
+  
     datatable(
-      df %>% select(ip, date, target),
+      df %>% arrange(desc(date)) %>% select(ip, date, target),
       options = list(
-        pageLength = 25,
-        scrollX = TRUE
-      )
+        pageLength = 100,
+        scrollX = TRUE,
+        ordering = TRUE
+      ),
+      rownames = FALSE
     )
   })
+
 }
 
