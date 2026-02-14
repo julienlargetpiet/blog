@@ -43,14 +43,14 @@ If using MariaDB instead:
 sudo apt install -y mariadb-server
 ```
 
-Install Go from:
+Install Go:
 
-https://go.dev/dl/
+On Linux:
 
-Verify:
-
-```bash
-go version
+```
+$ wget https://go.dev/dl/go1.22.0.linux-amd64.tar.gz
+$ sudo tar -C /usr/local -xzf go1.22.0.linux-amd64.tar.gz
+$ export PATH=$PATH:/usr/local/go/bin
 ```
 
 ---
