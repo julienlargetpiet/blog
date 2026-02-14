@@ -436,6 +436,100 @@ journalctl -u go_blog -xe
 
 ---
 
+# 15. Stylistic advises when writing articles
+
+You absolutely do not need any custom (html-in) css when you write your articles such as `style="..."` because all is handled in the `/assets/css/style.css`
+
+## Table
+
+When you need to create a table use this pattern:
+
+```
+<section class="form-section">
+
+<div class="admin-table-scroll-top">
+  <div class="admin-table-scroll-inner"></div>
+</div>
+  
+<div class="admin-table-wrapper">
+<table class="admin-table">
+  <tr>
+    <th>column 1</th>
+    <th>column 2</th>
+    ...
+  </tr>
+  <tr><td>cell at row 1 column 1</td><td>cell at row 1 column2</td>...</tr>
+  <tr><td>cell at row 2 column 1</td><td>cell at row 2 column2</td>...</tr>
+</table>
+</div>
+</section>
+
+```
+
+## Code
+
+When you need to write a code block use this pattern:
+
+```
+<div class="code-block">
+<pre>
+<button class="copy-btn">Copy</button>
+<code class="language-cpp">#include &lt;cublas_v2.h&gt;
+<!-- Code goes here -->
+</code>
+</pre>
+</div>
+```
+
+Note that this example is for `C++` code, so when you write bash code do that:
+
+```
+<div class="code-block">
+<pre>
+<button class="copy-btn">Copy</button>
+<code class="language-bash">#include &lt;cublas_v2.h&gt; <!-- MODIFIED -->
+<!-- Code goes here -->
+</code>
+</pre>
+</div>
+```
+
+Currently supported languages highlighting are:
+
+- C
+- C++
+- haskell
+- rust
+- go
+- R
+- bash
+- NGINX
+- systemd
+
+you can add new languages downloading the prism `JS` code you can find here:
+
+<a href="https://github.com/PrismJS/prism/tree/master/components?utm_source=chatgpt.com">https://github.com/PrismJS/prism/tree/master/components</a>
+
+you now put the js code into `/assets/prism/components/`
+
+and now edit `/internal/templates/base.html` to add:
+
+```
+<script defer src="/assets/prism/components/prism-yourlanguage.min.js"></script>`
+```
+
+## Math 
+
+Use the Katex synthax like so:
+
+```
+<p>
+$$
+\det(A) = \sum_{j=0}^{n-1} (-1)^j a_{0j} \det(M_{0j})
+$$
+</p>
+```
+
 # Final Verification Checklist
 
 - [ ] Binary built (`go_blog_admin`)
