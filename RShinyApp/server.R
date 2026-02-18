@@ -180,7 +180,6 @@ function(input, output, session) {
       mutate(target = sub("\\?.*$", "", target),
 	     target = trimws(target)) %>%
       filter(
-        target == "/" |
         target == "/articles/" |
         grepl("^/articles/.*\\.html$", target)
       )

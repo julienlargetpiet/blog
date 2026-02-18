@@ -311,6 +311,35 @@ sudo nginx -t
 sudo systemctl reload nginx
 ```
 
+### Note about NGINX logs rotations ###
+
+`logrotate is ofte in charge of rotating logs`
+
+I strongy advise to modify `/etc/logrotate.d/nginx` to:
+
+```
+/var/log/nginx/*.log {
+        size 500M
+        missingok
+        rotate 14
+        compress
+        delaycompress
+        notifempty
+        create 0640 www-data adm
+        sharedscripts
+        prerotate
+                if [ -d /etc/logrotate.d/httpd-prerotate ]; then \
+                        run-parts /etc/logrotate.d/httpd-prerotate; \
+                fi \
+        endscript
+        postrotate
+                invoke-rc.d nginx rotate >/dev/null 2>&1
+        endscript
+}
+```
+
+So rotation happens when the log file exceeds `500M` and keeps 14 last compressed logs file.
+
 ---
 
 # 11. NGINX Reverse Proxy (Site Configuration)
