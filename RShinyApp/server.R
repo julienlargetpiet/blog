@@ -45,7 +45,7 @@ function(input, output, session) {
   raw_data <- reactive({
     fp <- file_path
     req(!is.null(fp))
-
+  
     df <- read_delim(
       fp,
       delim = " ",
@@ -59,16 +59,18 @@ function(input, output, session) {
         X8 = col_double()
       )
     )
-
-    ua_col <- if (ncol(df) >= 10) df[[10]] else rep("", nrow(df))
-
+  
+    # Safety: ensure we have enough columns
+    req(ncol(df) >= 2)
+  
     parsed <- tibble(
       ip = df[[1]],
       date_raw = paste(df[[4]], df[[5]]),
       request_raw = df[[6]],
-      ua = df[[(ncol(df))]]  # safer: last column
+      ua = df[[ncol(df) - 1]],        # second to last
+      x_prefetch = df[[ncol(df)]]     # last column
     )
-    
+  
     parsed <- parsed %>%
       mutate(
         date = as.POSIXct(
@@ -76,11 +78,13 @@ function(input, output, session) {
           format = "%d/%b/%Y:%H:%M:%S %z",
           tz = "UTC"
         ),
-        target = extract_url(request_raw)
+        target = extract_url(request_raw),
+        is_prefetch = x_prefetch == "1"
       ) %>%
-      select(ip, date, target, ua)
-
-    parsed %>% filter(!is.na(date), !is.na(target))
+      select(ip, date, target, ua, is_prefetch)
+  
+    parsed %>% 
+      filter(!is.na(date), !is.na(target))
   })
 
   filtered_data <- reactive({
@@ -91,7 +95,7 @@ function(input, output, session) {
     # BOT DETECTION
     # -----------------------------
     if (!isTRUE(input$show_bots)) {
-  
+    
       bot_regex <- paste(
         c(
           "bot","crawler","spider",
@@ -106,34 +110,44 @@ function(input, output, session) {
         ),
         collapse = "|"
       )
-  
+    
+      # 1️⃣ Remove prefetch first
+      df <- df %>%
+        filter(!is_prefetch)
+    
+      # 2️⃣ UA detection
       df <- df %>%
         mutate(is_bot_ua = grepl(bot_regex, ua,
                                  ignore.case = TRUE,
                                  perl = TRUE))
- 
+    
+      # 3️⃣ Asset heuristic
       df <- df %>%
         group_by(ip) %>%
         mutate(
           total_requests = n(),
           html_requests = sum(grepl("\\.html$|/$", target)),
-          asset_ratio = html_requests / total_requests
+          asset_ratio = html_requests / total_requests,
+          is_bot_asset = asset_ratio > 0.9
         ) %>%
+        ungroup()
+    
+      # 4️⃣ Rate heuristic
+      df <- df %>%
+        group_by(ip, sec = floor_date(date, "second")) %>%
+        mutate(req_per_sec = n()) %>%
         ungroup() %>%
-        mutate(is_bot_asset = asset_ratio > 0.9)
-
-      #df <- df %>%
-      #  group_by(ip, sec = floor_date(date, "second")) %>%
-      #  mutate(req_per_sec = n()) %>%
-      #  ungroup() %>%
-      #  mutate(is_bot_rate = req_per_sec > 10)
-  
-      #df <- df %>%
-      #  mutate(is_bot = is_bot_ua | is_bot_rate) %>%
-      #  filter(!is_bot) %>%
-      #  select(-is_bot_ua, -req_per_sec, -is_bot_rate, -is_bot)
+        mutate(is_bot_rate = req_per_sec > 10)
+    
+      # 5️⃣ Final bot flag
+      df <- df %>%
+        mutate(is_bot = is_bot_ua | is_bot_rate | is_bot_asset) %>%
+        filter(!is_bot) %>%
+        select(-is_bot_ua, -req_per_sec, -is_bot_rate,
+               -is_bot_asset, -asset_ratio,
+               -total_requests, -html_requests,
+               -is_bot)
     }
-
     # -----------------------------
     # STATIC ASSET FILTER
     # -----------------------------
@@ -159,6 +173,8 @@ function(input, output, session) {
     # TIME WINDOW FILTER
     # -----------------------------
     last <- input$last_n * mult_map[[input$time_unit]]
+
+    if (nrow(df) == 0) return(df)
     cutoff <- max(df$date) - last
   
     df %>% filter(date >= cutoff)

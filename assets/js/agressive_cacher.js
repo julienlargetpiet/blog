@@ -21,7 +21,8 @@
       fetch(url, {
         credentials: "same-origin",
         cache: "force-cache",
-        priority: "low"
+        priority: "low",
+        headers: { "X-Prefetch": "1" }
       })
         .catch(() => {})
         .finally(() => {
