@@ -138,14 +138,30 @@ function(input, output, session) {
         mutate(req_per_sec = n()) %>%
         ungroup() %>%
         mutate(is_bot_rate = req_per_sec > 10)
-    
-      # 5️⃣ Final bot flag
+   
+      # 5️⃣ Reading-time heuristic (aggressive)
       df <- df %>%
-        mutate(is_bot = is_bot_ua | is_bot_rate | is_bot_asset) %>%
+        arrange(ip, date) %>%
+        group_by(ip) %>%
+        mutate(
+          next_date = lead(date),
+          time_on_page = as.numeric(difftime(next_date, date, units = "secs")),
+          is_article = grepl("^/articles/.*\\.html$", target),
+          is_bot_readtime = is_article &
+                            !is.na(time_on_page) &
+                            time_on_page < 30
+        ) %>%
+        ungroup()
+
+      # 6 Final bot flag
+      df <- df %>%
+        mutate(is_bot = is_bot_ua | is_bot_rate | is_bot_asset | is_bot_readtime) %>%
         filter(!is_bot) %>%
         select(-is_bot_ua, -req_per_sec, -is_bot_rate,
                -is_bot_asset, -asset_ratio,
                -total_requests, -html_requests,
+               -next_date, -time_on_page,
+               -is_article, -is_bot_readtime,
                -is_bot)
     }
     # -----------------------------
