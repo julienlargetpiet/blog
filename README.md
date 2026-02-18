@@ -544,6 +544,7 @@ Currently supported languages highlighting are:
 - go
 - R
 - bash
+- jq
 - NGINX
 - systemd
 
@@ -571,7 +572,17 @@ $$
 </p>
 ```
 
-## 📊 Shiny Log Analyzer (Optional Module)
+## PRE
+
+```
+<pre>
+...
+</pre>
+```
+
+Have a unique style that is not applied to pre tags inside code-block.
+
+# 📊 Shiny Log Analyzer (Optional Module)
 
 The `RShiny/` directory contains a complete **R Shiny dashboard** for analyzing your NGINX access logs.
 
