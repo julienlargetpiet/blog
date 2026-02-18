@@ -355,6 +355,32 @@ section {
 }
 
 /* ================================
+   Standalone pre (not code blocks)
+   ================================ */
+
+pre:not(.code-block pre) {
+  margin: 1.2em 0;
+  padding: 1em 1.2em;
+
+  background: var(--bg-soft);
+  color: var(--text-main);
+
+  border-left: 4px solid var(--accent);
+  border-radius: 6px;
+
+  font-family:
+    "JetBrains Mono",
+    "Fira Code",
+    "Source Code Pro",
+    monospace;
+
+  font-size: 0.9em;
+  line-height: 1.6;
+
+  overflow-x: auto;
+}
+
+/* ================================
    Prism syntax tokens (themed via :root)
    ================================ */
 
