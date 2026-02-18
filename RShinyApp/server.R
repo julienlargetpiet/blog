@@ -100,7 +100,9 @@ function(input, output, session) {
           "headless","phantomjs","selenium",
           "playwright","puppeteer",
           "node-fetch","axios",
-          "go-http-client","libwww-perl","java/"
+          "go-http-client","libwww-perl","java/",
+          "curl","wget","python-requests",
+          "httpclient","scrapy"
         ),
         collapse = "|"
       )
@@ -109,7 +111,17 @@ function(input, output, session) {
         mutate(is_bot_ua = grepl(bot_regex, ua,
                                  ignore.case = TRUE,
                                  perl = TRUE))
-  
+ 
+      df <- df %>%
+        group_by(ip) %>%
+        mutate(
+          total_requests = n(),
+          html_requests = sum(grepl("\\.html$|/$", target)),
+          asset_ratio = html_requests / total_requests
+        ) %>%
+        ungroup() %>%
+        mutate(is_bot_asset = asset_ratio > 0.9)
+
       #df <- df %>%
       #  group_by(ip, sec = floor_date(date, "second")) %>%
       #  mutate(req_per_sec = n()) %>%
