@@ -160,7 +160,7 @@ function(input, output, session) {
         select(-is_bot_ua, -req_per_sec, -is_bot_rate,
                -is_bot_asset, -asset_ratio,
                -total_requests, -html_requests,
-               -next_date, -time_on_page,
+               -next_date,
                -is_article, -is_bot_readtime,
                -is_bot)
     }
@@ -342,7 +342,7 @@ function(input, output, session) {
     df <- filtered_data()
   
     datatable(
-      df %>% arrange(desc(date)) %>% select(ip, date, target),
+      df %>% arrange(desc(date)) %>% select(ip, date, target, time_on_page),
       options = list(
         pageLength = 100,
         scrollX = TRUE,

@@ -81,10 +81,6 @@ ui <- fluidPage(
       title = "Data Page",
       page_sidebar(
         title = "Raw data (filtered)",
-        sidebar = tagList(
-          checkboxInput("show_bots", "Include bots", value = FALSE),
-          checkboxInput("show_static", "Include static assets (.css/.js/.png…)", value = TRUE)
-        ),
         card(
           withSpinner(DTOutput("mytable"), type = 5, size = 1.0)
         )
