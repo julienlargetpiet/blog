@@ -588,7 +588,7 @@ The `RShiny/` directory contains a complete **R Shiny dashboard** for analyzing 
 
 It provides:
 
-- Bot filtering (User-Agent + rate heuristics)
+- Bot filtering (User-Agent + rate heuristics + time_on_page(accurate between same session page visits))
 - RegEx-based page filtering
 - Traffic evolution over time
 - Top visited pages (Top N + Other)
