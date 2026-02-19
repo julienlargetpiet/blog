@@ -10,9 +10,11 @@
     <h1>{{ .Title }}</h1>
 
     {{ if .CreatedAt }}
-      <time class="article-date">
-        {{ .CreatedAt.Format "January 2, 2006" }}
-      </time>
+      <div class="article-meta">
+        <time class="article-date" datetime="{{ .CreatedAt }}">
+          {{ .CreatedAt.Format "January 2, 2006" }}
+        </time>
+      </div>
     {{ end }}
   </header>
 

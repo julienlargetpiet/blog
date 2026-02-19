@@ -1137,3 +1137,47 @@ tbody tr:nth-child(even) {
   border-color: var(--accent);
   color: var(--bg-main);
 }
+
+
+
+/* ================================
+   Article Page
+   ================================ */
+
+.article-page {
+  margin-top: 3rem;
+}
+
+.article-header {
+  margin-bottom: 2.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.article-header h1 {
+  margin: 0 0 0.6rem;
+  line-height: 1.25;
+}
+
+.article-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.article-date {
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 600;
+
+  color: var(--accent);
+
+  padding: 0.35em 0.7em;
+  border-radius: 999px;
+
+  background: var(--bg-soft);
+  border: 1px solid var(--border-soft);
+
+  display: inline-block;
+}
