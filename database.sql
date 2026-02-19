@@ -2,17 +2,22 @@
 
 DROP TABLE articles;
 
+
+CREATE TABLE subjects (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    subject VARCHAR(100) NOT NULL,
+    slug VARCHAR(100) NOT NULL UNIQUE
+);
+
 CREATE TABLE articles (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     title TEXT NOT NULL,
+    subject_id INT NULL,
     html MEDIUMTEXT NOT NULL,
-    created_at DATETIME NOT NULL
-);
+    created_at DATETIME NOT NULL,
 
-INSERT INTO articles (title, html, created_at)
-VALUES (
-  'First post',
-  '<p>Hello from the database.</p>',
-  NOW()
+    CONSTRAINT fk_articles_subject
+        FOREIGN KEY (subject_id)
+        REFERENCES subjects(id)
+        ON DELETE SET NULL
 );
-
