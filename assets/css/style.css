@@ -90,6 +90,11 @@
   --btn-primary-hover-bg: #000;     /* black */
   --btn-primary-hover-text: #fff;   /* white */
 
+  /* Slug badge (light mode) */
+  --slug-text: var(--text-strong);
+  --slug-bg: #ffffff;
+  --slug-border: var(--border-soft);
+
   color-scheme: light;
 }
 
@@ -135,6 +140,11 @@
   --btn-primary-hover-bg: #fff;     /* white */
   --btn-primary-hover-text: #000;   /* black */
 
+  /* Slug badge (dark mode tuned) */
+  --slug-text: #fb923c;
+  --slug-bg: rgba(251, 146, 60, 0.12);
+  --slug-border: rgba(251, 146, 60, 0.4);
+
   color-scheme: dark;
 }
 
@@ -170,8 +180,13 @@
     --syntax-type:    #b4a7e6;
     --syntax-operator:#cfd8d5;
 
-  --btn-primary-hover-bg: #fff;     /* white */
-  --btn-primary-hover-text: #000;   /* black */
+    --btn-primary-hover-bg: #fff;     /* white */
+    --btn-primary-hover-text: #000;   /* black */
+
+    /* Slug badge (dark mode tuned) */
+    --slug-text: #fb923c;
+    --slug-bg: rgba(251, 146, 60, 0.12);
+    --slug-border: rgba(251, 146, 60, 0.4);
 
     color-scheme: dark;
   }
@@ -1183,6 +1198,7 @@ tbody tr:nth-child(even) {
   display: inline-block;
 }
 
+
 .article-slug {
   font-family:
     "JetBrains Mono",
@@ -1191,14 +1207,22 @@ tbody tr:nth-child(even) {
     monospace;
 
   font-size: 0.8rem;
-  color: var(--text-main);
-  opacity: 0.7;
+  letter-spacing: 0.04em;
+  font-weight: 500;
 
-  padding: 0.35em 0.6em;
-  border-radius: 6px;
+  color: var(--slug-text);
+  background: var(--slug-bg);
 
-  background: var(--bg-main);
-  border: 1px dashed var(--border-soft);
+  padding: 0.35em 0.7em;
+  border-radius: 999px;
+
+  border: 1px solid var(--slug-border);
+
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
 }
+
 
 
