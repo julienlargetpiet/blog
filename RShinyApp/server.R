@@ -14,31 +14,54 @@ function(input, output, session) {
   observeEvent(input$last_n, ignoreInit = TRUE, {
     updateNumericInput(session, "last_n_2", value = input$last_n)
   })
+  
   observeEvent(input$last_n_2, ignoreInit = TRUE, {
     updateNumericInput(session, "last_n", value = input$last_n_2)
   })
 
-  observeEvent(input$dark_mode, ignoreInit = TRUE, {
-  
-    session$setCurrentTheme(
-      if (isTRUE(input$dark_mode)) {
-        bs_theme(
-          version = 5,
-          bootswatch = "darkly",
-          base_font = font_google("Nunito"),
-          code_font = font_google("Nunito")
-        )
-      } else {
-        bs_theme(
-          version = 5,
-          bootswatch = "litera",
-          base_font = font_google("Nunito"),
-          code_font = font_google("Nunito")
-        )
-      }
-    )
-  
+  #observeEvent(input$dark_mode, ignoreInit = TRUE, {
+  #
+  #  session$setCurrentTheme(
+  #    if (isTRUE(input$dark_mode)) {
+  #      bs_theme(
+  #        version = 5,
+  #        bootswatch = "darkly",
+  #        base_font = font_google("Nunito"),
+  #        code_font = font_google("Nunito")
+  #      )
+  #    } else {
+  #      bs_theme(
+  #        version = 5,
+  #        bootswatch = "litera",
+  #        base_font = font_google("Nunito"),
+  #        code_font = font_google("Nunito")
+  #      )
+  #    }
+  #  )
+  #
+  #})
+
+  theme_reactive <- reactive({
+    if (isTRUE(input$dark_mode)) {
+      bs_theme(
+        version = 5,
+        bootswatch = "darkly",
+        base_font = font_google("Nunito"),
+        code_font = font_google("Nunito")
+      )
+    } else {
+      bs_theme(
+        version = 5,
+        bootswatch = "litera",
+        base_font = font_google("Nunito"),
+        code_font = font_google("Nunito")
+      )
+    }
   })
+
+  observeEvent(input$dark_mode, {
+    session$setCurrentTheme(theme_reactive())
+  }, ignoreInit = TRUE)
 
   file_path <- "/var/log/nginx/access.log"
 

@@ -1,10 +1,17 @@
 ui <- fluidPage(
 
+  #theme = bs_theme(
+  #  version = 5,
+  #  bootswatch = "flatly",   # light theme
+  #  base_font = font_google("Lexend"),
+  #  code_font = font_google("Lexend")
+  #),
+
   theme = bs_theme(
-    version = 5,
-    bootswatch = "flatly",   # light theme
-    base_font = font_google("Lexend"),
-    code_font = font_google("Lexend")
+     version = 5,
+     bootswatch = "litera",   # same as your light mode default
+     base_font = font_google("Nunito"),
+     code_font = font_google("Nunito")
   ),
 
   checkboxInput("dark_mode", "Dark mode", value = FALSE),
