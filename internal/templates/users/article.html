@@ -16,6 +16,13 @@
         </time>
       </div>
     {{ end }}
+
+    {{ if .Slug }}
+      <span class="article-slug">
+        /{{ .Slug }}
+      </span>
+    {{ end }}
+
   </header>
 
   <div class="article-content">
