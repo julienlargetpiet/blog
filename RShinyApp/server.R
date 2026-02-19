@@ -365,15 +365,25 @@ function(input, output, session) {
     df <- filtered_data()
   
     datatable(
-      df %>% arrange(desc(date)) %>% select(ip, date, target, time_on_page),
+      df %>% 
+        arrange(desc(date)) %>% 
+        mutate(target = paste0('<a href="https://domain.com', 
+                                target,
+                                '" target="_blank">',
+                                target,
+                                "</a>")) %>%
+        select(ip, date, target, time_on_page),
       options = list(
         pageLength = 100,
         scrollX = TRUE,
         ordering = TRUE
       ),
-      rownames = FALSE
+      rownames = FALSE,
+      escape=FALSE
     )
   })
 
 }
+
+
 

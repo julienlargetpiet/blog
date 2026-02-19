@@ -599,6 +599,10 @@ It provides:
 
 This module is optional and intended for internal analytics.
 
+Note:
+
+Modify the line 370 in `server.R` to match your domain name.
+
 ---
 
 ### 1️⃣ Install R (Ubuntu / Debian)
