@@ -25,6 +25,15 @@ Admin — New article
           name="title"
           required
         >
+
+<select name="subject_id" required>
+  {{ range .Subjects }}
+    <option value="{{ .Id }}">
+      {{ .Title }}
+    </option>
+  {{ end }}
+</select>
+
       </div>
     </fieldset>
 

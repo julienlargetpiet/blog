@@ -23,6 +23,11 @@ func NewRouter(db *sql.DB, adminPass string) http.Handler {
     mux.HandleFunc("/admin/new",       s.requireAuth(s.handleNewArticle))
     mux.HandleFunc("/admin/articles/", s.requireAuth(s.handleEditArticle))
     mux.HandleFunc("/admin/delete/",   s.requireAuth(s.handleDeleteArticle))
+    
+    mux.HandleFunc("/admin/subjects",         s.requireAuth(s.handleSubject))
+    mux.HandleFunc("/admin/subjects/delete/", s.requireAuth(s.handleDeleteSubject))
+    mux.HandleFunc("/admin/subjects/edit",    s.requireAuth(s.handleEditSubject))
+    mux.HandleFunc("/admin/subjects/add",     s.requireAuth(s.handleNewSubject))
 
     mux.HandleFunc("/admin/files",         s.requireAuth(s.handleFiles))
 	mux.HandleFunc("/admin/files/delete/", s.requireAuth(s.handleDeleteFile))
@@ -39,5 +44,8 @@ func NewRouter(db *sql.DB, adminPass string) http.Handler {
 
 	return mux
 }
+
+
+
 
 

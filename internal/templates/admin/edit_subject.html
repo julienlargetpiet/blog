@@ -1,0 +1,61 @@
+{{ define "title" }}
+Admin — Edit article
+{{ end }}
+
+{{ define "content" }}
+
+<main class="admin-page admin-form-wide">
+
+  <header class="admin-header">
+    <h1>Edit Subject</h1>
+    <p>Update subject.</p>
+  </header>
+
+  <form method="post" action="/admin/subjects/edit">
+
+    <fieldset class="form-section">
+
+      <div class="form-group">
+
+        <select name="subject_id">
+          {{ range .Subjects }}
+            <option 
+              value="{{ .Id }}"
+            >
+              {{ .Title }}
+            </option>
+          {{ end }}
+        </select>
+
+        <input
+          id="subject"
+          type="text"
+          name="subject"
+          required
+        >
+
+      </div>
+    </fieldset>
+
+    <!-- Actions -->
+    <div class="admin-actions">
+      <button type="submit" class="btn primary">
+        💾 Save
+      </button>
+
+      <a href="/admin" class="btn">
+        Cancel
+      </a>
+    </div>
+  </form>
+
+</main>
+
+<!-- Admin logic + CodeMirror -->
+<script type="module" src="/assets/js/editor.bundle.js"></script>
+
+<script src="/assets/js/admin.js"></script>
+
+{{ end }}
+
+

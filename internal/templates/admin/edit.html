@@ -7,11 +7,11 @@ Admin — Edit article
 <main class="admin-page admin-form-wide">
 
   <header class="admin-header">
-    <h1>Edit article #{{ .ID }}</h1>
+    <h1>Edit article #{{ .Article.ID }}</h1>
     <p>Update the article content and rebuild the site.</p>
   </header>
 
-  <form method="post" action="/admin/articles/{{ .ID }}">
+  <form method="post" action="/admin/articles/{{ .Article.ID }}">
 
     <!-- Article metadata -->
     <fieldset class="form-section">
@@ -23,9 +23,21 @@ Admin — Edit article
           id="title"
           type="text"
           name="title"
-          value="{{ .Title }}"
+          value="{{ .Article.Title }}"
           required
         >
+
+<select name="subject_id">
+  {{ range .Subjects }}
+    <option 
+      value="{{ .Id }}"
+      {{ if eq .Id $.Article.SubjectId }}selected{{ end }}
+    >
+      {{ .Title }}
+    </option>
+  {{ end }}
+</select>
+
       </div>
     </fieldset>
 
@@ -50,9 +62,7 @@ Admin — Edit article
           id="description-editor"
           name="html"
           rows="50"
-        >        
-        {{ .HTML }}
-        </textarea>
+        >{{ .Article.HTML }}</textarea>
 
         <!-- HTML preview -->
         <div
@@ -81,7 +91,7 @@ Admin — Edit article
     <h2>Danger zone</h2>
     <p>This action is irreversible. The article will be deleted and the site rebuilt.</p>
 
-    <form method="post" action="/admin/delete/{{ .ID }}">
+    <form method="post" action="/admin/delete/{{ .Article.ID }}">
       <button
         type="submit"
         class="btn-danger"

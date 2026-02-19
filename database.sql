@@ -5,7 +5,7 @@ DROP TABLE articles;
 
 CREATE TABLE subjects (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    subject VARCHAR(100) NOT NULL,
+    title VARCHAR(100) NOT NULL,
     slug VARCHAR(100) NOT NULL UNIQUE
 );
 

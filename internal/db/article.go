@@ -12,7 +12,7 @@ type ArticleRepo struct {
 
 func (r *ArticleRepo) ListAll() ([]model.Article, error) {
 	rows, err := r.DB.Query(`
-		SELECT id, title, html, created_at
+		SELECT id, title, subject_id, html, created_at
 		FROM articles
 		ORDER BY id DESC
 	`)
@@ -28,6 +28,7 @@ func (r *ArticleRepo) ListAll() ([]model.Article, error) {
 		if err := rows.Scan(
 			&a.ID,
 			&a.Title,
+			&a.SubjectId,
 			&a.HTML,
 			&a.CreatedAt,
 		); err != nil {
@@ -47,12 +48,13 @@ func (r *ArticleRepo) GetByID(id int64) (model.Article, error) {
 	var a model.Article
 
 	err := r.DB.QueryRow(`
-		SELECT id, title, html, created_at
+		SELECT id, title, subject_id, html, created_at
 		FROM articles
 		WHERE id = ?
 	`, id).Scan(
 		&a.ID,
 		&a.Title,
+		&a.SubjectId,
 		&a.HTML,
 		&a.CreatedAt,
 	)
@@ -60,16 +62,12 @@ func (r *ArticleRepo) GetByID(id int64) (model.Article, error) {
 	return a, err
 }
 
-
-func (r *ArticleRepo) Update(id int64, title, html string) error {
-	_, err := r.DB.Exec(
-		`UPDATE articles
-		 SET title = ?, html = ?
-		 WHERE id = ?`,
-		title,
-		html,
-		id,
-	)
+func (r *ArticleRepo) Update(id int64, title string, subjectId int32, html string) error {
+	_, err := r.DB.Exec(`
+		UPDATE articles
+		SET title = ?, subject_id = ?, html = ?
+		WHERE id = ?
+	`, title, subjectId, html, id)
 	return err
 }
 
@@ -81,17 +79,15 @@ func (r *ArticleRepo) Delete(id int64) error {
 	return err
 }
 
-func (r *ArticleRepo) Create(title, html string) (int64, error) {
+func (r *ArticleRepo) Create(title string, subjectId int32, html string) (int64, error) {
 	res, err := r.DB.Exec(`
-		INSERT INTO articles (title, html, created_at)
-		VALUES (?, ?, NOW())
-	`, title, html)
+		INSERT INTO articles (title, subject_id, html, created_at)
+		VALUES (?, ?, ?, NOW())
+	`, title, subjectId, html)
 	if err != nil {
 		return 0, err
 	}
 
 	return res.LastInsertId()
 }
-
-
 

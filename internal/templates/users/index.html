@@ -1,11 +1,41 @@
-{{ define "title" }}Home{{ end }}
+{{ define "title" }}
+  {{ if .ActiveSubject }}
+    {{ .ActiveSubject }}
+  {{ else }}
+    Home
+  {{ end }}
+{{ end }}
 
 {{ define "content" }}
 
 <section class="container">
+
+  <!-- Subject Selector -->
+  <div class="subject-selector">
+
+    <!-- All articles -->
+    <a 
+      href="/index.html" 
+      class="subject-pill {{ if not .ActiveSubject }}active{{ end }}"
+    >
+      All
+    </a>
+
+    {{ range .Subjects }}
+      <a 
+        href="/sub/{{ .Slug }}.html"
+        class="subject-pill {{ if eq $.ActiveSubject .Title }}active{{ end }}"
+      >
+        {{ .Title }}
+      </a>
+    {{ end }}
+
+  </div>
+
+  <!-- Articles Grid -->
   <div class="card-grid">
 
-    {{ range $i, $a := . }}
+    {{ range $i, $a := .Articles }}
       <a
         href="/articles/{{ $a.ID }}.html"
         class="doc-card card-variant-{{ add (mod $i 4) 1 }}"
@@ -13,11 +43,11 @@
         <h3>{{ $a.Title }}</h3>
 
         <p>{{ excerpt $a.HTML 22 }}</p>
-
       </a>
     {{ end }}
 
   </div>
+
 </section>
 
 {{ end }}

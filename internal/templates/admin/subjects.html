@@ -1,0 +1,102 @@
+{{ define "title" }}
+Admin — Subjects
+{{ end }}
+
+{{ define "content" }}
+
+<main class="admin-page admin-form-wide">
+
+  <header class="admin-header">
+    <h1>Subjects</h1>
+  </header>
+
+  <!-- Add subject form -->
+  <form method="post" action="/admin/subjects/add">
+
+    <fieldset class="form-section">
+      <legend>Add subject</legend>
+
+      <div class="form-group">
+        <label for="subject">Title</label>
+        <input
+          type="text"
+          id="subject"
+          name="subject"
+          required
+          placeholder="e.g. System Design"
+        />
+      </div>
+    </fieldset>
+
+    <div class="admin-actions">
+      <button type="submit" class="btn primary">
+        ➕ Add subject
+      </button>
+
+      <a href="/admin/subjects/edit" class="btn">
+          Edit
+      </a>
+
+      <a href="/admin" class="btn">
+        Back
+      </a>
+    </div>
+  </form>
+
+  <!-- Existing subjects -->
+  <section class="form-section">
+    <legend>Subjects</legend>
+
+    {{ if . }}
+
+      <div class="admin-table-scroll-top">
+        <div class="admin-table-scroll-inner"></div>
+      </div>
+
+      <div class="admin-table-wrapper">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Title</th>
+              <th>Slug</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{ range . }}
+            <tr>
+              <td><code>#{{ .Id }}</code></td>
+              <td>{{ .Title }}</td>
+              <td><small>{{ .Slug }}</small></td>
+              <td>
+                <form
+                  method="post"
+                  action="/admin/subjects/delete/{{ .Id }}"
+                  style="display:inline"
+                  onsubmit="return confirm('Delete {{ .Title }}?');"
+                >
+                  <button type="submit" class="btn btn-danger">
+                    🗑 Delete
+                  </button>
+                </form>
+              </td>
+            </tr>
+            {{ end }}
+          </tbody>
+        </table>
+      </div>
+
+    {{ else }}
+      <p><em>No subjects.</em></p>
+    {{ end }}
+
+  </section>
+
+</main>
+
+<script src="/assets/js/admin.js"></script>
+
+{{ end }}
+
+

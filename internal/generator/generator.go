@@ -16,6 +16,44 @@ import (
 	"blog/internal/model"
 )
 
+func (g *Generator) buildSubjectMap() map[int32]model.Subject {
+	m := make(map[int32]model.Subject, len(g.Subjects))
+	for _, s := range g.Subjects {
+		m[s.Id] = s
+	}
+	return m
+}
+
+func (g *Generator) buildArticleViews() []model.ArticleView {
+	subjectMap := g.buildSubjectMap()
+
+	views := make([]model.ArticleView, 0, len(g.Articles))
+
+	for _, a := range g.Articles {
+
+		subject, ok := subjectMap[a.SubjectId]
+		if !ok {
+			subject = defaultSubject
+		}
+
+		views = append(views, model.ArticleView{
+			ID:        a.ID,
+			Title:     a.Title,
+			SubjectId: a.SubjectId,
+			Slug:      subject.Slug,
+			HTML:      template.HTML(a.HTML),
+			CreatedAt: a.CreatedAt,
+		})
+	}
+
+	return views
+}
+
+var defaultSubject = model.Subject{
+	Title: "Default",
+	Slug:  "default",
+}
+
 var htmlTagRe = regexp.MustCompile(`<[^>]+>`)
 
 func excerpt(htmlContent string, words int) string {
@@ -35,7 +73,14 @@ func excerpt(htmlContent string, words int) string {
 
 type Generator struct {
 	Articles []model.Article
+    Subjects []model.Subject
 	OutDir   string
+}
+
+type IndexView struct {
+	Articles []model.ArticleView
+	Subjects []model.Subject
+	ActiveSubject string
 }
 
 func (g *Generator) Build() error {
@@ -47,6 +92,10 @@ func (g *Generator) Build() error {
 		return err
 	}
 
+	if err := os.MkdirAll(filepath.Join(g.OutDir, "sub"), 0o755); err != nil {
+		return err
+	}
+
     sort.Slice(g.Articles, func(i, j int) bool {
     	return g.Articles[i].ID > g.Articles[j].ID
     })
@@ -55,9 +104,12 @@ func (g *Generator) Build() error {
 		return err
 	}
 
+	if err := g.buildSubjects(); err != nil {
+		return err
+	}
+
 	return g.buildArticles()
 }
-
 
 func (g *Generator) buildArticles() error {
 	tmpl, err := template.ParseFiles(
@@ -68,18 +120,14 @@ func (g *Generator) buildArticles() error {
 		return err
 	}
 
-	for _, a := range g.Articles {
-		view := model.ArticleView{
-			ID:        a.ID,
-			Title:     a.Title,
-			HTML:      template.HTML(a.HTML), // 🔑 TRUSTED HTML
-			CreatedAt: a.CreatedAt,
-		}
+	views := g.buildArticleViews()
+
+	for _, view := range views {
 
 		filename := filepath.Join(
 			g.OutDir,
 			"articles",
-			strconv.FormatInt(a.ID, 10)+".html",
+			strconv.FormatInt(view.ID, 10)+".html",
 		)
 
 		f, err := os.Create(filename)
@@ -99,39 +147,35 @@ func (g *Generator) buildArticles() error {
 }
 
 func (g *Generator) buildIndex() error {
-    funcs := template.FuncMap{
-    	"mod": func(a, b int) int { return a % b },
-    	"add": func(a, b int) int { return a + b },
-    	"excerpt": func(html template.HTML, n int) string {
-    		return excerpt(string(html), n)
-    	},
-    }
-	
-    tmpl, err := template.New("base").
+	funcs := template.FuncMap{
+		"mod": func(a, b int) int { return a % b },
+		"add": func(a, b int) int { return a + b },
+		"excerpt": func(html template.HTML, n int) string {
+			return excerpt(string(html), n)
+		},
+	}
+
+	tmpl, err := template.New("base").
 		Funcs(funcs).
 		ParseFiles(
 			"internal/templates/base.html",
 			"internal/templates/users/index.html",
 		)
-
 	if err != nil {
 		return err
 	}
 
-	// 🔑 Convert DB models → view models
-	views := make([]model.ArticleView, 0, len(g.Articles))
-	for _, a := range g.Articles {
-		views = append(views, model.ArticleView{
-			ID:        a.ID,
-			Title:     a.Title,
-			HTML:      template.HTML(a.HTML), // trusted HTML
-			CreatedAt: a.CreatedAt,
-		})
-	}
-
+    views := g.buildArticleViews()
+    
     sort.Slice(views, func(i, j int) bool {
-		return views[i].ID > views[j].ID
-	})
+    	return views[i].ID > views[j].ID
+    })
+    
+    page := IndexView{
+    	Articles:      views,
+    	Subjects:      g.Subjects,
+    	ActiveSubject: "",
+    }
 
 	filename := filepath.Join(g.OutDir, "index.html")
 	f, err := os.Create(filename)
@@ -140,7 +184,66 @@ func (g *Generator) buildIndex() error {
 	}
 	defer f.Close()
 
-	return tmpl.ExecuteTemplate(f, "base", views)
+	return tmpl.ExecuteTemplate(f, "base", page)
+}
+
+func (g *Generator) buildSubjects() error {
+	funcs := template.FuncMap{
+		"mod": func(a, b int) int { return a % b },
+		"add": func(a, b int) int { return a + b },
+		"excerpt": func(html template.HTML, n int) string {
+			return excerpt(string(html), n)
+		},
+	}
+
+	tmpl, err := template.New("base").
+		Funcs(funcs).
+		ParseFiles(
+			"internal/templates/base.html",
+			"internal/templates/users/index.html",
+		)
+	if err != nil {
+		return err
+	}
+
+	views := g.buildArticleViews()
+
+	// group by subject id
+	grouped := make(map[int32][]model.ArticleView)
+	for _, v := range views {
+		grouped[v.SubjectId] = append(grouped[v.SubjectId], v)
+	}
+
+	for _, subject := range g.Subjects {
+
+		filtered := grouped[subject.Id]
+
+		page := IndexView{
+			Articles:      filtered,
+			Subjects:      g.Subjects,
+			ActiveSubject: subject.Title,
+		}
+
+		filename := filepath.Join(
+			g.OutDir,
+			"sub",
+			subject.Slug+".html",
+		)
+
+		f, err := os.Create(filename)
+		if err != nil {
+			return err
+		}
+
+		if err := func() error {
+			defer f.Close()
+			return tmpl.ExecuteTemplate(f, "base", page)
+		}(); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (g *Generator) BuildSitemap() error {
@@ -169,6 +272,13 @@ func (g *Generator) BuildSitemap() error {
             Loc:     fmt.Sprintf("%s/articles/%d.html", base, a.ID),
             LastMod: a.CreatedAt.Format("2006-01-02"),
         })
+    }
+
+    for _, s := range g.Subjects {
+    	urls = append(urls, URL{
+    		Loc: fmt.Sprintf("%s/sub/%s.html", base, s.Slug),
+    		LastMod: time.Now().Format("2006-01-02"),
+    	})
     }
 
     sitemap := URLSet{
