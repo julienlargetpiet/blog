@@ -60,7 +60,7 @@ ui <- fluidPage(
           textInput(
             inputId = "webpages",
             label = "RegEx expression(s) (separate with --)",
-            value = "^/$",
+            value = "articles",
             placeholder = "Example: ^/$--^/blog"
           ),
           selectInput(
