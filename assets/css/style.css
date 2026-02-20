@@ -1325,20 +1325,8 @@ address a:hover {
   color: var(--text-strong);
 }
 
-/* ================================
-   Large Screens: Always Visible
-   ================================ */
-
-@media (min-width: 1100px) {
-  .article-summary {
-    transform: translateX(0);
-    opacity: 1;
-    pointer-events: auto;
-  }
-
-  .summary-toggle {
-    display: none;
-  }
+.article-summary.open + .summary-toggle {
+  left: 18.5rem; /* width + spacing */
 }
 
 /* ================================
@@ -1387,3 +1375,10 @@ address a:hover {
     top: 5.5rem;
   }
 }
+
+.article-content h2,
+.article-content h3 {
+  scroll-margin-top: 7rem;
+}
+
+

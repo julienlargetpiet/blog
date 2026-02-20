@@ -107,11 +107,10 @@ function initSummary() {
   const summaryNav = document.getElementById("summary-content");
   const summaryPanel = document.getElementById("article-summary");
 
-  if (!content || !summaryNav) return;
+  if (!content || !summaryNav || !summaryPanel) return;
 
   const headings = content.querySelectorAll("h2, h3");
 
-  // Hide summary completely if not enough headings
   if (headings.length < 2) return;
 
   headings.forEach((heading) => {
@@ -126,15 +125,19 @@ function initSummary() {
       link.style.paddingLeft = "1rem";
     }
 
-    // Auto-close drawer on mobile
     link.addEventListener("click", () => {
-      if (summaryPanel) {
+      if (window.innerWidth <= 1100) {
         summaryPanel.classList.remove("open");
       }
     });
 
     summaryNav.appendChild(link);
   });
+
+  // 🔥 Auto-open on large screens
+  if (window.innerWidth >= 1100) {
+    summaryPanel.classList.add("open");
+  }
 }
 
 function slugify(text) {
