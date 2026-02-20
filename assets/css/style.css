@@ -1361,11 +1361,12 @@ address a:hover {
 @media (max-width: 768px) {
 
   .article-summary {
-    top: 0;
     left: 0;
     width: 100%;
-    height: 100vh;
     max-height: none;
+
+    top: 4.5rem; /* same height as your sticky header */
+    height: calc(100vh - 5.5rem);
 
     border-radius: 0;
     padding-top: 6rem;
@@ -1378,7 +1379,17 @@ address a:hover {
 
 .article-content h2,
 .article-content h3 {
-  scroll-margin-top: 7rem;
+  scroll-margin-top: 8.25rem;
+}
+
+.article-summary.open ~ .summary-toggle {
+  left: 2rem;
+}
+
+@media (max-width: 768px) {
+  .summary-toggle {
+    top: 6rem;
+  }
 }
 
 
