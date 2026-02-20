@@ -91,3 +91,21 @@ func (r *ArticleRepo) Create(title string, subjectId int32, html string) (int64,
 	return res.LastInsertId()
 }
 
+func (r *ArticleRepo) GetDefaultSubjectID() (int32, error) {
+	var id int32
+    const DefaultSubjectSlug = "default"
+
+	err := r.DB.QueryRow(`
+		SELECT id
+		FROM subjects
+		WHERE slug = ?
+	`, DefaultSubjectSlug).Scan(&id)
+
+    if err != nil {
+        return 0, err
+    }
+
+	return id, nil
+}
+
+

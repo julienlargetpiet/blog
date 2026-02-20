@@ -14,7 +14,13 @@ import (
     "fmt"
 
 	"blog/internal/model"
+    "blog/internal/db"
 )
+
+var defaultSubject = model.Subject{
+	Title: "Default",
+	Slug:  "default",
+}
 
 func (g *Generator) buildSubjectMap() map[int32]model.Subject {
 	m := make(map[int32]model.Subject, len(g.Subjects))
@@ -31,10 +37,10 @@ func (g *Generator) buildArticleViews() []model.ArticleView {
 
 	for _, a := range g.Articles {
 
-		subject, ok := subjectMap[a.SubjectId]
-		if !ok {
-			subject = defaultSubject
-		}
+        subject, ok := subjectMap[a.SubjectId]
+        if !ok {
+        	panic(fmt.Sprintf("subject %d not found in subjectMap", a.SubjectId))
+        }
 
 		views = append(views, model.ArticleView{
 			ID:        a.ID,
@@ -47,11 +53,6 @@ func (g *Generator) buildArticleViews() []model.ArticleView {
 	}
 
 	return views
-}
-
-var defaultSubject = model.Subject{
-	Title: "Default",
-	Slug:  "default",
 }
 
 var htmlTagRe = regexp.MustCompile(`<[^>]+>`)

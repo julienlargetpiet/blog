@@ -22,12 +22,14 @@
     </a>
 
     {{ range .Subjects }}
-      <a 
-        href="/sub/{{ .Slug }}.html"
-        class="subject-pill {{ if eq $.ActiveSubject .Title }}active{{ end }}"
-      >
-        {{ .Title }}
-      </a>
+      {{- if ne .Slug "default" -}}
+          <a 
+            href="/sub/{{ .Slug }}.html"
+            class="subject-pill {{ if eq $.ActiveSubject .Title }}active{{ end }}"
+          >
+            {{ .Title }}
+          </a>
+      {{ end }}
     {{ end }}
 
   </div>

@@ -438,25 +438,38 @@ func (s *Server) handleDeleteSubject(w http.ResponseWriter, r *http.Request) {
 
 	idStr := strings.TrimPrefix(r.URL.Path, "/admin/subjects/delete/")
 	id64, err := strconv.ParseInt(idStr, 10, 32)
-	if err != nil {
+	if err != nil || id64 <= 0 {
 		http.NotFound(w, r)
 		return
 	}
 
 	id := int32(id64)
-
 	subjectRepo := db.SubjectRepo{DB: s.DB}
 
-	// 1️⃣ Delete subject
-	if err := subjectRepo.Delete(id); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	subject, err := subjectRepo.GetByID(id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			http.NotFound(w, r)
+			return
+		}
+		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
 
-    if err := s.rebuildSite(); err != nil {
-    	http.Error(w, err.Error(), http.StatusInternalServerError)
-    	return
-    }
+	if subject.Slug == "default" {
+		http.Error(w, "cannot delete default subject", http.StatusBadRequest)
+		return
+	}
+
+	if err := subjectRepo.Delete(id); err != nil {
+		http.Error(w, "cannot delete subject with existing articles", http.StatusConflict)
+		return
+	}
+
+	if err := s.rebuildSite(); err != nil {
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
 
 	http.Redirect(w, r, "/admin/subjects", http.StatusSeeOther)
 }

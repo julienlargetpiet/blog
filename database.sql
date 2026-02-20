@@ -3,7 +3,7 @@
 DROP TABLE articles;
 
 CREATE TABLE subjects (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(100) NOT NULL,
     slug VARCHAR(100) NOT NULL UNIQUE
 );
@@ -11,7 +11,7 @@ CREATE TABLE subjects (
 CREATE TABLE articles (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
-    subject_id INT NULL,
+    subject_id INT NOT NULL,
     html MEDIUMTEXT NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -20,5 +20,8 @@ CREATE TABLE articles (
     CONSTRAINT fk_articles_subject
         FOREIGN KEY (subject_id)
         REFERENCES subjects(id)
-        ON DELETE SET NULL
+        ON DELETE RESTRICT
 );
+
+INSERT INTO subjects (title, slug)
+VALUES ('Default', 'default');
