@@ -8,6 +8,8 @@ import (
     "os/exec"
     "io"
     "bytes"
+    "database/sql"
+    "errors"
 
 	"blog/internal/db"
 	"blog/internal/generator"

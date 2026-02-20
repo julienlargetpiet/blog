@@ -78,3 +78,20 @@ func (r *SubjectRepo) Update(id int32, title string) error {
 
 	return err
 }
+
+func (r *SubjectRepo) GetByID(id int32) (model.Subject, error) {
+	var s model.Subject
+
+	err := r.DB.QueryRow(`
+		SELECT id, title, slug
+		FROM subjects
+		WHERE id = ?
+	`, id).Scan(&s.Id, &s.Title, &s.Slug)
+
+	if err != nil {
+		return model.Subject{}, err
+	}
+
+	return s, nil
+}
+

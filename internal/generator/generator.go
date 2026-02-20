@@ -14,7 +14,6 @@ import (
     "fmt"
 
 	"blog/internal/model"
-    "blog/internal/db"
 )
 
 var defaultSubject = model.Subject{
