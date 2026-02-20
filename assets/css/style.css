@@ -1226,4 +1226,36 @@ tbody tr:nth-child(even) {
 }
 
 
+/* ================================
+   Footer / Address
+   ================================ */
 
+address {
+  margin-top: 2rem;
+  padding-top: 1.2rem;
+
+  border-top: 1px solid var(--border-soft);
+
+  font-style: normal;          /* remove default italic */
+  font-size: 0.9rem;
+  color: var(--text-main);
+}
+
+address a {
+  display: inline-block;
+
+  padding: 0.35em 0.6em;
+  border-radius: 6px;
+
+  color: var(--accent);
+  text-decoration: none;
+
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+address a:hover {
+  background-color: var(--bg-hover);
+  color: var(--accent-hover);
+}
