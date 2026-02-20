@@ -39,7 +39,7 @@
 
     {{ range $i, $a := .Articles }}
       <a
-        href="/articles/{{ $a.ID }}.html"
+        href="/articles/{{ $a.TitleURL }}.html"
         class="doc-card card-variant-{{ add (mod $i 4) 1 }}"
       >
         <h3>{{ $a.Title }}</h3>
@@ -53,3 +53,6 @@
 </section>
 
 {{ end }}
+
+
+

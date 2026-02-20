@@ -113,7 +113,7 @@ func (s *Server) handleEditArticle(w http.ResponseWriter, r *http.Request) {
     	}
     
     	// 🔥 Convert subject_id to int32
-    	subjectId64, err := strconv.ParseInt(subjectIdStr, 10, 32)
+    	subjectId64, err := strconv.ParseInt(subjectIdStr, 10, 64)
     	if err != nil {
     		http.Error(w, "invalid subject id", http.StatusBadRequest)
     		return
@@ -221,7 +221,7 @@ func (s *Server) handleNewArticle(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// 🔥 Convert subject_id
-		subjectId64, err := strconv.ParseInt(subjectIdStr, 10, 32)
+		subjectId64, err := strconv.ParseInt(subjectIdStr, 10, 64)
 		if err != nil {
 			http.Error(w, "invalid subject id", http.StatusBadRequest)
 			return
@@ -390,7 +390,7 @@ func (s *Server) handleEditSubject(w http.ResponseWriter, r *http.Request) {
 	    }
 
         subjectIdStr := r.FormValue("subject_id")
-    	subjectId64, err := strconv.ParseInt(subjectIdStr, 10, 32)
+    	subjectId64, err := strconv.ParseInt(subjectIdStr, 10, 64)
     	if err != nil {
     		http.Error(w, "invalid subject id", http.StatusBadRequest)
     		return
@@ -448,7 +448,7 @@ func (s *Server) handleDeleteSubject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	idStr := strings.TrimPrefix(r.URL.Path, "/admin/subjects/delete/")
-	id64, err := strconv.ParseInt(idStr, 10, 32)
+	id64, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil || id64 <= 0 {
 		http.NotFound(w, r)
 		return
@@ -520,6 +520,24 @@ func (s *Server) handleSubject(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func (s *Server) handleReSlugAll(w http.ResponseWriter, r *http.Request) {
+
+    if r.Method != http.MethodPost {
+    	http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+    	return
+    }
+
+	articleRepo := db.ArticleRepo{DB: s.DB}
+    
+    err := articleRepo.ReslugAll()
+	if err != nil {
+        http.Error(w, "internal server error: ReslugAll", http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, "/admin", http.StatusSeeOther)
+
+}
 
 
 

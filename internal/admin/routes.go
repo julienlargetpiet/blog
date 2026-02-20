@@ -34,6 +34,8 @@ func NewRouter(db *sql.DB, adminPass string) http.Handler {
 
     mux.HandleFunc("/admin/dump",          s.requireAuth(s.handleDumpDb))
 
+    mux.HandleFunc("/admin/reslug",        s.requireAuth(s.handleReSlugAll))
+
     mux.Handle(
     	"/assets/",
     	http.StripPrefix(

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 
 	"blog/internal/model"
+	"blog/internal/utils"
 )
 
 type ArticleRepo struct {
@@ -12,7 +13,7 @@ type ArticleRepo struct {
 
 func (r *ArticleRepo) ListAll() ([]model.Article, error) {
 	rows, err := r.DB.Query(`
-		SELECT id, title, subject_id, html, created_at
+		SELECT id, title, title_url, subject_id, html, created_at
 		FROM articles
 		ORDER BY id DESC
 	`)
@@ -28,6 +29,7 @@ func (r *ArticleRepo) ListAll() ([]model.Article, error) {
 		if err := rows.Scan(
 			&a.ID,
 			&a.Title,
+            &a.TitleURL,
 			&a.SubjectId,
 			&a.HTML,
 			&a.CreatedAt,
@@ -48,12 +50,13 @@ func (r *ArticleRepo) GetByID(id int64) (model.Article, error) {
 	var a model.Article
 
 	err := r.DB.QueryRow(`
-		SELECT id, title, subject_id, html, created_at
+		SELECT id, title, title_url, subject_id, html, created_at
 		FROM articles
 		WHERE id = ?
 	`, id).Scan(
 		&a.ID,
 		&a.Title,
+        &a.TitleURL,
 		&a.SubjectId,
 		&a.HTML,
 		&a.CreatedAt,
@@ -65,9 +68,9 @@ func (r *ArticleRepo) GetByID(id int64) (model.Article, error) {
 func (r *ArticleRepo) Update(id int64, title string, subjectId int32, html string) error {
 	_, err := r.DB.Exec(`
 		UPDATE articles
-		SET title = ?, subject_id = ?, html = ?
+		SET title = ?, title_url = ?, subject_id = ?, html = ?
 		WHERE id = ?
-	`, title, subjectId, html, id)
+	`, title, utils.Slugify(title), subjectId, html, id)
 	return err
 }
 
@@ -81,9 +84,9 @@ func (r *ArticleRepo) Delete(id int64) error {
 
 func (r *ArticleRepo) Create(title string, subjectId int32, html string) (int64, error) {
 	res, err := r.DB.Exec(`
-		INSERT INTO articles (title, subject_id, html, created_at)
-		VALUES (?, ?, ?, NOW())
-	`, title, subjectId, html)
+		INSERT INTO articles (title, title_url, subject_id, html, created_at)
+		VALUES (?, ?, ?, ?, NOW())
+	`, title, utils.Slugify(title), subjectId, html)
 	if err != nil {
 		return 0, err
 	}
@@ -106,6 +109,57 @@ func (r *ArticleRepo) GetDefaultSubjectID() (int32, error) {
     }
 
 	return id, nil
+}
+
+func (r *ArticleRepo) ReslugAll() error {
+	rows, err := r.DB.Query(`
+		SELECT id, title
+		FROM articles
+	`)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	tx, err := r.DB.Begin()
+	if err != nil {
+		return err
+	}
+
+	stmt, err := tx.Prepare(`
+		UPDATE articles
+		SET title_url = ?
+		WHERE id = ?
+	`)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	defer stmt.Close()
+
+	for rows.Next() {
+		var id int64
+		var title string
+
+		if err := rows.Scan(&id, &title); err != nil {
+			tx.Rollback()
+			return err
+		}
+
+		slug := utils.Slugify(title)
+
+		if _, err := stmt.Exec(slug, id); err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return tx.Commit()
 }
 
 

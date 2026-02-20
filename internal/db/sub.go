@@ -2,21 +2,15 @@ package db
 
 import (
 	"database/sql"
-    "strings"
-    "regexp"
 
 	"blog/internal/model"
+    "blog/internal/utils"
 )
 
 type SubjectRepo struct {
 	DB *sql.DB
 }
 
-func Slugify(s string) string {
-	s = strings.ToLower(strings.TrimSpace(s))
-	s = regexp.MustCompile(`[^a-z0-9]+`).ReplaceAllString(s, "-")
-	return strings.Trim(s, "-")
-}
 
 func (r *SubjectRepo) Delete(id int32) error {
 	_, err := r.DB.Exec(
@@ -27,7 +21,7 @@ func (r *SubjectRepo) Delete(id int32) error {
 }
 
 func (r *SubjectRepo) Create(title string) (int64, error) {
-	slug := Slugify(title)
+	slug := utils.Slugify(title)
 
 	res, err := r.DB.Exec(`
 		INSERT INTO subjects (title, slug)
@@ -74,7 +68,7 @@ func (r *SubjectRepo) Update(id int32, title string) error {
 		UPDATE subjects
 		SET title = ?, slug = ?
 		WHERE id = ?
-	`, title, Slugify(title), id)
+	`, title, utils.Slugify(title), id)
 
 	return err
 }

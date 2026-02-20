@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"strconv"
     "strings"
     "regexp"
     "html"
@@ -21,8 +20,8 @@ var defaultSubject = model.Subject{
 	Slug:  "default",
 }
 
-func (g *Generator) buildSubjectMap() map[int32]model.Subject {
-	m := make(map[int32]model.Subject, len(g.Subjects))
+func (g *Generator) buildSubjectMap() map[int64]model.Subject {
+	m := make(map[int64]model.Subject, len(g.Subjects))
 	for _, s := range g.Subjects {
 		m[s.Id] = s
 	}
@@ -44,6 +43,7 @@ func (g *Generator) buildArticleViews() []model.ArticleView {
 		views = append(views, model.ArticleView{
 			ID:        a.ID,
 			Title:     a.Title,
+            TitleURL:  a.TitleURL,
 			SubjectId: a.SubjectId,
 			Slug:      subject.Slug,
 			HTML:      template.HTML(a.HTML),
@@ -127,7 +127,7 @@ func (g *Generator) buildArticles() error {
 		filename := filepath.Join(
 			g.OutDir,
 			"articles",
-			strconv.FormatInt(view.ID, 10)+".html",
+			view.TitleURL + ".html",
 		)
 
 		f, err := os.Create(filename)
@@ -209,7 +209,7 @@ func (g *Generator) buildSubjects() error {
 	views := g.buildArticleViews()
 
 	// group by subject id
-	grouped := make(map[int32][]model.ArticleView)
+	grouped := make(map[int64][]model.ArticleView)
 	for _, v := range views {
 		grouped[v.SubjectId] = append(grouped[v.SubjectId], v)
 	}
@@ -269,7 +269,7 @@ func (g *Generator) BuildSitemap() error {
 
     for _, a := range g.Articles {
         urls = append(urls, URL{
-            Loc:     fmt.Sprintf("%s/articles/%d.html", base, a.ID),
+            Loc:     fmt.Sprintf("%s/articles/%s.html", base, a.TitleURL),
             LastMod: a.CreatedAt.Format("2006-01-02"),
         })
     }

@@ -352,6 +352,7 @@ section {
   border: 1px solid var(--text-main);
   border-radius: 6px;
   color: var(--text-main);
+  cursor: pointer;
 }
 
 .btn.primary {

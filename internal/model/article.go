@@ -8,7 +8,8 @@ import (
 type Article struct {
 	ID        int64
 	Title     string
-    SubjectId int32
+    TitleURL  string
+    SubjectId int64
 	HTML      string
 	CreatedAt time.Time
 }
@@ -16,7 +17,8 @@ type Article struct {
 type ArticleView struct {
 	ID          int64
 	Title       string
-    SubjectId   int32
+    TitleURL    string
+    SubjectId   int64
     Slug        string
 	HTML        template.HTML
 	CreatedAt   time.Time
