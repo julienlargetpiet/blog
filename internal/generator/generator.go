@@ -113,7 +113,7 @@ func (g *Generator) Build() error {
 
 func (g *Generator) buildArticles() error {
 	tmpl, err := template.ParseFiles(
-		"internal/templates/base.html",
+		"internal/templates/base_article.html",
 		"internal/templates/users/article.html",
 	)
 	if err != nil {
@@ -137,7 +137,7 @@ func (g *Generator) buildArticles() error {
 
 		if err := func() error {
 			defer f.Close()
-			return tmpl.ExecuteTemplate(f, "base", view)
+			return tmpl.ExecuteTemplate(f, "base_article", view)
 		}(); err != nil {
 			return err
 		}

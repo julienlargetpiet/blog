@@ -87,4 +87,64 @@ document.addEventListener("DOMContentLoaded", () => {
 })();
 
 
+document.addEventListener("DOMContentLoaded", function () {
+  const summary = document.getElementById("article-summary");
+  const toggle = document.getElementById("summary-toggle");
+
+  if (summary && toggle) {
+    toggle.addEventListener("click", function () {
+      summary.classList.toggle("open");
+    });
+  }
+});
+
+document.addEventListener("DOMContentLoaded", function () {
+  initSummary();
+});
+
+function initSummary() {
+  const content = document.querySelector(".article-content");
+  const summaryNav = document.getElementById("summary-content");
+  const summaryPanel = document.getElementById("article-summary");
+
+  if (!content || !summaryNav) return;
+
+  const headings = content.querySelectorAll("h2, h3");
+
+  // Hide summary completely if not enough headings
+  if (headings.length < 2) return;
+
+  headings.forEach((heading) => {
+    const id = heading.id || slugify(heading.textContent);
+    heading.id = id;
+
+    const link = document.createElement("a");
+    link.href = "#" + id;
+    link.textContent = heading.textContent;
+
+    if (heading.tagName === "H3") {
+      link.style.paddingLeft = "1rem";
+    }
+
+    // Auto-close drawer on mobile
+    link.addEventListener("click", () => {
+      if (summaryPanel) {
+        summaryPanel.classList.remove("open");
+      }
+    });
+
+    summaryNav.appendChild(link);
+  });
+}
+
+function slugify(text) {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/\s+/g, "")
+    .replace(/\s+/g, "-");
+}
+
+
 

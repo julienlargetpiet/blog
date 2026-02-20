@@ -205,6 +205,7 @@
 
 html {
   overflow-y: scroll;
+  scroll-behavior: smooth;
 }
 
 body {
@@ -1260,4 +1261,129 @@ address a:hover {
   transform: translateY(-2px);
 }
 
+/* ================================
+   Article Summary (Left Panel)
+   ================================ */
 
+.article-summary {
+  position: fixed;
+  top: 8rem;
+  left: 2rem;
+
+  width: 16rem;
+  max-height: 70vh;
+
+  padding: 1.2rem;
+
+  background: var(--bg-soft);
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(8px);
+
+  overflow-y: auto;
+
+  transform: translateX(-120%);
+  opacity: 0;
+  pointer-events: none;
+
+  transition:
+    transform 0.25s ease,
+    opacity 0.2s ease;
+
+  z-index: 200;
+}
+
+/* When opened */
+.article-summary.open {
+  transform: translateX(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Title */
+.summary-inner h2 {
+  margin-top: 0;
+  margin-bottom: 0.8rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+/* Links */
+.summary-inner nav a {
+  display: block;
+  font-size: 0.85rem;
+  margin: 0.4rem 0;
+  color: var(--text-main);
+  transition: color 0.15s ease;
+}
+
+.summary-inner nav a:hover {
+  color: var(--text-strong);
+}
+
+/* ================================
+   Large Screens: Always Visible
+   ================================ */
+
+@media (min-width: 1100px) {
+  .article-summary {
+    transform: translateX(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .summary-toggle {
+    display: none;
+  }
+}
+
+/* ================================
+   Toggle Button
+   ================================ */
+
+.summary-toggle {
+  position: fixed;
+  top: 6rem;
+  left: 1rem;
+
+  z-index: 210;
+
+  background: var(--bg-soft);
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+
+  padding: 0.4rem 0.6rem;
+  cursor: pointer;
+
+  transition: background-color 0.15s ease;
+}
+
+.summary-toggle:hover {
+  background: var(--bg-hover);
+}
+
+/* ================================
+   Mobile Drawer
+   ================================ */
+
+@media (max-width: 768px) {
+
+  .article-summary {
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    max-height: none;
+
+    border-radius: 0;
+    padding-top: 6rem;
+  }
+
+  .summary-toggle {
+    top: 5.5rem;
+  }
+}
