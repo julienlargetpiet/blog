@@ -749,7 +749,7 @@ After=network.target
 
 [Service]
 Type=simple
-User=julien
+User=username
 WorkingDirectory=/var/www/R_Shiny_NGINX
 
 ExecStart=/usr/bin/R --no-save --no-restore -e "shiny::runApp('/var/www/R_Shiny_NGINX', host='127.0.0.1', port=7665)"
