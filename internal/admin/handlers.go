@@ -275,29 +275,38 @@ func (s *Server) handleNewArticle(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleDumpDb(w http.ResponseWriter, r *http.Request) {
 
     cmd := exec.Command(
-        "mysqldump",
-        "-u", "root",
+        "/usr/bin/mysqldump",
+        "-u", "goblog",
         "-pm",
         "go_blog",
     )
-
-    stdout, err := cmd.StdoutPipe()
+    
+    stderr, err := cmd.StderrPipe()
     if err != nil {
-        http.Error(w, "failed to create pipe", 500)
+        http.Error(w, "failed to create stderr pipe", 500)
         return
     }
-
+    
+    stdout, err := cmd.StdoutPipe()
+    if err != nil {
+        http.Error(w, "failed to create stdout pipe", 500)
+        return
+    }
+    
     if err := cmd.Start(); err != nil {
         http.Error(w, "failed to start dump", 500)
         return
     }
-
+    
     w.Header().Set("Content-Type", "application/sql")
     w.Header().Set("Content-Disposition", "attachment; filename=\"go_blog.sql\"")
-
+    
+    go io.Copy(io.Discard, stderr) // consume stderr to avoid blocking
+    
     io.Copy(w, stdout)
-
+    
     cmd.Wait()
+
 }
 
 func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
