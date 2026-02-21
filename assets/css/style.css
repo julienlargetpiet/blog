@@ -1392,20 +1392,21 @@ address a:hover {
   }
 }
 
-
 .flash-message {
   position: fixed;
   top: 6rem;
   right: 2rem;
 
-  background: var(--bg-soft);
-  border: 1px solid var(--border-soft);
-  border-radius: 8px;
-
   padding: 0.6rem 1rem;
   font-size: 0.85rem;
 
-  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+  border-radius: 8px;
+
+  background: #fff7ed;      /* soft warm background */
+  border: 1px solid #fdba74;
+  color: #c2410c;           /* muted burnt orange */
+
+  box-shadow: 0 8px 20px rgba(0,0,0,0.06);
 
   z-index: 500;
 
@@ -1413,6 +1414,20 @@ address a:hover {
   transition: opacity 0.3s ease;
 }
 
+:root[data-theme="dark"] .flash-message {
+  background: rgba(251, 146, 60, 0.12);
+  border: 1px solid rgba(251, 146, 60, 0.4);
+  color: #fb923c;
+}
+
+.flash-message.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+.flash-message.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
 .flash-message.hidden {
   opacity: 0;
   pointer-events: none;
