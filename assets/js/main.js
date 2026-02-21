@@ -149,5 +149,39 @@ function slugify(text) {
     .replace(/\s+/g, "-");
 }
 
+document.addEventListener("DOMContentLoaded", function () {
+  initReslugFlash();
+});
+
+function initReslugFlash() {
+  const form = document.querySelector('form[action="/admin/reslug"]');
+  const flash = document.getElementById("flash-message");
+
+  if (!form || !flash) return;
+
+  form.addEventListener("submit", function (e) {
+
+      e.preventDefault(); // ⬅️ stop immediate submission
+
+      showFlashMessage("Build All to see changes");
+
+      setTimeout(() => {
+        form.submit(); // submit after delay
+      }, 3000);
+
+  });
+}
+
+function showFlashMessage(message) {
+  const flash = document.getElementById("flash-message");
+  if (!flash) return;
+
+  flash.textContent = message;
+  flash.classList.remove("hidden");
+
+  setTimeout(() => {
+    flash.classList.add("hidden");
+  }, 3000);
+}
 
 

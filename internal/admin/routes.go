@@ -33,6 +33,7 @@ func NewRouter(db *sql.DB, adminPass string) http.Handler {
 	mux.HandleFunc("/admin/files/delete/", s.requireAuth(s.handleDeleteFile))
 
     mux.HandleFunc("/admin/dump",          s.requireAuth(s.handleDumpDb))
+    mux.HandleFunc("/admin/build_all",     s.requireAuth(s.handleBuildAll))
 
     mux.HandleFunc("/admin/reslug",        s.requireAuth(s.handleReSlugAll))
 

@@ -8,16 +8,24 @@ Admin — Articles
 <p>
   <a href="/admin/new" class="btn primary">➕ New article</a>
   <a href="/admin/files" class="btn">See files</a>
-  <a href="/admin/subjects" class="btn">See subjects</a>
-
-<form method="POST" action="/admin/reslug">
-  <button type="submit" class="btn">Reslug All</button>
-</form>
-
-<br>
-
+  <a href="/admin/subjects" class="btn">See subjects</a>  
   <a href="/admin/dump" class="btn">Dump db</a>
+
+  <div class="admin-actions-row">
+
+     <form method="POST" action="/admin/reslug">
+       <button type="submit" class="btn">Reslug All</button>
+     </form>
+     
+     <form method="POST" action="/admin/build_all">
+       <button type="submit" class="btn">Build All</button>
+     </form>
+
+  </div>
+
 </p>
+
+<div id="flash-message" class="flash-message hidden"></div>
 
 <section class="form-section">
 <div class="admin-table-scroll-top">
@@ -67,6 +75,7 @@ Admin — Articles
 </section>
 
 <script src="/assets/js/admin.js"></script>
+
 
 {{ end }}
 

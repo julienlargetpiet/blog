@@ -1393,3 +1393,51 @@ address a:hover {
 }
 
 
+.flash-message {
+  position: fixed;
+  top: 6rem;
+  right: 2rem;
+
+  background: var(--bg-soft);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+
+  padding: 0.6rem 1rem;
+  font-size: 0.85rem;
+
+  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+
+  z-index: 500;
+
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+.flash-message.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.admin-actions-row {
+  display: flex;
+  gap: 1rem;          /* spacing between buttons */
+  align-items: center;
+}
+
+@media (max-width: 640px) {
+  .admin-actions-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-actions-row form {
+    width: 100%;
+  }
+
+  .admin-actions-row .btn {
+    width: 100%;
+  }
+}
+
+
+

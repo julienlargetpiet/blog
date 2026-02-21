@@ -539,5 +539,19 @@ func (s *Server) handleReSlugAll(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func (s *Server) handleBuildAll(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+    if err := s.rebuildSite(); err != nil {
+    	http.Error(w, err.Error(), http.StatusInternalServerError)
+    	return
+    }
+
+	// 5️⃣ Redirect back to admin
+	http.Redirect(w, r, "/admin", http.StatusSeeOther)
+}
 
 
