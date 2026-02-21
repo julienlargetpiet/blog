@@ -2,6 +2,7 @@ package db
 
 import (
 	"database/sql"
+    "errors"
 
 	"blog/internal/model"
     "blog/internal/utils"
@@ -88,4 +89,26 @@ func (r *SubjectRepo) GetByID(id int32) (model.Subject, error) {
 
 	return s, nil
 }
+
+func (r *SubjectRepo) ExistsByName(name string) (bool, error) {
+	var exists int
+
+	err := r.DB.QueryRow(`
+		SELECT 1
+		FROM subjects
+		WHERE slug = ?
+        LIMIT 1
+	`, utils.Slugify(name)).Scan(&exists)
+
+	if err != nil {
+        if (errors.Is(err, sql.ErrNoRows)) {
+    	    return false, nil
+        }
+		return false, err
+	}
+
+	return true, nil
+}
+
+
 

@@ -127,6 +127,17 @@ func (s *Server) handleEditArticle(w http.ResponseWriter, r *http.Request) {
             return
         }
 
+        exists, err := repo.ExistsByTitle(title)
+        if err != nil {
+	    	http.Error(w, err.Error(), http.StatusInternalServerError)
+            return
+        }
+
+        if exists {
+	    	http.Error(w, "Article Title already exists", http.StatusConflict)
+            return
+        }
+
     	// 1. Update DB
     	if err := repo.Update(id, title, subjectId, isPublic, html); err != nil {
     		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -239,6 +250,17 @@ func (s *Server) handleNewArticle(w http.ResponseWriter, r *http.Request) {
         isPublic, err := strconv.ParseBool(isPublicStr)
         if err != nil {
 			http.Error(w, "invalid visibility", http.StatusBadRequest)
+            return
+        }
+
+        exists, err := articleRepo.ExistsByTitle(title)
+        if err != nil {
+	    	http.Error(w, err.Error(), http.StatusInternalServerError)
+            return
+        }
+
+        if exists {
+	    	http.Error(w, "Article Title already exists", http.StatusConflict)
             return
         }
 
@@ -371,18 +393,22 @@ func (s *Server) handleNewSubject(w http.ResponseWriter, r *http.Request) {
 
 	subjectRepo := db.SubjectRepo{DB: s.DB}
 
-	// 1️⃣ Insert subject
+    exists, err := subjectRepo.ExistsByName(name)
+    if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
+    }
+
+    if exists {
+		http.Error(w, "Subject Name already exists", http.StatusConflict)
+        return
+    }
+
 	if _, err := subjectRepo.Create(name); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-    if err := s.rebuildSite(); err != nil {
-    	http.Error(w, err.Error(), http.StatusInternalServerError)
-    	return
-    }
-
-	// 4️⃣ Redirect
 	http.Redirect(w, r, "/admin/subjects", http.StatusSeeOther)
 }
 
@@ -410,6 +436,17 @@ func (s *Server) handleEditSubject(w http.ResponseWriter, r *http.Request) {
     		return
     	}
     	subjectId := int32(subjectId64)
+
+        exists, err := subjectRepo.ExistsByName(name)
+        if err != nil {
+	    	http.Error(w, err.Error(), http.StatusInternalServerError)
+            return
+        }
+
+        if exists {
+	    	http.Error(w, "Subject Name already exists", http.StatusConflict)
+            return
+        }
 
 	    // 1️⃣ Insert subject
 	    if err := subjectRepo.Update(subjectId, name); err != nil {

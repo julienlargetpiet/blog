@@ -2,6 +2,7 @@ package db
 
 import (
 	"database/sql"
+    "errors"
 
 	"blog/internal/model"
 	"blog/internal/utils"
@@ -169,6 +170,27 @@ func (r *ArticleRepo) ReslugAll() error {
 	}
 
 	return tx.Commit()
+}
+
+
+func (r *ArticleRepo) ExistsByTitle(title string) (bool, error) {
+	var exists int
+
+	err := r.DB.QueryRow(`
+		SELECT 1
+		FROM articles
+		WHERE title_url = ?
+        LIMIT 1
+	`, utils.Slugify(title)).Scan(&exists)
+
+	if err != nil {
+        if (errors.Is(err, sql.ErrNoRows)) {
+    	    return false, nil
+        }
+		return false, err
+	}
+
+	return true, nil
 }
 
 
