@@ -1,8 +1,8 @@
 # Statix (Go) — Production Deployment Guide  
 NGINX Reverse Proxy + MariaDB/MySQL + systemd
 
-This document describes the complete production deployment of **Statix**,  
-a Go-based static website generator with an admin backend.
+This document describes the complete production deployment of blog,
+a Go-based static website generator supporting both full and localized builds, with an integrated admin backend.
 
 It covers:
 
