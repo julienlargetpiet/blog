@@ -36,12 +36,43 @@ func (s *Server) rebuildSite() error {
 	}
 
 	gen := generator.Generator{
+        ArticleRepo: articleRepo,
+        SubjectRepo: subjectRepo,
 		Articles: articles,
 		Subjects: subjects,
 		OutDir:   "dist",
 	}
 
 	if err := gen.Build(); err != nil {
+		return err
+	}
+
+	return gen.BuildSitemap()
+}
+
+func (s *Server) rebuildSiteLocalize(title string, subject_id int64) error {
+	articleRepo := db.ArticleRepo{DB: s.DB}
+	subjectRepo := db.SubjectRepo{DB: s.DB}
+
+	articles, err := articleRepo.ListAll()
+	if err != nil {
+		return err
+	}
+
+	subjects, err := subjectRepo.ListAll()
+	if err != nil {
+		return err
+	}
+
+	gen := generator.Generator{
+        ArticleRepo: articleRepo,
+        SubjectRepo: subjectRepo,
+		Articles: articles,
+		Subjects: subjects,
+		OutDir:   "dist",
+	}
+
+	if err := gen.LocalizedBuild(title, subject_id); err != nil {
 		return err
 	}
 
@@ -113,13 +144,12 @@ func (s *Server) handleEditArticle(w http.ResponseWriter, r *http.Request) {
     		return
     	}
     
-    	// 🔥 Convert subject_id to int32
     	subjectId64, err := strconv.ParseInt(subjectIdStr, 10, 64)
     	if err != nil {
     		http.Error(w, "invalid subject id", http.StatusBadRequest)
     		return
     	}
-    	subjectId := int32(subjectId64)
+    	subjectId := int64(subjectId64)
    
         isPublic, err := strconv.ParseBool(isPublicStr)
         if err != nil {
@@ -127,7 +157,7 @@ func (s *Server) handleEditArticle(w http.ResponseWriter, r *http.Request) {
             return
         }
 
-        exists, err := repo.ExistsByTitle(title)
+        exists, err := repo.ExistsByTitle(title, id)
         if err != nil {
 	    	http.Error(w, err.Error(), http.StatusInternalServerError)
             return
@@ -144,7 +174,7 @@ func (s *Server) handleEditArticle(w http.ResponseWriter, r *http.Request) {
     		return
     	}
 
-        if err := s.rebuildSite(); err != nil {
+        if err := s.rebuildSiteLocalize(title, subjectId); err != nil {
         	http.Error(w, err.Error(), http.StatusInternalServerError)
         	return
         }
@@ -245,7 +275,7 @@ func (s *Server) handleNewArticle(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "invalid subject id", http.StatusBadRequest)
 			return
 		}
-		subjectId := int32(subjectId64)
+		subjectId := int64(subjectId64)
 
         isPublic, err := strconv.ParseBool(isPublicStr)
         if err != nil {
@@ -253,7 +283,7 @@ func (s *Server) handleNewArticle(w http.ResponseWriter, r *http.Request) {
             return
         }
 
-        exists, err := articleRepo.ExistsByTitle(title)
+        exists, err := articleRepo.ExistsByTitleRaw(title)
         if err != nil {
 	    	http.Error(w, err.Error(), http.StatusInternalServerError)
             return
@@ -270,7 +300,7 @@ func (s *Server) handleNewArticle(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-        if err := s.rebuildSite(); err != nil {
+        if err := s.rebuildSiteLocalize(title, subjectId); err != nil {
         	http.Error(w, err.Error(), http.StatusInternalServerError)
         	return
         }
@@ -393,7 +423,7 @@ func (s *Server) handleNewSubject(w http.ResponseWriter, r *http.Request) {
 
 	subjectRepo := db.SubjectRepo{DB: s.DB}
 
-    exists, err := subjectRepo.ExistsByName(name)
+    exists, err := subjectRepo.ExistsByNameRaw(name)
     if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
         return
@@ -435,9 +465,9 @@ func (s *Server) handleEditSubject(w http.ResponseWriter, r *http.Request) {
     		http.Error(w, "invalid subject id", http.StatusBadRequest)
     		return
     	}
-    	subjectId := int32(subjectId64)
+    	subjectId := int64(subjectId64)
 
-        exists, err := subjectRepo.ExistsByName(name)
+        exists, err := subjectRepo.ExistsByName(name, subjectId)
         if err != nil {
 	    	http.Error(w, err.Error(), http.StatusInternalServerError)
             return
@@ -505,7 +535,7 @@ func (s *Server) handleDeleteSubject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id := int32(id64)
+	id := int64(id64)
 	subjectRepo := db.SubjectRepo{DB: s.DB}
 
 	subject, err := subjectRepo.GetByID(id)

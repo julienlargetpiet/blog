@@ -70,7 +70,7 @@ func (r *ArticleRepo) GetByID(id int64) (model.Article, error) {
 
 func (r *ArticleRepo) Update(id int64, 
                              title string, 
-                             subjectId int32, 
+                             subjectId int64, 
                              is_public bool,
                              html string) error {
 	_, err := r.DB.Exec(`
@@ -90,7 +90,7 @@ func (r *ArticleRepo) Delete(id int64) error {
 }
 
 func (r *ArticleRepo) Create(title string, 
-                             subjectId int32,
+                             subjectId int64,
                              is_public bool,
                              html string) (int64, error) {
 	res, err := r.DB.Exec(`
@@ -104,8 +104,8 @@ func (r *ArticleRepo) Create(title string,
 	return res.LastInsertId()
 }
 
-func (r *ArticleRepo) GetDefaultSubjectID() (int32, error) {
-	var id int32
+func (r *ArticleRepo) GetDefaultSubjectID() (int64, error) {
+	var id int64
     const DefaultSubjectSlug = "default"
 
 	err := r.DB.QueryRow(`
@@ -173,7 +173,27 @@ func (r *ArticleRepo) ReslugAll() error {
 }
 
 
-func (r *ArticleRepo) ExistsByTitle(title string) (bool, error) {
+func (r *ArticleRepo) ExistsByTitle(title string, id int64) (bool, error) {
+	var exists int
+
+	err := r.DB.QueryRow(`
+		SELECT 1
+		FROM articles
+		WHERE title_url = ? AND id != ?
+        LIMIT 1
+	`, utils.Slugify(title), id).Scan(&exists)
+
+	if err != nil {
+        if (errors.Is(err, sql.ErrNoRows)) {
+    	    return false, nil
+        }
+		return false, err
+	}
+
+	return true, nil
+}
+
+func (r *ArticleRepo) ExistsByTitleRaw(title string) (bool, error) {
 	var exists int
 
 	err := r.DB.QueryRow(`
@@ -191,6 +211,26 @@ func (r *ArticleRepo) ExistsByTitle(title string) (bool, error) {
 	}
 
 	return true, nil
+}
+
+func (r *ArticleRepo) GetByTitleURL(title_url string) (model.Article, error) {
+	var a model.Article
+
+	err := r.DB.QueryRow(`
+		SELECT id, title, title_url, subject_id, is_public, html, created_at
+		FROM articles
+		WHERE title_url = ?
+	`, title_url).Scan(
+		&a.ID,
+		&a.Title,
+        &a.TitleURL,
+		&a.SubjectId,
+        &a.IsPublic,
+		&a.HTML,
+		&a.CreatedAt,
+	)
+
+	return a, err
 }
 
 

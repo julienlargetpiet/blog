@@ -13,7 +13,7 @@ type SubjectRepo struct {
 }
 
 
-func (r *SubjectRepo) Delete(id int32) error {
+func (r *SubjectRepo) Delete(id int64) error {
 	_, err := r.DB.Exec(
 		`DELETE FROM subjects WHERE id = ?`,
 		id,
@@ -64,7 +64,7 @@ func (r *SubjectRepo) ListAll() ([]model.Subject, error) {
 	return subjects, nil
 }
 
-func (r *SubjectRepo) Update(id int32, title string) error {
+func (r *SubjectRepo) Update(id int64, title string) error {
 	_, err := r.DB.Exec(`
 		UPDATE subjects
 		SET title = ?, slug = ?
@@ -74,7 +74,7 @@ func (r *SubjectRepo) Update(id int32, title string) error {
 	return err
 }
 
-func (r *SubjectRepo) GetByID(id int32) (model.Subject, error) {
+func (r *SubjectRepo) GetByID(id int64) (model.Subject, error) {
 	var s model.Subject
 
 	err := r.DB.QueryRow(`
@@ -90,7 +90,27 @@ func (r *SubjectRepo) GetByID(id int32) (model.Subject, error) {
 	return s, nil
 }
 
-func (r *SubjectRepo) ExistsByName(name string) (bool, error) {
+func (r *SubjectRepo) ExistsByName(name string, id int64) (bool, error) {
+	var exists int
+
+	err := r.DB.QueryRow(`
+		SELECT 1
+		FROM subjects
+		WHERE slug = ? AND id != ?
+        LIMIT 1
+	`, utils.Slugify(name), id).Scan(&exists)
+
+	if err != nil {
+        if (errors.Is(err, sql.ErrNoRows)) {
+    	    return false, nil
+        }
+		return false, err
+	}
+
+	return true, nil
+}
+
+func (r *SubjectRepo) ExistsByNameRaw(name string) (bool, error) {
 	var exists int
 
 	err := r.DB.QueryRow(`
@@ -110,5 +130,20 @@ func (r *SubjectRepo) ExistsByName(name string) (bool, error) {
 	return true, nil
 }
 
+func (r *SubjectRepo) GetSlugByID(id int64) (string, error) {
+	var slug_val string
+
+	err := r.DB.QueryRow(`
+		SELECT slug
+		FROM subjects
+		WHERE id = ?
+	`, id).Scan(&slug_val)
+
+	if err != nil {
+		return "", err
+	}
+
+	return slug_val, nil
+}
 
 

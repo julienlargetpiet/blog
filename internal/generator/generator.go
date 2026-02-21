@@ -13,6 +13,8 @@ import (
     "fmt"
 
 	"blog/internal/model"
+	"blog/internal/utils"
+    "blog/internal/db"
 )
 
 var defaultSubject = model.Subject{
@@ -74,9 +76,11 @@ func excerpt(htmlContent string, words int) string {
 }
 
 type Generator struct {
-	Articles []model.Article
-    Subjects []model.Subject
-	OutDir   string
+    ArticleRepo db.ArticleRepo
+    SubjectRepo db.SubjectRepo
+	Articles    []model.Article
+    Subjects    []model.Subject
+	OutDir      string
 }
 
 type IndexView struct {
@@ -113,6 +117,33 @@ func (g *Generator) Build() error {
 	return g.buildArticles()
 }
 
+func (g *Generator) LocalizedBuild(title string, subject_id int64) error {
+
+    title_url := utils.Slugify(title)
+    os.Remove("/dist/articles/" + title_url + ".html")
+
+    subject_slug, err := g.SubjectRepo.GetSlugByID(subject_id)
+    if err != nil {
+        return err
+    }
+
+    os.Remove("/dist/sub/" + subject_slug + ".html")
+
+    sort.Slice(g.Articles, func(i, j int) bool {
+    	return g.Articles[i].ID > g.Articles[j].ID
+    })
+
+	if err := g.buildIndex(); err != nil {
+		return err
+	}
+
+	if err := g.buildSubject(subject_id); err != nil {
+		return err
+	}
+
+	return g.buildArticle(title_url, subject_slug)
+}
+
 func (g *Generator) buildArticles() error {
 	tmpl, err := template.ParseFiles(
 		"internal/templates/base_article.html",
@@ -143,6 +174,49 @@ func (g *Generator) buildArticles() error {
 		}(); err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (g *Generator) buildArticle(title_url, slug_val string) error {
+	tmpl, err := template.ParseFiles(
+		"internal/templates/base_article.html",
+		"internal/templates/users/article.html",
+	)
+	if err != nil {
+		return err
+	}
+
+    article, err := g.ArticleRepo.GetByTitleURL(title_url)
+
+	view := model.ArticleView{
+            ID:        article.ID,
+            Title:     article.Title,
+            TitleURL:  article.TitleURL,
+            SubjectId: article.SubjectId,
+            Slug:      slug_val,
+            IsPublic:  article.IsPublic,
+            HTML:      template.HTML(article.HTML),
+            CreatedAt: article.CreatedAt,
+        }
+
+	filename := filepath.Join(
+		g.OutDir,
+		"articles",
+		view.TitleURL + ".html",
+	)
+
+	f, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+
+	if err := func() error {
+		defer f.Close()
+		return tmpl.ExecuteTemplate(f, "base_article", view)
+	}(); err != nil {
+		return err
 	}
 
 	return nil
@@ -246,6 +320,67 @@ func (g *Generator) buildSubjects() error {
 	}
 
 	return nil
+}
+
+func (g *Generator) buildSubject(subject_id int64) error {
+	funcs := template.FuncMap{
+		"mod": func(a, b int) int { return a % b },
+		"add": func(a, b int) int { return a + b },
+		"excerpt": func(html template.HTML, n int) string {
+			return excerpt(string(html), n)
+		},
+	}
+
+	tmpl, err := template.New("base").
+		Funcs(funcs).
+		ParseFiles(
+			"internal/templates/base.html",
+			"internal/templates/users/index.html",
+		)
+	if err != nil {
+		return err
+	}
+
+	views := g.BuildArticleViews()
+
+	// group by subject id
+	grouped := make(map[int64][]model.ArticleView)
+	for _, v := range views {
+		grouped[v.SubjectId] = append(grouped[v.SubjectId], v)
+	}
+
+    subject, err := g.SubjectRepo.GetByID(subject_id)
+    if err != nil {
+        return err
+    }
+
+	filtered := grouped[subject.Id]
+
+	page := IndexView{
+		Articles:      filtered,
+		Subjects:      g.Subjects,
+		ActiveSubject: subject.Title,
+	}
+
+	filename := filepath.Join(
+		g.OutDir,
+		"sub",
+		subject.Slug+".html",
+	)
+
+	f, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+
+	if err := func() error {
+		defer f.Close()
+		return tmpl.ExecuteTemplate(f, "base", page)
+	}(); err != nil {
+		return err
+	}
+
+    return nil
 }
 
 func (g *Generator) BuildSitemap() error {
