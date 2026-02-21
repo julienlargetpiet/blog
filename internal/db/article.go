@@ -13,7 +13,7 @@ type ArticleRepo struct {
 
 func (r *ArticleRepo) ListAll() ([]model.Article, error) {
 	rows, err := r.DB.Query(`
-		SELECT id, title, title_url, subject_id, html, created_at
+		SELECT id, title, title_url, subject_id, is_public, html, created_at
 		FROM articles
 		ORDER BY id DESC
 	`)
@@ -31,6 +31,7 @@ func (r *ArticleRepo) ListAll() ([]model.Article, error) {
 			&a.Title,
             &a.TitleURL,
 			&a.SubjectId,
+            &a.IsPublic,
 			&a.HTML,
 			&a.CreatedAt,
 		); err != nil {
@@ -50,7 +51,7 @@ func (r *ArticleRepo) GetByID(id int64) (model.Article, error) {
 	var a model.Article
 
 	err := r.DB.QueryRow(`
-		SELECT id, title, title_url, subject_id, html, created_at
+		SELECT id, title, title_url, subject_id, is_public, html, created_at
 		FROM articles
 		WHERE id = ?
 	`, id).Scan(
@@ -58,6 +59,7 @@ func (r *ArticleRepo) GetByID(id int64) (model.Article, error) {
 		&a.Title,
         &a.TitleURL,
 		&a.SubjectId,
+        &a.IsPublic,
 		&a.HTML,
 		&a.CreatedAt,
 	)
@@ -65,12 +67,16 @@ func (r *ArticleRepo) GetByID(id int64) (model.Article, error) {
 	return a, err
 }
 
-func (r *ArticleRepo) Update(id int64, title string, subjectId int32, html string) error {
+func (r *ArticleRepo) Update(id int64, 
+                             title string, 
+                             subjectId int32, 
+                             is_public bool,
+                             html string) error {
 	_, err := r.DB.Exec(`
 		UPDATE articles
-		SET title = ?, title_url = ?, subject_id = ?, html = ?
+		SET title = ?, title_url = ?, subject_id = ?, html = ?, is_public = ?
 		WHERE id = ?
-	`, title, utils.Slugify(title), subjectId, html, id)
+	`, title, utils.Slugify(title), subjectId, html, is_public, id)
 	return err
 }
 
@@ -82,11 +88,14 @@ func (r *ArticleRepo) Delete(id int64) error {
 	return err
 }
 
-func (r *ArticleRepo) Create(title string, subjectId int32, html string) (int64, error) {
+func (r *ArticleRepo) Create(title string, 
+                             subjectId int32,
+                             is_public bool,
+                             html string) (int64, error) {
 	res, err := r.DB.Exec(`
-		INSERT INTO articles (title, title_url, subject_id, html, created_at)
-		VALUES (?, ?, ?, ?, NOW())
-	`, title, utils.Slugify(title), subjectId, html)
+		INSERT INTO articles (title, title_url, subject_id, html, is_public, created_at)
+		VALUES (?, ?, ?, ?, ?, NOW())
+	`, title, utils.Slugify(title), subjectId, html, is_public)
 	if err != nil {
 		return 0, err
 	}

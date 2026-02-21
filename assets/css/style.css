@@ -95,6 +95,15 @@
   --slug-bg: #ffffff;
   --slug-border: var(--border-soft);
 
+  /* Status colors */
+  --status-public-text: #166534;
+  --status-public-bg: rgba(22, 101, 52, 0.12);
+  --status-public-border: rgba(22, 101, 52, 0.35);
+  
+  --status-private-text: #c2410c;
+  --status-private-bg: rgba(251, 146, 60, 0.12);
+  --status-private-border: rgba(251, 146, 60, 0.4);
+
   color-scheme: light;
 }
 
@@ -145,6 +154,15 @@
   --slug-bg: rgba(251, 146, 60, 0.12);
   --slug-border: rgba(251, 146, 60, 0.4);
 
+  /* Status colors (dark tuned) */
+  --status-public-text: #4ade80;
+  --status-public-bg: rgba(74, 222, 128, 0.12);
+  --status-public-border: rgba(74, 222, 128, 0.4);
+  
+  --status-private-text: #fb923c;
+  --status-private-bg: rgba(251, 146, 60, 0.15);
+  --status-private-border: rgba(251, 146, 60, 0.45);
+
   color-scheme: dark;
 }
 
@@ -187,6 +205,15 @@
     --slug-text: #fb923c;
     --slug-bg: rgba(251, 146, 60, 0.12);
     --slug-border: rgba(251, 146, 60, 0.4);
+
+    /* Status colors (dark tuned) */
+    --status-public-text: #4ade80;
+    --status-public-bg: rgba(74, 222, 128, 0.12);
+    --status-public-border: rgba(74, 222, 128, 0.4);
+    
+    --status-private-text: #fb923c;
+    --status-private-bg: rgba(251, 146, 60, 0.15);
+    --status-private-border: rgba(251, 146, 60, 0.45);
 
     color-scheme: dark;
   }
@@ -1452,6 +1479,31 @@ address a:hover {
   .admin-actions-row .btn {
     width: 100%;
   }
+}
+
+.article-visibility {
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 600;
+  margin-left: auto;
+
+  padding: 0.35em 0.7em;
+  border-radius: 999px;
+
+  display: inline-block;
+}
+
+.article-visibility.public {
+  color: var(--status-public-text);
+  background: var(--status-public-bg);
+  border: 1px solid var(--status-public-border);
+}
+
+.article-visibility.private {
+  color: var(--status-private-text);
+  background: var(--status-private-bg);
+  border: 1px solid var(--status-private-border);
 }
 
 

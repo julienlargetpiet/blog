@@ -27,16 +27,28 @@ Admin — Edit article
           required
         >
 
-<select name="subject_id">
-  {{ range .Subjects }}
-    <option 
-      value="{{ .Id }}"
-      {{ if eq .Id $.Article.SubjectId }}selected{{ end }}
-    >
-      {{ .Title }}
-    </option>
-  {{ end }}
-</select>
+        <label for="subject_id">Subject</label>
+        <select name="subject_id" id="subject_id">
+          {{ range .Subjects }}
+            <option 
+              value="{{ .Id }}"
+              {{ if eq .Id $.Article.SubjectId }}selected{{ end }}
+            >
+              {{ .Title }}
+            </option>
+          {{ end }}
+        </select>
+
+
+        <label for="is_public">Visibility</label>
+        <select name="is_public" id="is_public" required>
+            <option value="true" {{ if .Article.IsPublic }}selected{{ end }}>
+                Public
+            </option>
+            <option value="false" {{ if not .Article.IsPublic }}selected{{ end }}>
+                Private
+            </option>
+        </select>
 
       </div>
     </fieldset>

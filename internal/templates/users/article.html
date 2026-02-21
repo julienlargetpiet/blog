@@ -14,6 +14,12 @@
         <time class="article-date" datetime="{{ .CreatedAt }}">
           {{ .CreatedAt.Format "January 2, 2006" }}
         </time>
+    
+        {{ if .IsPublic }}
+          <span class="article-visibility public">Public</span>
+        {{ else }}
+          <span class="article-visibility private">Private</span>
+        {{ end }}
       </div>
     {{ end }}
 

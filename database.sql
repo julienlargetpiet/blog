@@ -13,6 +13,7 @@ CREATE TABLE articles (
     title VARCHAR(255) NOT NULL,
     title_url VARCHAR(255) NOT NULL,
     subject_id INT NOT NULL,
+    is_public BOOLEAN NOT NULL,
     html MEDIUMTEXT NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 

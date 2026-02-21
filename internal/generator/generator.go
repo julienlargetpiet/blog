@@ -20,7 +20,7 @@ var defaultSubject = model.Subject{
 	Slug:  "default",
 }
 
-func (g *Generator) buildSubjectMap() map[int64]model.Subject {
+func (g *Generator) BuildSubjectMap() map[int64]model.Subject {
 	m := make(map[int64]model.Subject, len(g.Subjects))
 	for _, s := range g.Subjects {
 		m[s.Id] = s
@@ -28,28 +28,30 @@ func (g *Generator) buildSubjectMap() map[int64]model.Subject {
 	return m
 }
 
-func (g *Generator) buildArticleViews() []model.ArticleView {
-	subjectMap := g.buildSubjectMap()
+func (g *Generator) BuildArticleViews() []model.ArticleView {
+	subjectMap := g.BuildSubjectMap()
 
 	views := make([]model.ArticleView, 0, len(g.Articles))
 
-	for _, a := range g.Articles {
-
+    for i := range g.Articles {
+        a := &g.Articles[i]
+    
         subject, ok := subjectMap[a.SubjectId]
         if !ok {
-        	panic(fmt.Sprintf("subject %d not found in subjectMap", a.SubjectId))
+            panic(fmt.Sprintf("subject %d not found", a.SubjectId))
         }
-
-		views = append(views, model.ArticleView{
-			ID:        a.ID,
-			Title:     a.Title,
+    
+        views = append(views, model.ArticleView{
+            ID:        a.ID,
+            Title:     a.Title,
             TitleURL:  a.TitleURL,
-			SubjectId: a.SubjectId,
-			Slug:      subject.Slug,
-			HTML:      template.HTML(a.HTML),
-			CreatedAt: a.CreatedAt,
-		})
-	}
+            SubjectId: a.SubjectId,
+            Slug:      subject.Slug,
+            IsPublic:  a.IsPublic,
+            HTML:      template.HTML(a.HTML),
+            CreatedAt: a.CreatedAt,
+        })
+    }
 
 	return views
 }
@@ -120,7 +122,7 @@ func (g *Generator) buildArticles() error {
 		return err
 	}
 
-	views := g.buildArticleViews()
+	views := g.BuildArticleViews()
 
 	for _, view := range views {
 
@@ -165,7 +167,7 @@ func (g *Generator) buildIndex() error {
 		return err
 	}
 
-    views := g.buildArticleViews()
+    views := g.BuildArticleViews()
     
     sort.Slice(views, func(i, j int) bool {
     	return views[i].ID > views[j].ID
@@ -206,7 +208,7 @@ func (g *Generator) buildSubjects() error {
 		return err
 	}
 
-	views := g.buildArticleViews()
+	views := g.BuildArticleViews()
 
 	// group by subject id
 	grouped := make(map[int64][]model.ArticleView)

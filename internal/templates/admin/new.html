@@ -26,13 +26,24 @@ Admin — New article
           required
         >
 
-<select name="subject_id" required>
-  {{ range .Subjects }}
-    <option value="{{ .Id }}">
-      {{ .Title }}
-    </option>
-  {{ end }}
-</select>
+        <label for="subject_id">Subject</label>
+        <select name="subject_id" id="subject_id" required>
+          {{ range .Subjects }}
+            <option value="{{ .Id }}">
+              {{ .Title }}
+            </option>
+          {{ end }}
+        </select>
+        
+        <label for="is_public">Visibility</label>
+        <select name="is_public" id="is_public" required>
+            <option value="true" selected>
+              Public
+            </option>
+            <option value="false">
+              Private
+            </option>
+        </select>
 
       </div>
     </fieldset>

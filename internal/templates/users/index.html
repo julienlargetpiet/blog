@@ -38,14 +38,16 @@
   <div class="card-grid">
 
     {{ range $i, $a := .Articles }}
-      <a
-        href="/articles/{{ $a.TitleURL }}.html"
-        class="doc-card card-variant-{{ add (mod $i 4) 1 }}"
-      >
-        <h3>{{ $a.Title }}</h3>
+      {{ if $a.IsPublic }}
+          <a
+            href="/articles/{{ $a.TitleURL }}.html"
+            class="doc-card card-variant-{{ add (mod $i 4) 1 }}"
+          >
+            <h3>{{ $a.Title }}</h3>
 
-        <p>{{ excerpt $a.HTML 22 }}</p>
-      </a>
+            <p>{{ excerpt $a.HTML 22 }}</p>
+          </a>
+      {{ end }}
     {{ end }}
 
   </div>

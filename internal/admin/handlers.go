@@ -55,11 +55,11 @@ func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
     	return
     }
 
-	repo := db.ArticleRepo{DB: s.DB}
+    articleRepo := db.ArticleRepo{DB: s.DB}
 
-	articles, err := repo.ListAll()
+	articles, err := articleRepo.ListAll()
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+    	http.Error(w, "error occured in articleRepo.ListAll()", http.StatusBadRequest)
 		return
 	}
 
@@ -105,6 +105,7 @@ func (s *Server) handleEditArticle(w http.ResponseWriter, r *http.Request) {
     
     	title := r.FormValue("title")
     	subjectIdStr := r.FormValue("subject_id")
+    	isPublicStr := r.FormValue("is_public")
     	html := r.FormValue("html")
     
     	if title == "" {
@@ -119,9 +120,15 @@ func (s *Server) handleEditArticle(w http.ResponseWriter, r *http.Request) {
     		return
     	}
     	subjectId := int32(subjectId64)
-    
+   
+        isPublic, err := strconv.ParseBool(isPublicStr)
+        if err != nil {
+			http.Error(w, "invalid visibility", http.StatusBadRequest)
+            return
+        }
+
     	// 1. Update DB
-    	if err := repo.Update(id, title, subjectId, html); err != nil {
+    	if err := repo.Update(id, title, subjectId, isPublic, html); err != nil {
     		http.Error(w, err.Error(), http.StatusInternalServerError)
     		return
     	}
@@ -213,6 +220,7 @@ func (s *Server) handleNewArticle(w http.ResponseWriter, r *http.Request) {
 
 		title := r.FormValue("title")
 		subjectIdStr := r.FormValue("subject_id")
+		isPublicStr := r.FormValue("is_public")
 		html := r.FormValue("html")
 
 		if title == "" {
@@ -228,8 +236,14 @@ func (s *Server) handleNewArticle(w http.ResponseWriter, r *http.Request) {
 		}
 		subjectId := int32(subjectId64)
 
+        isPublic, err := strconv.ParseBool(isPublicStr)
+        if err != nil {
+			http.Error(w, "invalid visibility", http.StatusBadRequest)
+            return
+        }
+
 		// 1️⃣ Insert into DB
-		if _, err := articleRepo.Create(title, subjectId, html); err != nil {
+		if _, err := articleRepo.Create(title, subjectId, isPublic, html); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}

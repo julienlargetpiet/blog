@@ -10,6 +10,7 @@ type Article struct {
 	Title     string
     TitleURL  string
     SubjectId int64
+    IsPublic  bool
 	HTML      string
 	CreatedAt time.Time
 }
@@ -20,6 +21,7 @@ type ArticleView struct {
     TitleURL    string
     SubjectId   int64
     Slug        string
+    IsPublic    bool
 	HTML        template.HTML
 	CreatedAt   time.Time
 }
