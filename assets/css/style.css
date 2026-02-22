@@ -1516,7 +1516,6 @@ address a:hover {
   left: 0;
   right: 0;
 
-  /* Always pinned to layout viewport */
   bottom: 0;
   padding-bottom: env(safe-area-inset-bottom);
 
@@ -1524,9 +1523,6 @@ address a:hover {
 
   z-index: 1000;
   pointer-events: none;
-
-  /* Prevent subpixel jitter */
-  transform: translateZ(0);
 }
 
 .scroll-progress-bar {
@@ -1543,6 +1539,4 @@ address a:hover {
     var(--accent),
     var(--accent-hover)
   );
-
-  will-change: transform;
 }
