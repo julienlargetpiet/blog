@@ -47,6 +47,11 @@ func (s *Server) rebuildSite() error {
 		return err
 	}
 
+    err = gen.BuildRSS()
+    if err != nil {
+        return err
+    }
+
 	return gen.BuildSitemap()
 }
 
@@ -79,6 +84,12 @@ func (s *Server) rebuildSiteLocalize(title string,
 	}
 
     if sitemap_build {
+
+        err = gen.BuildRSS()
+        if err != nil {
+            return err
+        }
+
 	    return gen.BuildSitemap()
     }
 

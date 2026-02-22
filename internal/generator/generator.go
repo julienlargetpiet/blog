@@ -434,5 +434,72 @@ func (g *Generator) BuildSitemap() error {
     return os.WriteFile(filename, data, 0644)
 }
 
+func (g *Generator) BuildRSS() error {
+    type Item struct {
+        Title   string `xml:"title"`
+        Link    string `xml:"link"`
+        GUID    string `xml:"guid"`
+        PubDate string `xml:"pubDate"`
+    }
+
+    type Channel struct {
+        Title         string `xml:"title"`
+        Link          string `xml:"link"`
+        Description   string `xml:"description"`
+        LastBuildDate string `xml:"lastBuildDate"`
+        Items         []Item `xml:"item"`
+    }
+
+    type RSS struct {
+        XMLName xml.Name `xml:"rss"`
+        Version string   `xml:"version,attr"`
+        Channel Channel  `xml:"channel"`
+    }
+
+    const base = "https://julienlargetpiet.tech"
+
+    sort.SliceStable(g.Articles, func(i, j int) bool {
+        return g.Articles[i].CreatedAt.After(g.Articles[j].CreatedAt)
+    })
+
+    items := make([]Item, 0, len(g.Articles))
+
+    for _, a := range g.Articles {
+        if !a.IsPublic {
+            continue
+        }
+
+        link := fmt.Sprintf("%s/articles/%s.html", base, a.TitleURL)
+
+        items = append(items, Item{
+            Title:   a.Title,
+            Link:    link,
+            GUID:    link,
+            PubDate: a.CreatedAt.Format(time.RFC1123Z),
+        })
+    }
+
+    rss := RSS{
+        Version: "2.0",
+        Channel: Channel{
+            Title:         "Julien Larget-Piet Updates",
+            Link:          base,
+            Description:   "Article publication notifications.",
+            LastBuildDate: time.Now().Format(time.RFC1123Z),
+            Items:         items,
+        },
+    }
+
+    data, err := xml.MarshalIndent(rss, "", "  ")
+    if err != nil {
+        return err
+    }
+
+    data = append([]byte(xml.Header), data...)
+
+    filename := filepath.Join(g.OutDir, "rss.xml")
+    return os.WriteFile(filename, data, 0644)
+}
+
 
 
