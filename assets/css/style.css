@@ -366,6 +366,10 @@ section,
   padding: 0;
 }
 
+.container {
+  width: 100%;
+}
+
 section {
   margin: 3em auto;
 }
@@ -1540,3 +1544,14 @@ address a:hover {
     var(--accent-hover)
   );
 }
+
+.rss-wrapper {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.rss-link {
+  display: inline-block;   /* force shrink to content */
+}
+
+
