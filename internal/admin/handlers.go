@@ -50,7 +50,9 @@ func (s *Server) rebuildSite() error {
 	return gen.BuildSitemap()
 }
 
-func (s *Server) rebuildSiteLocalize(title string, subject_id int64) error {
+func (s *Server) rebuildSiteLocalize(title string, 
+                                     subject_id int64,
+                                     sitemap_build bool) error {
 	articleRepo := db.ArticleRepo{DB: s.DB}
 	subjectRepo := db.SubjectRepo{DB: s.DB}
 
@@ -76,7 +78,12 @@ func (s *Server) rebuildSiteLocalize(title string, subject_id int64) error {
 		return err
 	}
 
-	return gen.BuildSitemap()
+    if sitemap_build {
+	    return gen.BuildSitemap()
+    }
+
+    return nil
+
 }
 
 func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
@@ -174,7 +181,7 @@ func (s *Server) handleEditArticle(w http.ResponseWriter, r *http.Request) {
     		return
     	}
 
-        if err := s.rebuildSiteLocalize(title, subjectId); err != nil {
+        if err := s.rebuildSiteLocalize(title, subjectId, false); err != nil {
         	http.Error(w, err.Error(), http.StatusInternalServerError)
         	return
         }
@@ -300,7 +307,7 @@ func (s *Server) handleNewArticle(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-        if err := s.rebuildSiteLocalize(title, subjectId); err != nil {
+        if err := s.rebuildSiteLocalize(title, subjectId, true); err != nil {
         	http.Error(w, err.Error(), http.StatusInternalServerError)
         	return
         }
