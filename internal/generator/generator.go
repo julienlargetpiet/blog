@@ -436,10 +436,11 @@ func (g *Generator) BuildSitemap() error {
 
 func (g *Generator) BuildRSS() error {
     type Item struct {
-        Title   string `xml:"title"`
-        Link    string `xml:"link"`
-        GUID    string `xml:"guid"`
-        PubDate string `xml:"pubDate"`
+        Title       string `xml:"title"`
+        Link        string `xml:"link"`
+        GUID        string `xml:"guid"`
+        PubDate     string `xml:"pubDate"`
+        Description string `xml:"description`
     }
 
     type Channel struct {
@@ -458,10 +459,6 @@ func (g *Generator) BuildRSS() error {
 
     const base = "https://julienlargetpiet.tech"
 
-    sort.SliceStable(g.Articles, func(i, j int) bool {
-        return g.Articles[i].CreatedAt.After(g.Articles[j].CreatedAt)
-    })
-
     items := make([]Item, 0, len(g.Articles))
 
     for _, a := range g.Articles {
@@ -476,6 +473,7 @@ func (g *Generator) BuildRSS() error {
             Link:    link,
             GUID:    link,
             PubDate: a.CreatedAt.Format(time.RFC1123Z),
+            Description: "New article published",
         })
     }
 
