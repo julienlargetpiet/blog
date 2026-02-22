@@ -1507,4 +1507,42 @@ address a:hover {
 }
 
 
+/* ================================
+   Scroll Progress Bar (Ultra Robust)
+   ================================ */
 
+.scroll-progress {
+  position: fixed;
+  left: 0;
+  right: 0;
+
+  /* Always pinned to layout viewport */
+  bottom: 0;
+  padding-bottom: env(safe-area-inset-bottom);
+
+  height: 6px;
+
+  z-index: 1000;
+  pointer-events: none;
+
+  /* Prevent subpixel jitter */
+  transform: translateZ(0);
+}
+
+.scroll-progress-bar {
+  height: 100%;
+  width: 100%;
+
+  transform-origin: left;
+  transform: scaleX(0);
+
+  border-radius: 999px;
+
+  background: linear-gradient(
+    90deg,
+    var(--accent),
+    var(--accent-hover)
+  );
+
+  will-change: transform;
+}
