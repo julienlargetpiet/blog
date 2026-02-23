@@ -62,7 +62,7 @@ sudo useradd -r -s /bin/false goblog
 sudo mkdir -p /var/www
 sudo chown -R goblog:goblog /var/www
 
-sudo -u goblog git clone <YOUR_REPO_URL> /var/www/go_blog
+sudo -u goblog git clone https://github.com/julienlargetpiet/blog /var/www/go_blog
 cd /var/www/go_blog
 ```
 
