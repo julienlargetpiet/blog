@@ -24,6 +24,7 @@ type EditArticleView struct {
 func (s *Server) rebuildSite() error {
 	articleRepo := db.ArticleRepo{DB: s.DB}
 	subjectRepo := db.SubjectRepo{DB: s.DB}
+	authorRepo  := db.AuthorRepo{DB: s.DB}
 
 	articles, err := articleRepo.ListAll()
 	if err != nil {
@@ -35,8 +36,13 @@ func (s *Server) rebuildSite() error {
 		return err
 	}
 
+	content, err := authorRepo.GetContent()
+	if err != nil {
+		return err
+	}
+
 	gen := generator.Generator{
-        AuthorContent: template.HTML(""),
+        AuthorContent: template.HTML(content),
         ArticleRepo: articleRepo,
         SubjectRepo: subjectRepo,
 		Articles: articles,
