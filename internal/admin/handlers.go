@@ -69,7 +69,8 @@ func (s *Server) rebuildSite() error {
 
 func (s *Server) rebuildSiteLocalize(title string, 
                                      subject_id int64,
-                                     sitemap_build bool) error {
+                                     sitemap_build bool,
+                                     is_deletion bool) error {
 	articleRepo := db.ArticleRepo{DB: s.DB}
 	subjectRepo := db.SubjectRepo{DB: s.DB}
 
@@ -92,7 +93,7 @@ func (s *Server) rebuildSiteLocalize(title string,
 		OutDir:   "dist",
 	}
 
-	if err := gen.LocalizedBuild(title, subject_id); err != nil {
+	if err := gen.LocalizedBuild(title, subject_id, is_deletion); err != nil {
 		return err
 	}
 
@@ -300,7 +301,7 @@ func (s *Server) handleEditArticle(w http.ResponseWriter, r *http.Request) {
     		return
     	}
 
-        if err := s.rebuildSiteLocalize(title, subjectId, false); err != nil {
+        if err := s.rebuildSiteLocalize(title, subjectId, false, false); err != nil {
         	http.Error(w, err.Error(), http.StatusInternalServerError)
         	return
         }
@@ -359,18 +360,26 @@ func (s *Server) handleDeleteArticle(w http.ResponseWriter, r *http.Request) {
 
 	articleRepo := db.ArticleRepo{DB: s.DB}
 
-	// 1️⃣ Delete article
-	if err := articleRepo.Delete(id); err != nil {
+    article, err := articleRepo.GetByID(id)
+    if err != nil {
+        if errors.Is(err, sql.ErrNoRows) {
+            http.NotFound(w, r)
+            return
+        }
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
+    }
+
+    if err := articleRepo.Delete(id); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-    if err := s.rebuildSite(); err != nil {
+    if err := s.rebuildSiteLocalize(article.Title, article.SubjectId, true, true); err != nil {
     	http.Error(w, err.Error(), http.StatusInternalServerError)
     	return
     }
 
-	// 5️⃣ Redirect back to admin
 	http.Redirect(w, r, "/admin", http.StatusSeeOther)
 }
 
@@ -426,7 +435,7 @@ func (s *Server) handleNewArticle(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-        if err := s.rebuildSiteLocalize(title, subjectId, true); err != nil {
+        if err := s.rebuildSiteLocalize(title, subjectId, true, false); err != nil {
         	http.Error(w, err.Error(), http.StatusInternalServerError)
         	return
         }

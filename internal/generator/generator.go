@@ -22,6 +22,45 @@ var defaultSubject = model.Subject{
 	Slug:  "default",
 }
 
+func writeFileAtomic(filename string, write func(f *os.File) error) error {
+    dir := filepath.Dir(filename)
+
+    tmp, err := os.CreateTemp(dir, filepath.Base(filename)+".tmp-*")
+    if err != nil {
+        return err
+    }
+
+    tmpName := tmp.Name()
+
+    defer func() {
+        if tmp != nil {
+            tmp.Close()
+            os.Remove(tmpName)
+        }
+    }()
+
+    if err := write(tmp); err != nil {
+        return err
+    }
+
+    if err := tmp.Sync(); err != nil {
+        return err
+    }
+
+    // 🔥 set correct permissions BEFORE rename
+    if err := tmp.Chmod(0644); err != nil {
+        return err
+    }
+
+    if err := tmp.Close(); err != nil {
+        return err
+    }
+
+    tmp = nil
+
+    return os.Rename(tmpName, filename)
+}
+
 func (g *Generator) BuildSubjectMap() map[int64]model.Subject {
 	m := make(map[int64]model.Subject, len(g.Subjects))
 	for _, s := range g.Subjects {
@@ -118,17 +157,20 @@ func (g *Generator) Build() error {
 	return g.buildArticles()
 }
 
-func (g *Generator) LocalizedBuild(title string, subject_id int64) error {
+func (g *Generator) LocalizedBuild(title string, 
+                                   subject_id int64,
+                                   is_deletion bool) error {
 
     title_url := utils.Slugify(title)
-    os.Remove("/dist/articles/" + title_url + ".html")
+
+    //if is_deletion {
+    //    os.Remove("/dist/articles/" + title_url + ".html")
+    //}
 
     subject_slug, err := g.SubjectRepo.GetSlugByID(subject_id)
     if err != nil {
         return err
     }
-
-    os.Remove("/dist/sub/" + subject_slug + ".html")
 
     sort.Slice(g.Articles, func(i, j int) bool {
     	return g.Articles[i].ID > g.Articles[j].ID
@@ -142,7 +184,12 @@ func (g *Generator) LocalizedBuild(title string, subject_id int64) error {
 		return err
 	}
 
-	return g.buildArticle(title_url, subject_slug)
+    if !is_deletion {
+	    return g.buildArticle(title_url, subject_slug)
+    }
+
+    return nil
+
 }
 
 func (g *Generator) buildArticles() error {
@@ -164,17 +211,11 @@ func (g *Generator) buildArticles() error {
 			view.TitleURL + ".html",
 		)
 
-		f, err := os.Create(filename)
-		if err != nil {
-			return err
-		}
-
-		if err := func() error {
-			defer f.Close()
-			return tmpl.ExecuteTemplate(f, "base_article", view)
-		}(); err != nil {
-			return err
-		}
+        if err := writeFileAtomic(filename, func(f *os.File) error {
+            return tmpl.ExecuteTemplate(f, "base_article", view)
+        }); err != nil {
+            return err
+        }
 	}
 
 	return nil
@@ -190,6 +231,10 @@ func (g *Generator) buildArticle(title_url, slug_val string) error {
 	}
 
     article, err := g.ArticleRepo.GetByTitleURL(title_url)
+
+    if err != nil {
+        return err
+    }
 
 	view := model.ArticleView{
             ID:        article.ID,
@@ -208,19 +253,9 @@ func (g *Generator) buildArticle(title_url, slug_val string) error {
 		view.TitleURL + ".html",
 	)
 
-	f, err := os.Create(filename)
-	if err != nil {
-		return err
-	}
-
-	if err := func() error {
-		defer f.Close()
-		return tmpl.ExecuteTemplate(f, "base_article", view)
-	}(); err != nil {
-		return err
-	}
-
-	return nil
+    return writeFileAtomic(filename, func(f *os.File) error {
+        return tmpl.ExecuteTemplate(f, "base_article", view)
+    })
 }
 
 func (g *Generator) buildIndex() error {
@@ -255,13 +290,11 @@ func (g *Generator) buildIndex() error {
     }
 
 	filename := filepath.Join(g.OutDir, "index.html")
-	f, err := os.Create(filename)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
 
-	return tmpl.ExecuteTemplate(f, "base", page)
+    return writeFileAtomic(filename, func(f *os.File) error {
+        return tmpl.ExecuteTemplate(f, "base", page)
+    })
+
 }
 
 func (g *Generator) BuildAuthor() error {
@@ -275,11 +308,6 @@ func (g *Generator) BuildAuthor() error {
 	}
 
 	filename := filepath.Join(g.OutDir, "author.html")
-	f, err := os.Create(filename)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
 
 	data := struct {
 		Content template.HTML
@@ -287,7 +315,10 @@ func (g *Generator) BuildAuthor() error {
 		Content: g.AuthorContent,
 	}
 
-	return tmpl.ExecuteTemplate(f, "base", data)
+    return writeFileAtomic(filename, func(f *os.File) error {
+        return tmpl.ExecuteTemplate(f, "base", data)
+    })
+
 }
 
 func (g *Generator) buildSubjects() error {
@@ -333,17 +364,12 @@ func (g *Generator) buildSubjects() error {
 			subject.Slug+".html",
 		)
 
-		f, err := os.Create(filename)
-		if err != nil {
-			return err
-		}
+        if err := writeFileAtomic(filename, func(f *os.File) error {
+            return tmpl.ExecuteTemplate(f, "base", page)
+        }); err != nil {
+            return err
+        }
 
-		if err := func() error {
-			defer f.Close()
-			return tmpl.ExecuteTemplate(f, "base", page)
-		}(); err != nil {
-			return err
-		}
 	}
 
 	return nil
@@ -395,19 +421,9 @@ func (g *Generator) buildSubject(subject_id int64) error {
 		subject.Slug+".html",
 	)
 
-	f, err := os.Create(filename)
-	if err != nil {
-		return err
-	}
-
-	if err := func() error {
-		defer f.Close()
-		return tmpl.ExecuteTemplate(f, "base", page)
-	}(); err != nil {
-		return err
-	}
-
-    return nil
+    return writeFileAtomic(filename, func(f *os.File) error {
+        return tmpl.ExecuteTemplate(f, "base", page)
+    })
 }
 
 func (g *Generator) BuildSitemap() error {
@@ -463,7 +479,12 @@ func (g *Generator) BuildSitemap() error {
     data = append([]byte(xml.Header), data...)
 
     filename := filepath.Join(g.OutDir, "sitemap.xml")
-    return os.WriteFile(filename, data, 0644)
+
+    return writeFileAtomic(filename, func(f *os.File) error {
+        _, err := f.Write(data)
+        return err
+    })
+
 }
 
 func (g *Generator) BuildRSS() error {
@@ -472,7 +493,7 @@ func (g *Generator) BuildRSS() error {
         Link        string `xml:"link"`
         GUID        string `xml:"guid"`
         PubDate     string `xml:"pubDate"`
-        Description string `xml:"description`
+        Description string `xml:"description"`
     }
 
     type Channel struct {
@@ -528,7 +549,10 @@ func (g *Generator) BuildRSS() error {
     data = append([]byte(xml.Header), data...)
 
     filename := filepath.Join(g.OutDir, "rss.xml")
-    return os.WriteFile(filename, data, 0644)
+    return writeFileAtomic(filename, func(f *os.File) error {
+    	_, err := f.Write(data)
+    	return err
+    })
 }
 
 
