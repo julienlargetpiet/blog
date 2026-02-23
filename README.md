@@ -1,7 +1,9 @@
 # Statix (Go) — Production Deployment Guide  
 NGINX + MySQL/MariaDB + systemd
 
-This document describes the complete production deployment of **Statix**, a Go-based static website generator with an integrated admin backend.
+Blog provides a build engine that operates in either localized or global mode. In localized mode, each page set or instance executes its build process independently. In global mode, a centralized engine orchestrates builds across multiple page sets or environments.
+
+Builds are atomic. Each generation produces an isolated, immutable output that is promoted to production only upon successful completion. No partial or intermediate state is ever exposed.
 
 Architecture:
 
