@@ -445,6 +445,11 @@ func (g *Generator) BuildSitemap() error {
     	})
     }
 
+    urls = append(urls, URL{
+    	Loc: fmt.Sprintf("%s/author.html", base),
+    	LastMod: time.Now().Format("2006-01-02"),
+    })
+
     sitemap := URLSet{
         Xmlns: "http://www.sitemaps.org/schemas/sitemap/0.9",
         URLs:  urls,
