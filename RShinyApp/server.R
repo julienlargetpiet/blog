@@ -111,6 +111,9 @@ function(input, output, session) {
   })
 
   filtered_data <- reactive({
+
+    req(input$time_unit, input$last_n)
+
     df <- raw_data()
     req(nrow(df) > 0)
   
@@ -218,7 +221,37 @@ function(input, output, session) {
     df %>% filter(date >= cutoff)
 
   })  
+ 
+  geo_cache_reactive <- reactiveVal(NULL)
+  last_ips <- reactiveVal(character())
   
+  observeEvent(filtered_data(), {
+  
+    ips <- sort(unique(filtered_data()$ip))
+  
+    if (!identical(ips, last_ips())) {
+  
+      geo_data <- lookup_ips(
+        ips,
+        db_path = geo_db_path
+      )
+  
+      geo_cache_reactive(geo_data)
+      last_ips(ips)
+    }
+  
+  }, ignoreInit = FALSE)
+
+  geo_enriched_data <- reactive({
+  
+    df <- filtered_data()
+    geo <- geo_cache_reactive()
+  
+    if (is.null(geo)) return(df)
+  
+    df %>% left_join(geo, by = "ip")
+  })
+
   # KPIs
   output$kpi_hits <- renderText({
     df <- filtered_data()
@@ -362,7 +395,7 @@ function(input, output, session) {
   })
 
   output$mytable <- renderDT({
-    df <- filtered_data()
+    df <- geo_enriched_data()
   
     datatable(
       df %>% 
@@ -372,7 +405,7 @@ function(input, output, session) {
                                 '" target="_blank">',
                                 target,
                                 "</a>")) %>%
-        select(ip, date, target, time_on_page),
+        select(country, ip, date, target, time_on_page),
       options = list(
         pageLength = 100,
         scrollX = TRUE,

@@ -351,27 +351,52 @@ Statix should now be accessible at:
 
 The `RShinyApp/` directory contains a complete **R Shiny dashboard** for analyzing NGINX access logs.
 
-Features:
-
-- Bot filtering (User-Agent + rate heuristics)
-- RegEx-based page filtering
-- Traffic evolution over time
-- Top visited pages (Top N + Other)
-- Dark / Light mode
-- Authentication via `shinymanager`
-- Reverse proxy support
-- systemd-managed service
-
 This module is optional and intended for internal analytics.
 
 ---
 
-# 1️⃣ Install R (Debian / Ubuntu)
+## ✨ Features
+
+- Intelligent bot filtering (User-Agent + behavioral heuristics)
+- Country-level IP geolocation (GeoLite2)
+- Traffic evolution over time
+- Top visited pages (Top N + Other)
+- Dark / Light mode
+- Authentication via `shinymanager`
+- Reverse proxy support (NGINX)
+- systemd-managed background service
+- Incremental GeoIP caching
+
+---
+
+# 1️⃣ Install R & mmdblookup (Debian / Ubuntu)
+
+Update system:
 
 ```bash
 sudo apt update
+```
+
+Install R:
+
+```bash
 sudo apt install -y r-base
 ```
+
+Install MaxMind tools:
+
+```bash
+sudo apt install -y libmaxminddb-dev libmaxminddb0 mmdb-bin
+```
+
+Verify installation:
+
+```bash
+mmdblookup --version
+```
+
+> ⚠ Some distributions ship older versions without JSON support.  
+> This project uses lookup-path extraction and does **not** require JSON output.
 
 ---
 
@@ -383,13 +408,13 @@ Start R:
 R
 ```
 
-(Optional — use a user-level library):
+(Optional — user-level library):
 
 ```r
 .libPaths("~/.local/share/R/library")
 ```
 
-Install required packages:
+Install dependencies:
 
 ```r
 install.packages(c(
@@ -403,11 +428,10 @@ install.packages(c(
   "shinycssloaders",
   "DT",
   "stringr",
-  "jsonlite"
 ))
 ```
 
-Exit R:
+Exit:
 
 ```r
 q()
@@ -415,7 +439,53 @@ q()
 
 ---
 
-# 3️⃣ Deploy the Shiny App
+# 3️⃣ GeoIP Setup (GeoLite2)
+
+This dashboard uses the **GeoLite2 City** database from MaxMind.
+
+⚠ The database file is **NOT included** in this repository due to licensing restrictions.
+
+## Installation Steps
+
+1. Create a free MaxMind account:  
+   https://www.maxmind.com/en/geolite2/signup
+
+2. Download:  
+   **GeoLite2 City — GeoIP2 Binary (.mmdb)**
+
+3. Extract the archive:
+
+```bash
+tar -xzf GeoLite2-City_*.tar.gz
+```
+
+4. Copy the `.mmdb` file to:
+
+```
+RShinyApp/geo/GeoLite2-City.mmdb
+```
+
+5. Ensure `geo_db_path` in `global.R` matches the file location.
+
+---
+
+## 🔄 Updating GeoLite Database
+
+MaxMind updates GeoLite weekly.
+
+To update:
+
+1. Download the latest GeoLite2 City database
+2. Replace the `.mmdb` file
+3. Restart Shiny:
+
+```bash
+sudo systemctl restart shiny
+```
+
+---
+
+# 4️⃣ Deploy the Shiny App
 
 Place the Shiny project in:
 
@@ -437,7 +507,7 @@ Never commit real credentials.
 
 ---
 
-# 4️⃣ Manual Test (Optional)
+# 5️⃣ Manual Test (Optional)
 
 ```bash
 R
@@ -461,7 +531,7 @@ Ctrl+C
 
 ---
 
-# 5️⃣ NGINX Reverse Proxy Configuration
+# 6️⃣ NGINX Reverse Proxy Configuration
 
 Edit:
 
@@ -488,6 +558,8 @@ location /shiny/ {
 }
 ```
 
+> Important: Ensure the trailing slash is present in `proxy_pass`.
+
 Reload NGINX:
 
 ```bash
@@ -503,7 +575,7 @@ https://example.com/shiny/
 
 ---
 
-# 6️⃣ systemd Service for Shiny
+# 7️⃣ systemd Service for Shiny
 
 Create:
 
@@ -529,6 +601,8 @@ RestartSec=5
 
 NoNewPrivileges=true
 PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
 
 [Install]
 WantedBy=multi-user.target
@@ -554,12 +628,29 @@ journalctl -u shiny -f
 # 🔐 Security Notes
 
 - Shiny listens only on `127.0.0.1`
-- It is exposed via NGINX reverse proxy
+- Exposed via NGINX reverse proxy
 - Authentication handled via `shinymanager`
 - Consider adding:
   - Firewall restrictions
   - NGINX rate limiting
   - IP allowlist (if internal-only)
+
+---
+
+# 📁 Repository Notes
+
+The following files must **NOT** be committed:
+
+- `*.mmdb`
+- `geo_cache.rds`
+- Any local credential modifications
+
+Ensure `.gitignore` contains:
+
+```
+*.mmdb
+geo_cache.rds
+```
 
 ---
 
@@ -571,8 +662,6 @@ You now have a self-hosted NGINX log analytics dashboard:
 - Page-based traffic analysis
 - Interactive Plotly charts
 - Dark mode support
+- Country-level geolocation
 - systemd-managed background service
 - Secure reverse proxy exposure
-
-
-
