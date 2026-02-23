@@ -133,8 +133,10 @@ function initSummary() {
   if (headings.length < 2) return;
 
   headings.forEach((heading) => {
-    const id = heading.id || slugify(heading.textContent);
-    heading.id = id;
+    if (!heading.id) {
+      heading.id = slugify(heading.textContent);
+    }
+    const id = heading.id;
 
     const link = document.createElement("a");
     link.href = "#" + id;
