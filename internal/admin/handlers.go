@@ -53,6 +53,11 @@ func (s *Server) rebuildSite() error {
         return err
     }
 
+    err = gen.BuildAuthor()
+    if err != nil {
+        return err
+    }
+
 	return gen.BuildSitemap()
 }
 
