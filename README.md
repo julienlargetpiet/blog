@@ -1,20 +1,16 @@
 # Statix (Go) — Production Deployment Guide  
-NGINX Reverse Proxy + MariaDB/MySQL + systemd
+NGINX + MySQL/MariaDB + systemd
 
-This document describes the complete production deployment of blog,
-a Go-based static website generator supporting both full and localized builds, with an integrated admin backend.
+This document describes the complete production deployment of **Statix**, a Go-based static website generator with an integrated admin backend.
 
-It covers:
+Architecture:
 
-- Building the Go binary
-- Database setup (MySQL or MariaDB)
-- Proper Linux permissions
-- systemd service configuration
-- Global NGINX configuration
+- Go admin backend → 127.0.0.1:8080
 - NGINX reverse proxy
-- HTTPS (Let’s Encrypt)
-- Optional Cloudflare integration
-- Safe update procedure
+- MySQL or MariaDB database
+- Static files served from /var/www/go_blog/dist
+- systemd-managed service
+- Dedicated non-root system user (goblog)
 
 Domain placeholder used in this guide:
 
@@ -24,11 +20,10 @@ Replace it with your real domain.
 
 ---
 
-# 1. Prerequisites
+# 1️⃣ Prerequisites
 
 Server: Debian / Ubuntu  
-Privileges: sudo access  
-Go version: 1.23+  
+Privileges: sudo  
 
 Install required packages:
 
@@ -37,46 +32,23 @@ sudo apt update
 sudo apt install -y nginx mysql-server
 ```
 
-If using MariaDB instead:
+If using MariaDB:
 
 ```bash
 sudo apt install -y mariadb-server
 ```
 
-Install Go:
-
-On Linux:
-
-```
-$ wget https://go.dev/dl/go1.23.0.linux-amd64.tar.gz
-$ sudo tar -C /usr/local -xzf go1.23.0.linux-amd64.tar.gz
-$ export PATH=$PATH:/usr/local/go/bin
-```
-
----
-
-# 2. Build the Go Admin Binary
-
-From the root of your project (where `go.mod` is located):
+Install Go (manual):
 
 ```bash
-go mod tidy
-CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o go_blog_admin
+wget https://go.dev/dl/go1.23.0.linux-amd64.tar.gz
+sudo tar -C /usr/local -xzf go1.23.0.linux-amd64.tar.gz
+/usr/local/go/bin/go version
 ```
-
-This produces:
-
-```
-./go_blog_admin
-```
-
-The binary is now ready for production.
 
 ---
 
-# 3. Create System User
-
-Create a dedicated system user for security:
+# 2️⃣ Create Dedicated System User
 
 ```bash
 sudo useradd -r -s /bin/false goblog
@@ -84,55 +56,72 @@ sudo useradd -r -s /bin/false goblog
 
 ---
 
-# 4. Deploy Project Files
-
-Create production directory:
+# 3️⃣ Clone Project Directly to Production Path
 
 ```bash
-sudo mkdir -p /var/www/go_blog
+sudo mkdir -p /var/www
+sudo chown -R goblog:goblog /var/www
+
+sudo -u goblog git clone <YOUR_REPO_URL> /var/www/go_blog
+cd /var/www/go_blog
 ```
 
-Move binary:
+The project must live directly inside:
 
-```bash
-sudo mv ./go_blog_admin /var/www/go_blog/go_blog_admin
-```
-
-Your final layout should be:
-
-```
-/var/www/go_blog/
-    go_blog_admin
-    dist/
-    assets/
-        common_files/
-    _uploads/
-```
+    /var/www/go_blog
 
 ---
 
-# 5. Set Permissions (Critical Step)
+# 4️⃣ Build Production Binary
 
-Ensure everything belongs to the `goblog` user:
+From the repo root:
+
+```bash
+cd /var/www/go_blog
+sudo -u goblog /usr/local/go/bin/go build -buildvcs=false -o go_blog_admin ./cmd/admin
+```
+
+Binary location:
+
+    /var/www/go_blog/go_blog_admin
+
+---
+
+# 5️⃣ Set Correct Linux Permissions
+
+Ownership:
 
 ```bash
 sudo chown -R goblog:goblog /var/www/go_blog
 ```
 
-Make binary executable:
+Directories must be traversable by nginx:
 
 ```bash
-sudo chmod 0755 /var/www/go_blog/go_blog_admin
+sudo find /var/www/go_blog -type d -exec chmod 755 {} \;
 ```
 
-This ensures:
-- The service can execute the binary
-- The app can write to `_uploads`
-- Static files are readable
+Files must be readable by nginx:
+
+```bash
+sudo find /var/www/go_blog -type f -exec chmod 644 {} \;
+```
+
+Binary must remain executable:
+
+```bash
+sudo chmod 755 /var/www/go_blog/go_blog_admin
+```
+
+Final permission model:
+
+- Owner: goblog
+- nginx: read-only
+- No 777 anywhere
 
 ---
 
-# 6. Database Setup (MySQL or MariaDB)
+# 6️⃣ Database Setup (MySQL or MariaDB)
 
 Login:
 
@@ -140,74 +129,57 @@ Login:
 sudo mysql -u root -p
 ```
 
-## Create Database
+Create database:
 
 ```sql
 CREATE DATABASE go_blog;
 ```
 
-## Create Main Application User
+Create application user:
 
 ```sql
-CREATE USER 'blog_user'@'localhost' IDENTIFIED BY 'your_secure_password';
+CREATE USER 'blog_user'@'localhost' IDENTIFIED BY 'secure_password';
 GRANT ALL PRIVILEGES ON go_blog.* TO 'blog_user'@'localhost';
 FLUSH PRIVILEGES;
 ```
 
-## Create Restricted Backup User
+(Optional) restricted backup user:
 
 ```sql
-CREATE USER 'goblog'@'localhost' IDENTIFIED BY 'm';
+CREATE USER 'goblog_backup'@'localhost' IDENTIFIED BY 'strong_password';
 GRANT SELECT, SHOW VIEW, TRIGGER, LOCK TABLES
-ON go_blog.* TO 'goblog'@'localhost';
+ON go_blog.* TO 'goblog_backup'@'localhost';
 FLUSH PRIVILEGES;
 ```
 
 ---
 
-# 7. Initialize Schema
+# 7️⃣ Import Schema (from your repo)
 
-Create a file named `database.sql`:
-
-```sql
-CREATE TABLE articles (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    title TEXT NOT NULL,
-    html MEDIUMTEXT NOT NULL,
-    created_at DATETIME NOT NULL
-);
-
-INSERT INTO articles (title, html, created_at)
-VALUES (
-  'First post',
-  '<p>Hello from the database.</p>',
-  NOW()
-);
-```
-
-Import schema:
+From the repo root (the file is assumed to exist in the repository):
 
 ```bash
+cd /var/www/go_blog
 mysql -u blog_user -p go_blog < database.sql
 ```
 
+That’s it.
+
 ---
 
-# 8. Configure Credentials
+# 8️⃣ Configure Application Credentials
 
 Edit:
 
-```
-internal/config/config.go
-```
+    internal/config/config.go
 
-Example hardcoded configuration:
+Example:
 
 ```go
 cfg := Config{
     DB: db.Config{
         User:     "blog_user",
-        Password: "your_secure_password",
+        Password: "secure_password",
         Host:     "127.0.0.1",
         Port:     3306,
         DBName:   "go_blog",
@@ -217,17 +189,15 @@ cfg := Config{
 }
 ```
 
-⚠ Never commit real credentials to version control.
+⚠ Never commit real credentials.
 
 ---
 
-# 9. systemd Service
+# 9️⃣ systemd Service
 
 Create:
 
-```
-/etc/systemd/system/go_blog.service
-```
+    /etc/systemd/system/go_blog.service
 
 ```ini
 [Unit]
@@ -248,8 +218,6 @@ NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=full
 ProtectHome=true
-
-Environment=GIN_MODE=release
 
 [Install]
 WantedBy=multi-user.target
@@ -272,83 +240,11 @@ journalctl -u go_blog -f
 
 ---
 
-# 10. Global NGINX Configuration
-
-The main NGINX configuration file is:
-
-```
-/etc/nginx/nginx.conf
-```
-
-In most installations, the default configuration is sufficient.
-
-Verify that inside the `http {}` block you have:
-
-```nginx
-include /etc/nginx/conf.d/*.conf;
-include /etc/nginx/sites-enabled/*;
-```
-
-Note, add inside http block the following:
-
-```
-log_format main '$remote_addr - $remote_user [$time_local] '
-                '"$request" $status $body_bytes_sent '
-                '"$http_referer" "$http_user_agent" '
-                '"$http_x_prefetch"';
-
-access_log /var/log/nginx/access.log main;
-error_log /var/log/nginx/error.log warn;
-```
-
-These directives are required so that your site configuration
-(`/etc/nginx/sites-available/example.com`) is loaded.
-
-After any modification:
-
-```bash
-sudo nginx -t
-sudo systemctl reload nginx
-```
-
-### Note about NGINX logs rotations ###
-
-`logrotate is ofte in charge of rotating logs`
-
-I strongy advise to modify `/etc/logrotate.d/nginx` to:
-
-```
-/var/log/nginx/*.log {
-        size 500M
-        missingok
-        rotate 14
-        compress
-        delaycompress
-        notifempty
-        create 0640 www-data adm
-        sharedscripts
-        prerotate
-                if [ -d /etc/logrotate.d/httpd-prerotate ]; then \
-                        run-parts /etc/logrotate.d/httpd-prerotate; \
-                fi \
-        endscript
-        postrotate
-                invoke-rc.d nginx rotate >/dev/null 2>&1
-        endscript
-}
-```
-
-So rotation happens when the log file exceeds `500M` and keeps 14 last compressed logs file.
-
----
-
-# 11. NGINX Reverse Proxy (Site Configuration)
+# 🔟 NGINX Reverse Proxy + Static Serving
 
 Create:
 
-```
-/etc/nginx/sites-available/example.com
-```
+    /etc/nginx/sites-available/example.com
 
 ```nginx
 server {
@@ -391,7 +287,7 @@ server {
 }
 ```
 
-Enable site:
+Enable:
 
 ```bash
 sudo ln -s /etc/nginx/sites-available/example.com /etc/nginx/sites-enabled/
@@ -401,75 +297,31 @@ sudo systemctl reload nginx
 
 ---
 
-# 12. HTTPS (Let’s Encrypt)
-
-Install:
+# 1️⃣1️⃣ HTTPS (Let’s Encrypt)
 
 ```bash
 sudo apt install -y certbot python3-certbot-nginx
-```
-
-Generate certificate:
-
-```bash
 sudo certbot --nginx -d example.com -d www.example.com
 ```
 
 ---
 
-# 13. Optional: Cloudflare Real IP Support
+# 1️⃣2️⃣ Updating the Application
 
-Inside `/etc/nginx/nginx.conf` → `http {}` block:
-
-```nginx
-set_real_ip_from 173.245.48.0/20;
-set_real_ip_from 103.21.244.0/22;
-set_real_ip_from 103.22.200.0/22;
-set_real_ip_from 103.31.4.0/22;
-set_real_ip_from 141.101.64.0/18;
-set_real_ip_from 108.162.192.0/18;
-set_real_ip_from 190.93.240.0/20;
-set_real_ip_from 188.114.96.0/20;
-set_real_ip_from 197.234.240.0/22;
-set_real_ip_from 198.41.128.0/17;
-set_real_ip_from 162.158.0.0/15;
-set_real_ip_from 104.16.0.0/13;
-set_real_ip_from 104.24.0.0/14;
-set_real_ip_from 172.64.0.0/13;
-set_real_ip_from 131.0.72.0/22;
-
-real_ip_header CF-Connecting-IP;
-real_ip_recursive on;
-```
-
-Reload NGINX after editing:
+Rebuild:
 
 ```bash
-sudo nginx -t
-sudo systemctl reload nginx
+cd /var/www/go_blog
+sudo -u goblog /usr/local/go/bin/go build -buildvcs=false -o go_blog_admin ./cmd/admin
 ```
 
----
-
-# 14. Updating the Application (Safe Procedure)
-
-Build new binary:
+Restart:
 
 ```bash
-CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o go_blog_admin
+sudo systemctl restart go_blog
 ```
 
-Deploy update:
-
-```bash
-sudo systemctl stop go_blog
-sudo mv go_blog_admin /var/www/go_blog/go_blog_admin
-sudo chown goblog:goblog /var/www/go_blog/go_blog_admin
-sudo chmod 0755 /var/www/go_blog/go_blog_admin
-sudo systemctl start go_blog
-```
-
-If something fails:
+Logs:
 
 ```bash
 journalctl -u go_blog -xe
@@ -477,147 +329,53 @@ journalctl -u go_blog -xe
 
 ---
 
-# 15. Stylistic advises when writing articles
+# ✅ Final Verification Checklist
 
-You absolutely do not need any custom (html-in) css when you write your articles such as `style="..."` because all is handled in the `/assets/css/style.css`
+- [ ] Repository cloned to /var/www/go_blog
+- [ ] Binary built (go_blog_admin)
+- [ ] Permissions applied
+- [ ] Database created
+- [ ] blog_user created + privileges granted
+- [ ] database.sql imported
+- [ ] systemd service running
+- [ ] NGINX site enabled
+- [ ] HTTPS enabled
 
-## Table
+Statix should now be accessible at:
 
-When you need to create a table use this pattern:
+    https://example.com
+    https://example.com/admin
 
-```
-<section class="form-section">
 
-<div class="admin-table-scroll-top">
-  <div class="admin-table-scroll-inner"></div>
-</div>
-  
-<div class="admin-table-wrapper">
-<table class="admin-table">
-  <tr>
-    <th>column 1</th>
-    <th>column 2</th>
-    ...
-  </tr>
-  <tr><td>cell at row 1 column 1</td><td>cell at row 1 column2</td>...</tr>
-  <tr><td>cell at row 2 column 1</td><td>cell at row 2 column2</td>...</tr>
-</table>
-</div>
-</section>
+# 📊 Optional Module — R Shiny Log Analyzer
 
-```
+The `RShinyApp/` directory contains a complete **R Shiny dashboard** for analyzing NGINX access logs.
 
-## Code
+Features:
 
-When you need to write a code block use this pattern:
-
-```
-<div class="code-block">
-<pre>
-<button class="copy-btn">Copy</button>
-<code class="language-cpp">#include &lt;cublas_v2.h&gt;
-<!-- Code goes here -->
-</code>
-</pre>
-</div>
-```
-
-Note that this example is for `C++` code, so when you write bash code do that:
-
-```
-<div class="code-block">
-<pre>
-<button class="copy-btn">Copy</button>
-<code class="language-bash">#include &lt;cublas_v2.h&gt; <!-- MODIFIED -->
-<!-- Code goes here -->
-</code>
-</pre>
-</div>
-```
-
-Currently supported languages highlighting are:
-
-- C
-- C++
-- haskell
-- rust
-- go
-- R
-- bash
-- jq
-- NGINX
-- systemd
-
-you can add new languages downloading the prism `JS` code you can find here:
-
-<a href="https://github.com/PrismJS/prism/tree/master/components?utm_source=chatgpt.com">https://github.com/PrismJS/prism/tree/master/components</a>
-
-you now put the js code into `/assets/prism/components/`
-
-and now edit `/internal/templates/base.html` to add:
-
-```
-<script defer src="/assets/prism/components/prism-yourlanguage.min.js"></script>`
-```
-
-## Math 
-
-Use the Katex synthax like so:
-
-```
-<p>
-$$
-\det(A) = \sum_{j=0}^{n-1} (-1)^j a_{0j} \det(M_{0j})
-$$
-</p>
-```
-
-## PRE
-
-```
-<pre>
-...
-</pre>
-```
-
-Have a unique style that is not applied to pre tags inside code-block.
-
-# 📊 Shiny Log Analyzer (Optional Module)
-
-The `RShiny/` directory contains a complete **R Shiny dashboard** for analyzing your NGINX access logs.
-
-It provides:
-
-- Bot filtering (User-Agent + rate heuristics + time_on_page(accurate between same session page visits))
+- Bot filtering (User-Agent + rate heuristics)
 - RegEx-based page filtering
 - Traffic evolution over time
 - Top visited pages (Top N + Other)
 - Dark / Light mode
 - Authentication via `shinymanager`
 - Reverse proxy support
-- systemd service deployment
+- systemd-managed service
 
 This module is optional and intended for internal analytics.
 
-Note:
-
-Modify the line 370 in `server.R` to match your domain name.
-
 ---
 
-### 1️⃣ Install R (Ubuntu / Debian)
+# 1️⃣ Install R (Debian / Ubuntu)
 
 ```bash
 sudo apt update
-sudo apt install r-base
-sudo apt install -y libcurl4-openssl-dev libssl-dev libxml2-dev
+sudo apt install -y r-base
 ```
-
-The development libraries are required for packages like `curl`, `httr`, and `plotly`.
 
 ---
 
-### 2️⃣ Install Required R Packages
+# 2️⃣ Install Required R Packages
 
 Start R:
 
@@ -625,13 +383,13 @@ Start R:
 R
 ```
 
-(Optional but recommended) use a user-level library:
+(Optional — use a user-level library):
 
 ```r
 .libPaths("~/.local/share/R/library")
 ```
 
-Install all required packages:
+Install required packages:
 
 ```r
 install.packages(c(
@@ -645,8 +403,7 @@ install.packages(c(
   "shinycssloaders",
   "DT",
   "stringr",
-  "curl",
-  "httr"
+  "jsonlite"
 ))
 ```
 
@@ -658,41 +415,53 @@ q()
 
 ---
 
-### -- Mandatory Step --
+# 3️⃣ Deploy the Shiny App
 
-Edit `Rshiny/global.R` and modify you admin password.
+Place the Shiny project in:
 
-⚠ Never commit real credentials to version control.
+```
+/var/www/RShinyApp
+```
+
+Set ownership and permissions:
+
+```bash
+sudo chown -R goblog:goblog /var/www/RShinyApp
+sudo find /var/www/RShinyApp -type d -exec chmod 755 {} \;
+sudo find /var/www/RShinyApp -type f -exec chmod 644 {} \;
+```
+
+⚠ Edit `RShinyApp/global.R` and configure your admin credentials.
+
+Never commit real credentials.
 
 ---
 
-### 3️⃣ Run the App Manually (Optional Test)
-
-Before configuring systemd, you can test locally:
+# 4️⃣ Manual Test (Optional)
 
 ```bash
 R
 ```
 
 ```r
-shiny::runApp('/var/www/R_Shiny_NGINX', host='127.0.0.1', port=7665)
+shiny::runApp('/var/www/RShinyApp', host='127.0.0.1', port=7665)
 ```
 
-Then open:
+Open:
 
 ```
 http://127.0.0.1:7665
 ```
 
+Stop with:
+
+```
+Ctrl+C
+```
+
 ---
 
-### 4️⃣ Configure NGINX Reverse Proxy
-
-To expose the dashboard at:
-
-```
-https://yourdomain.com/shiny/
-```
+# 5️⃣ NGINX Reverse Proxy Configuration
 
 Edit:
 
@@ -700,10 +469,9 @@ Edit:
 /etc/nginx/sites-available/example.com
 ```
 
-Add this block inside your `server` configuration:
+Add inside the HTTPS server block:
 
 ```nginx
-# --- R Shiny app ---
 location /shiny/ {
     proxy_pass http://127.0.0.1:7665/;
 
@@ -720,21 +488,22 @@ location /shiny/ {
 }
 ```
 
-Validate configuration:
-
-```bash
-sudo nginx -t
-```
-
 Reload NGINX:
 
 ```bash
+sudo nginx -t
 sudo systemctl reload nginx
+```
+
+Dashboard URL:
+
+```
+https://example.com/shiny/
 ```
 
 ---
 
-## 5️⃣ Create a systemd Service
+# 6️⃣ systemd Service for Shiny
 
 Create:
 
@@ -749,15 +518,15 @@ After=network.target
 
 [Service]
 Type=simple
-User=username
-WorkingDirectory=/var/www/R_Shiny_NGINX
+User=goblog
+Group=goblog
+WorkingDirectory=/var/www/RShinyApp
 
-ExecStart=/usr/bin/R --no-save --no-restore -e "shiny::runApp('/var/www/R_Shiny_NGINX', host='127.0.0.1', port=7665)"
+ExecStart=/usr/bin/R --no-save --no-restore -e "shiny::runApp('/var/www/RShinyApp', host='127.0.0.1', port=7665)"
 
 Restart=always
 RestartSec=5
 
-# Basic hardening
 NoNewPrivileges=true
 PrivateTmp=true
 
@@ -771,15 +540,10 @@ Enable and start:
 sudo systemctl daemon-reload
 sudo systemctl enable shiny
 sudo systemctl start shiny
-```
-
-Check status:
-
-```bash
 sudo systemctl status shiny
 ```
 
-View logs:
+Logs:
 
 ```bash
 journalctl -u shiny -f
@@ -787,62 +551,28 @@ journalctl -u shiny -f
 
 ---
 
-## 6️⃣ Security Considerations
+# 🔐 Security Notes
 
-- The app listens only on `127.0.0.1`
-- It is exposed externally via NGINX reverse proxy
-- Authentication is handled via `shinymanager`
-- Consider additional protections:
-  - IP allowlists
-  - NGINX rate limiting
+- Shiny listens only on `127.0.0.1`
+- It is exposed via NGINX reverse proxy
+- Authentication handled via `shinymanager`
+- Consider adding:
   - Firewall restrictions
-  - Dedicated system user (e.g., `shiny`)
-  - Restrictive permissions on log files
+  - NGINX rate limiting
+  - IP allowlist (if internal-only)
 
 ---
 
-## 7️⃣ Access the Dashboard
+# ✅ Result
 
-Once running, open:
-
-```
-https://yourdomain.com/shiny/
-```
-
-Login using your configured credentials.
-
----
-
-## ✅ Result
-
-You now have a self-hosted NGINX log analytics dashboard featuring:
+You now have a self-hosted NGINX log analytics dashboard:
 
 - Intelligent bot filtering
 - Page-based traffic analysis
-- Time-window aggregation
-- Interactive charts (Plotly)
+- Interactive Plotly charts
 - Dark mode support
 - systemd-managed background service
 - Secure reverse proxy exposure
 
-Clean, reproducible, production-ready.
-
-# Final Verification Checklist
-
-- [ ] Binary built (`go_blog_admin`)
-- [ ] Permissions applied
-- [ ] Database created
-- [ ] blog_user created
-- [ ] goblog backup user created
-- [ ] Schema imported
-- [ ] systemd service running
-- [ ] nginx.conf verified
-- [ ] Site configuration enabled
-- [ ] HTTPS enabled
-
-Statix should now be accessible at:
-
-https://example.com  
-https://example.com/admin
 
 
