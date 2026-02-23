@@ -36,6 +36,7 @@ func (s *Server) rebuildSite() error {
 	}
 
 	gen := generator.Generator{
+        AuthorContent: template.HTML(""),
         ArticleRepo: articleRepo,
         SubjectRepo: subjectRepo,
 		Articles: articles,
@@ -72,6 +73,7 @@ func (s *Server) rebuildSiteLocalize(title string,
 	}
 
 	gen := generator.Generator{
+        AuthorContent: template.HTML(""),
         ArticleRepo: articleRepo,
         SubjectRepo: subjectRepo,
 		Articles: articles,
@@ -92,6 +94,34 @@ func (s *Server) rebuildSiteLocalize(title string,
 
 	    return gen.BuildSitemap()
     }
+
+    return nil
+
+}
+
+func (s *Server) rebuildAuthor() error {
+
+	articleRepo := db.ArticleRepo{DB: s.DB}
+	subjectRepo := db.SubjectRepo{DB: s.DB}
+	authorRepo  := db.AuthorRepo{DB: s.DB}
+
+	content, err := authorRepo.GetContent()
+	if err != nil {
+		return err
+	}
+
+	gen := generator.Generator{
+        AuthorContent: template.HTML(content),
+        ArticleRepo:   articleRepo,
+        SubjectRepo:   subjectRepo,
+		Articles:      []model.Article{},
+		Subjects:      []model.Subject{},
+		OutDir:        "dist",
+	}
+
+	if err := gen.BuildAuthor(); err != nil {
+		return err
+	}
 
     return nil
 
@@ -127,6 +157,73 @@ func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+}
+
+func (s *Server) handleAuthor(w http.ResponseWriter, r *http.Request) {
+
+    if r.Method != http.MethodGet {
+    	http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+    	return
+    }
+
+    authorRepo := db.AuthorRepo{DB: s.DB}
+
+	content, err := authorRepo.GetContent()
+	if err != nil {
+    	http.Error(w, "error occured in authorRepo.GetContent()", http.StatusBadRequest)
+		return
+	}
+
+    data := struct {
+		Content string
+	}{
+		Content: content,
+	}
+
+    tmpl, err := template.New("base").
+        ParseFiles(
+            "internal/templates/base.html",
+            "internal/templates/admin/edit_author.html",
+        )
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err := tmpl.ExecuteTemplate(w, "base", data); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (s *Server) handleUpdateAuthor(w http.ResponseWriter, r *http.Request) {
+
+    if r.Method != http.MethodPost {
+    	http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+        return
+    }
+
+    repo := db.AuthorRepo{DB: s.DB}
+
+    if err := r.ParseForm(); err != nil {
+    	http.Error(w, err.Error(), http.StatusBadRequest)
+    	return
+    }
+    
+    html := r.FormValue("html")
+    
+    if err := repo.Update(html); err != nil {
+    	http.Error(w, err.Error(), http.StatusInternalServerError)
+    	return
+    }
+
+    if err := s.rebuildAuthor(); err != nil {
+    	http.Error(w, err.Error(), http.StatusInternalServerError)
+    	return
+    }
+    
+    http.Redirect(w, r, "/admin", http.StatusSeeOther)
 }
 
 func (s *Server) handleEditArticle(w http.ResponseWriter, r *http.Request) {

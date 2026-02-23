@@ -1,0 +1,66 @@
+{{ define "title" }}
+Admin — Edit author
+{{ end }}
+
+{{ define "content" }}
+
+<main class="admin-page admin-form-wide">
+
+  <header class="admin-header">
+    <h1>Edit Author Content</h1>
+  </header>
+
+  <form method="post" action="/admin/author/update">
+
+    <!-- HTML content -->
+    <fieldset class="form-section">
+      <legend>Author content (HTML)</legend>
+
+      <div class="form-group editor-preview-container">
+        <label for="editor">
+          HTML body
+          <button
+            type="button"
+            class="preview-toggle toggle-btn"
+            onclick="togglePreview()"
+          >
+            Preview
+          </button>
+        </label>
+
+        <!-- CodeMirror textarea -->
+        <textarea
+          id="description-editor"
+          name="html"
+          rows="50"
+        >{{ .Content }}</textarea>
+
+        <!-- HTML preview -->
+        <div
+          id="description-preview"
+          class="html-preview"
+        ></div>
+      </div>
+    </fieldset>
+
+    <!-- Actions -->
+    <div class="admin-actions">
+      <button type="submit" class="btn primary">
+        💾 Save
+      </button>
+
+      <a href="/admin" class="btn">
+        Cancel
+      </a>
+    </div>
+  </form>
+
+</main>
+
+<!-- Admin logic + CodeMirror -->
+<script type="module" src="/assets/js/editor.bundle.js"></script>
+
+<script src="/assets/js/admin.js"></script>
+
+{{ end }}
+

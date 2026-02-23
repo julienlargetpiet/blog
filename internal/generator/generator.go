@@ -76,11 +76,12 @@ func excerpt(htmlContent string, words int) string {
 }
 
 type Generator struct {
-    ArticleRepo db.ArticleRepo
-    SubjectRepo db.SubjectRepo
-	Articles    []model.Article
-    Subjects    []model.Subject
-	OutDir      string
+    AuthorContent template.HTML
+    ArticleRepo   db.ArticleRepo
+    SubjectRepo   db.SubjectRepo
+	Articles      []model.Article
+    Subjects      []model.Subject
+	OutDir        string
 }
 
 type IndexView struct {
@@ -261,6 +262,32 @@ func (g *Generator) buildIndex() error {
 	defer f.Close()
 
 	return tmpl.ExecuteTemplate(f, "base", page)
+}
+
+func (g *Generator) BuildAuthor() error {
+	tmpl, err := template.New("base").
+		ParseFiles(
+			"internal/templates/base.html",
+			"internal/templates/admin/author.html",
+		)
+	if err != nil {
+		return err
+	}
+
+	filename := filepath.Join(g.OutDir, "author.html")
+	f, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	data := struct {
+		Content template.HTML
+	}{
+		Content: g.AuthorContent,
+	}
+
+	return tmpl.ExecuteTemplate(f, "base", data)
 }
 
 func (g *Generator) buildSubjects() error {

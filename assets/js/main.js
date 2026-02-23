@@ -100,7 +100,26 @@ document.addEventListener("DOMContentLoaded", function () {
 
 document.addEventListener("DOMContentLoaded", function () {
   initSummary();
+  initMoreIndex();
 });
+
+function initMoreIndex() {
+  const morePanel = document.getElementById("index-more");
+  if (!morePanel) return;
+
+  const toggleBtn = document.getElementById("index-toggle");
+
+  if (window.innerWidth >= 1100) {
+    morePanel.classList.add("open");
+  }
+
+  if (toggleBtn) {
+    toggleBtn.addEventListener("click", () => {
+      morePanel.classList.toggle("open");
+    });
+  }
+
+}
 
 function initSummary() {
   const content = document.querySelector(".article-content");
