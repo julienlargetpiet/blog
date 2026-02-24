@@ -368,10 +368,11 @@ This module is optional and intended for internal analytics.
 - Reverse proxy support (NGINX)
 - systemd-managed background service
 - Incremental GeoIP caching
+- Country-Level Traffic Mapping
 
 ---
 
-# 1️⃣ Install R & mmdblookup (Debian / Ubuntu)
+# 1 Install R & mmdblookup (Debian / Ubuntu)
 
 Update system:
 
@@ -384,6 +385,8 @@ Install R:
 ```bash
 sudo apt install -y r-base
 ```
+
+Recommended: R >= 4.2
 
 Install MaxMind tools:
 
@@ -402,7 +405,45 @@ mmdblookup --version
 
 ---
 
-# 2️⃣ Install Required R Packages
+# 2 Install Geospatial System Dependencies (Required for sf / leaflet)
+
+Leaflet depends on `sf`, which requires several system libraries.
+
+Install them before installing R packages:
+
+```bash
+sudo apt install -y \
+  build-essential \
+  cmake \
+  pkg-config \
+  libcurl4-openssl-dev \
+  libssl-dev \
+  libxml2-dev \
+  libudunits2-dev \
+  libgdal-dev \
+  gdal-bin \
+  libgeos-dev \
+  libproj-dev \
+  proj-bin
+```
+
+These provide:
+
+- GDAL → spatial data engine  
+- PROJ → coordinate transformations  
+- GEOS → geometry operations  
+- UDUNITS2 → unit handling  
+- C++ toolchain → required to compile `sf` and `s2`
+
+Verify GDAL version:
+
+```bash
+gdal-config --version
+```
+
+---
+
+# 3 Install Required R Packages
 
 Start R:
 
@@ -416,10 +457,38 @@ R
 .libPaths("~/.local/share/R/library")
 ```
 
-Install dependencies:
+## Core C++ dependency (required by sf/s2)
+
+```r
+install.packages("Rcpp")
+```
+
+## Geometry engine used by sf
+
+```r
+install.packages("s2")
+```
+
+## Install sf
+
+If running on older Debian (e.g. GDAL 3.2.x), use compatible version:
+
+```r
+install.packages("remotes")
+remotes::install_version("sf", version = "1.0-14")
+```
+
+Otherwise:
+
+```r
+install.packages("sf")
+```
+
+## Install leaflet and application dependencies
 
 ```r
 install.packages(c(
+  "leaflet",
   "shiny",
   "plotly",
   "dplyr",
@@ -429,19 +498,18 @@ install.packages(c(
   "shinymanager",
   "shinycssloaders",
   "DT",
-  "stringr",
+  "stringr"
 ))
 ```
 
-Exit:
+Exit R:
 
 ```r
 q()
 ```
-
 ---
 
-# 3️⃣ GeoIP Setup (GeoLite2)
+# 4 GeoIP Setup (GeoLite2)
 
 This dashboard uses the **GeoLite2 City** database from MaxMind.
 
@@ -467,6 +535,14 @@ tar -xzf GeoLite2-City_*.tar.gz
 RShinyApp/geo/GeoLite2-City.mmdb
 ```
 
+## Note
+
+If GeoIP parsing logic changes, remove cached results:
+
+```bash
+rm RShinyApp/geo_cache.rds
+```
+
 5. Ensure `geo_db_path` in `global.R` matches the file location.
 
 ---
@@ -487,7 +563,7 @@ sudo systemctl restart shiny
 
 ---
 
-# 4️⃣ Deploy the Shiny App
+# 5 Deploy the Shiny App
 
 Place the Shiny project in:
 
@@ -509,7 +585,7 @@ Never commit real credentials.
 
 ---
 
-# 5️⃣ Manual Test (Optional)
+# 6 Manual Test (Optional)
 
 ```bash
 R
@@ -533,7 +609,7 @@ Ctrl+C
 
 ---
 
-# 6️⃣ NGINX Reverse Proxy Configuration
+# 7 NGINX Reverse Proxy Configuration
 
 Edit:
 
@@ -577,7 +653,7 @@ https://example.com/shiny/
 
 ---
 
-# 7️⃣ systemd Service for Shiny
+# 8 systemd Service for Shiny
 
 Create:
 
@@ -667,3 +743,6 @@ You now have a self-hosted NGINX log analytics dashboard:
 - Country-level geolocation
 - systemd-managed background service
 - Secure reverse proxy exposure
+
+
+
