@@ -416,6 +416,54 @@ function(input, output, session) {
     )
   })
 
+  output$map <- renderLeaflet({
+  
+    df <- geo_enriched_data()
+    req(nrow(df) > 0)
+  
+    df <- df %>%
+      filter(!is.na(lat), !is.na(lon))
+  
+    req(nrow(df) > 0)
+  
+    agg <- df %>%
+      group_by(country) %>%
+      summarise(
+        hits = n(),
+        unique_ips = n_distinct(ip),
+        lat = mean(lat),
+        lon = mean(lon),
+        .groups = "drop"
+      )
+  
+    dark <- isTRUE(input$dark_mode)
+  
+    leaflet(agg) %>%
+      addProviderTiles(
+        if (dark)
+          providers$CartoDB.DarkMatter
+        else
+          providers$CartoDB.Positron
+      ) %>%
+      setView(lng = 0, lat = 20, zoom = 2) %>%
+      addCircleMarkers(
+        lng = ~lon,
+        lat = ~lat,
+        radius = ~pmin(25, pmax(5, sqrt(hits) * 3)),
+        stroke = FALSE,
+        fillOpacity = 0.75,
+        popup = ~paste0(
+          "<b>Country:</b> ", country, "<br>",
+          "<b>Total hits:</b> ", hits, "<br>",
+          "<b>Unique IPs:</b> ", unique_ips
+        ),
+        clusterOptions = if (isTRUE(input$map_cluster))
+          markerClusterOptions()
+        else NULL
+      )
+  
+  })
+
 }
 
 

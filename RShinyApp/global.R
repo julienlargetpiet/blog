@@ -8,6 +8,8 @@ library(shinymanager)
 library(shinycssloaders)
 library(DT)
 library(stringr)
+library(scales)
+library(leaflet)
 
 credentials <- data.frame(
   user = c("admin"),
@@ -93,7 +95,31 @@ lookup_ip <- function(ip, db_path) {
     timezone = NA_character_
   )
 
+  ##get_field <- function(...) {
+  ##  res <- tryCatch(
+  ##    system2(
+  ##      "mmdblookup",
+  ##      args = c("--file", db_path, "--ip", ip, ...),
+  ##      stdout = TRUE,
+  ##      stderr = FALSE
+  ##    ),
+  ##    error = function(e) NULL
+  ##  )
+
+  ##  #print(paste("IP:", ip))
+  ##  #print(res)
+
+  ##  if (is.null(res) || length(res) == 0) return(NA)
+
+  ##  # Extract quoted value if present
+  ##  line <- res[grepl('"', res)][1]
+  ##  if (is.na(line)) return(NA)
+
+  ##  sub('.*"([^"]+)".*', '\\1', line)
+  ##}
+
   get_field <- function(...) {
+  
     res <- tryCatch(
       system2(
         "mmdblookup",
@@ -103,17 +129,24 @@ lookup_ip <- function(ip, db_path) {
       ),
       error = function(e) NULL
     )
-
-    #print(paste("IP:", ip))
-    #print(res)
-
+  
     if (is.null(res) || length(res) == 0) return(NA)
-
-    # Extract quoted value if present
-    line <- res[grepl('"', res)][1]
-    if (is.na(line)) return(NA)
-
-    sub('.*"([^"]+)".*', '\\1', line)
+  
+    # 1️⃣ Try quoted string (country, timezone)
+    quoted_line <- grep('"', res, value = TRUE)
+    if (length(quoted_line) > 0) {
+      return(sub('.*"([^"]+)".*', '\\1', quoted_line[1]))
+    }
+  
+    # 2️⃣ Try numeric double (lat/lon)
+    double_line <- grep("<double>", res, value = TRUE)
+    if (length(double_line) > 0) {
+      # Extract numeric value before <double>
+      value <- sub(" <double>.*", "", trimws(double_line[1]))
+      return(value)
+    }
+  
+    return(NA)
   }
 
   country <- get_field("country", "names", "en")

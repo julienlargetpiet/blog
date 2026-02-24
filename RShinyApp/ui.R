@@ -92,11 +92,30 @@ ui <- fluidPage(
           withSpinner(DTOutput("mytable"), type = 5, size = 1.0)
         )
       )
+    ),
+
+    nav_panel(
+      title = "Geo Map",
+      page_sidebar(
+        title = "Traffic Map",
+        sidebar = tagList(
+          checkboxInput("map_cluster", "Cluster markers", value = TRUE)
+        ),
+        card(
+          withSpinner(
+            leafletOutput("map", height = 650),
+            type = 5,
+            size = 1.2
+          )
+        )
+      )
     )
+
   )
 )
 
 ui <- secure_app(ui)
+
 
 
 
