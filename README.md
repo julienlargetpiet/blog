@@ -585,6 +585,47 @@ Never commit real credentials.
 
 ---
 
+## Grant Access to NGINX Logs (Required)
+
+The application reads NGINX log files located in:
+
+```
+/var/log/nginx/
+```
+
+On Debian/Ubuntu systems, these logs are owned by:
+
+```
+www-data:adm
+```
+
+To allow the Shiny service user (`goblog`) to read them, add it to the `adm` group:
+
+```bash
+sudo usermod -aG adm goblog
+```
+
+Then restart the Shiny service:
+
+```bash
+sudo systemctl restart shiny
+```
+
+Verify group membership:
+
+```bash
+sudo -u goblog groups
+```
+
+You should see:
+
+```
+goblog adm
+```
+
+> ⚠ Without this step, the application will fail with:
+> `Error in file: cannot open the connection`
+
 # 6 Manual Test (Optional)
 
 ```bash
