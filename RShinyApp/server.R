@@ -218,6 +218,32 @@ function(input, output, session) {
     if (nrow(df) == 0) return(df)
     cutoff <- max(df$date) - last
   
+    # --- ASN enrichment (minimal) ---
+    ips <- sort(unique(df$ip))
+  
+    asn_data <- lookup_asns(
+      ips,
+      db_path = asn_db_path
+    )
+
+    df <- df %>% left_join(asn_data, by = "ip")
+
+    df <- df %>%
+      group_by(ip) %>%
+      mutate(total_requests = n()) %>%
+      ungroup() %>%
+      mutate(
+        is_cloud_asn = grepl(cloud_asn_regex, asn_org, ignore.case = TRUE),
+        is_bot_asn = is_cloud_asn & total_requests > 3
+    )
+
+    df <- switch(
+      input$strict,
+      "low" = df,
+      "medium" = df %>% filter(!is_bot_asn),
+      "high" = df %>% filter(!is_cloud_asn)
+    )
+
     df %>% filter(date >= cutoff)
 
   })  
@@ -243,13 +269,16 @@ function(input, output, session) {
   }, ignoreInit = FALSE)
 
   geo_enriched_data <- reactive({
-  
-    df <- filtered_data()
+ 
+    cat("GEO_ENRICHED_DATA CALLED\n")
+
+    df  <- filtered_data()
     geo <- geo_cache_reactive()
   
-    if (is.null(geo)) return(df)
+    if (!is.null(geo)) {
+      df <- df %>% left_join(geo, by = "ip")
+    }
   
-    df %>% left_join(geo, by = "ip")
   })
 
   # KPIs
@@ -405,7 +434,7 @@ function(input, output, session) {
                                 '" target="_blank">',
                                 target,
                                 "</a>")) %>%
-        select(country, ip, date, target, time_on_page),
+        select(country, asn_org, ip, date, target, time_on_page),
       options = list(
         pageLength = 100,
         scrollX = TRUE,

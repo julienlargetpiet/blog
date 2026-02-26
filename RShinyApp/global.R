@@ -10,6 +10,9 @@ library(DT)
 library(stringr)
 library(scales)
 library(leaflet)
+library(purrr)
+
+cat("GLOBAL LOADED\n")
 
 credentials <- data.frame(
   user = c("admin"),
@@ -45,6 +48,93 @@ interval_map <- c(
   y = "year"
 )
 
+cloud_asn_patterns <- c(
+
+  # --- Hyperscalers ---
+  "Amazon",
+  "AWS",
+  "Google",
+  "Microsoft",
+  "Azure",
+  "Alibaba",
+  "Tencent",
+  "Oracle",
+  "IBM Cloud",
+
+  # --- Major Hosting / VPS ---
+  "OVH",
+  "OVHcloud",
+  "DigitalOcean",
+  "Hetzner",
+  "Linode",
+  "Vultr",
+  "Scaleway",
+  "UpCloud",
+  "Contabo",
+  "Leaseweb",
+  "LeaseWeb",
+  "Online SAS",
+  "Ionos",
+  "1&1",
+  "GoDaddy",
+  "Namecheap",
+  "DreamHost",
+  "Hostinger",
+  "Bluehost",
+  "SiteGround",
+  "A2 Hosting",
+  "HostGator",
+
+  # --- CDN / Edge ---
+  "Cloudflare",
+  "Fastly",
+  "Akamai",
+  "StackPath",
+  "Bunny.net",
+  "CDN77",
+  "Edgecast",
+  "G-Core",
+  "Imperva",
+
+  # --- Cheap / Bot-heavy infra ---
+  "Choopa",
+  "ColoCrossing",
+  "Quadranet",
+  "Psychz",
+  "Sharktech",
+  "BuyVM",
+  "M247",
+  "Datacamp",
+  "Hostwinds",
+  "EUserv",
+
+  # --- SEO / Crawlers infra ---
+  "Babbar",
+  "Ahrefs",
+  "Semrush",
+  "MJ12",
+  "Majestic",
+  "Dotbot",
+
+  # --- Asian cloud infra ---
+  "Huawei",
+  "China Telecom",
+  "China Unicom",
+  "China Mobile",
+
+  # --- Misc infra providers ---
+  "Digital Realty",
+  "Equinix",
+  "CoreWeave",
+  "Packet",
+  "Vercel",
+  "Heroku",
+  "Render",
+  "Fly.io"
+)
+
+cloud_asn_regex <- paste(cloud_asn_patterns, collapse = "|")
+
 ## Extract URL from a typical request string: "GET /path HTTP/1.1"
 #extract_url <- function(request_col) {
 #  # Works even if method differs, and avoids brittle space indexing
@@ -61,7 +151,8 @@ extract_url <- function(request_col) {
 
 
 geo_cache_path <- "geo_cache.rds"
-  
+asn_cache_path <- "asn_cache.rds"
+
 load_geo_cache <- function() {
   if (file.exists(geo_cache_path)) {
     readRDS(geo_cache_path)
@@ -80,7 +171,24 @@ save_geo_cache <- function(cache) {
   saveRDS(cache, geo_cache_path)
 }
 
+load_asn_cache <- function() {
+  if (file.exists(asn_cache_path)) {
+    readRDS(asn_cache_path)
+  } else {
+    tibble(
+      ip = character(),
+      asn = integer(),
+      asn_org = character()
+    )
+  }
+}
+
+save_asn_cache <- function(cache) {
+  saveRDS(cache, asn_cache_path)
+}
+
 geo_db_path <- "geo/GeoLite2-City.mmdb"
+asn_db_path <- "geo/GeoLite2-ASN.mmdb"
 
 `%||%` <- function(a, b) if (!is.null(a)) a else b
 
@@ -183,6 +291,71 @@ lookup_ips <- function(ips, db_path) {
       distinct(ip, .keep_all = TRUE)
 
     save_geo_cache(cache)
+  }
+
+  cache %>% filter(ip %in% ips)
+}
+
+lookup_asn_single <- function(ip, db_path) {
+
+  get_field <- function(...) {
+    res <- tryCatch(
+      system2(
+        "mmdblookup",
+        args = c("--file", db_path, "--ip", ip, ...),
+        stdout = TRUE,
+        stderr = FALSE
+      ),
+      error = function(e) NULL
+    )
+
+    cat("RES: \n", res, "\n")
+
+    if (is.null(res) || length(res) == 0) return(NA)
+
+    uint_line <- grep("<uint32>", res, value = TRUE)
+    if (length(uint_line) > 0) {
+      # robust: keep only digits
+      value <- gsub("[^0-9]", "", uint_line[1])
+      return(value)
+    }
+
+    quoted_line <- grep('"', res, value = TRUE)
+    if (length(quoted_line) > 0) {
+      return(sub('.*"([^"]+)".*', '\\1', quoted_line[1]))
+    }
+
+    return(NA)
+  }
+
+  asn_number <- suppressWarnings(as.integer(get_field("autonomous_system_number")))
+  asn_org    <- get_field("autonomous_system_organization")
+
+  tibble(
+    ip = ip,
+    asn = asn_number,
+    asn_org = asn_org
+  )
+}
+
+lookup_asns <- function(ips, db_path) {
+
+  cache <- load_asn_cache()
+
+  known_ips <- cache$ip
+  new_ips <- setdiff(ips, known_ips)
+
+  if (length(new_ips) > 0) {
+
+    message("Looking up ", length(new_ips), " new ASNs...")
+
+    new_data <- lapply(new_ips, lookup_asn_single, db_path = db_path) %>%
+      bind_rows()
+
+    cache <- bind_rows(cache, new_data) %>%
+      distinct(ip, .keep_all = TRUE) # keep_all are for columns
+
+    save_asn_cache(cache)
   }
 
   cache %>% filter(ip %in% ips)

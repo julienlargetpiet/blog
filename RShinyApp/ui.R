@@ -34,7 +34,17 @@ ui <- fluidPage(
             value = 15,
             min = 1,
             step = 1
-          )
+          ),
+          selectInput(
+            inputId = "strict",
+            label = "Bot Filtering Level",
+            choices = c(
+              "Low" = "low",
+              "Medium" = "medium",
+              "High" = "high"
+            ),
+            selected = "low"
+          )        
         ),
 
         # KPI row + pie
