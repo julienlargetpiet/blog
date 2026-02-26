@@ -359,16 +359,30 @@ This module is optional and intended for internal analytics.
 
 ## ✨ Features
 
-- Intelligent bot filtering (User-Agent + behavioral heuristics)
-- Country-level IP geolocation (GeoLite2)
-- Traffic evolution over time
-- Top visited pages (Top N + Other)
-- Dark / Light mode
-- Authentication via `shinymanager`
-- Reverse proxy support (NGINX)
-- systemd-managed background service
-- Incremental GeoIP caching
-- Country-Level Traffic Mapping
+- Intelligent bot filtering  
+  - User-Agent pattern detection  
+  - Behavioral heuristics (rate limiting, asset ratio, reading time analysis)  
+  - ASN-based infrastructure analysis  
+
+- Multi-level bot filtering control  
+  - **Low** – Behavioral filtering only  
+  - **Medium** – Removes suspicious cloud / data center ASN  
+  - **High** – Removes all cloud / hosting ASN  
+
+- ASN enrichment (GeoLite2-ASN)  
+  - Autonomous System Number lookup  
+  - Organization detection (ISP / Cloud / Hosting provider)  
+  - Infrastructure-based traffic classification  
+
+- Country-level IP geolocation (GeoLite2-City)  
+- Traffic evolution over time  
+- Top visited pages (Top N + Other aggregation)  
+- Country-level traffic mapping (Leaflet)  
+- Incremental GeoIP & ASN caching (RDS-based)  
+- Dark / Light mode  
+- Authentication via `shinymanager`  
+- Reverse proxy support (NGINX)  
+- systemd-managed background service  
 
 ---
 
@@ -498,7 +512,8 @@ install.packages(c(
   "shinymanager",
   "shinycssloaders",
   "DT",
-  "stringr"
+  "stringr",
+  "purr"
 ))
 ```
 
@@ -509,7 +524,7 @@ q()
 ```
 ---
 
-# 4 GeoIP Setup (GeoLite2)
+# 4 GeoIP & ASN Setup (GeoLite2)
 
 This dashboard uses the **GeoLite2 City** database from MaxMind.
 
@@ -521,18 +536,20 @@ This dashboard uses the **GeoLite2 City** database from MaxMind.
    https://www.maxmind.com/en/geolite2/signup
 
 2. Download:  
-   **GeoLite2 City — GeoIP2 Binary (.mmdb)**
+   **GeoLite2-City & GeoLite2-ASN — GeoIP2 Binary (.mmdb)**
 
 3. Extract the archive:
 
 ```bash
 tar -xzf GeoLite2-City_*.tar.gz
+tar -xzf GeoLite2-ASN_*.tar.gz
 ```
 
 4. Copy the `.mmdb` file to:
 
 ```
 RShinyApp/geo/GeoLite2-City.mmdb
+RShinyApp/geo/GeoLite2-ASN.mmdb
 ```
 
 ## Note
@@ -541,6 +558,12 @@ If GeoIP parsing logic changes, remove cached results:
 
 ```bash
 rm RShinyApp/geo_cache.rds
+```
+
+If ASN parsing logic changes, remove cached results:
+
+```bash
+rm RShinyApp/asn_cache.rds
 ```
 
 5. Ensure `geo_db_path` in `global.R` matches the file location.
