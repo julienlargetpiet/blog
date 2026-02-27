@@ -41,7 +41,8 @@ ui <- fluidPage(
             choices = c(
               "Low" = "low",
               "Medium" = "medium",
-              "High" = "high"
+              "High" = "high",
+              "Very High" = "very_high"
             ),
             selected = "low"
           )        
@@ -52,7 +53,8 @@ ui <- fluidPage(
           width = 1/3,
           value_box(title = "Total requests", value = textOutput("kpi_hits")),
           value_box(title = "Unique IPs", value = textOutput("kpi_ips")),
-          value_box(title = "Unique pages", value = textOutput("kpi_pages"))
+          value_box(title = "Unique pages", value = textOutput("kpi_pages")),
+          value_box(title = "Median Read Time", value = textOutput("kpi_med_readtime"))
         ),
 
         value_box(
@@ -100,6 +102,16 @@ ui <- fluidPage(
         title = "Raw data (filtered)",
         card(
           withSpinner(DTOutput("mytable"), type = 5, size = 1.0)
+        )
+      )
+    ),
+
+    nav_panel(
+      title = "ReadTime Page",
+      page_sidebar(
+        title = "Read Time Median (filtered)",
+        card(
+          withSpinner(DTOutput("read_time"), type = 5, size = 1.0)
         )
       )
     ),

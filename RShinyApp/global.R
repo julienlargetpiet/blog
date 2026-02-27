@@ -24,13 +24,158 @@ credentials <- data.frame(
 Sys.setlocale("LC_TIME", "C")
 options(shiny.maxRequestSize = 300 * 1024^2)
 
-bot_keywords <- c(
-  "bot","spider","crawler","curl","wget","python","scrapy",
+bot_keywords <- unique(c(
+  # Core bot terms
+  "bot","crawler","spider",
+
+  # SEO / scraping bots
   "ahrefs","ahrefsbot","semrush","mj12","dotbot",
-  "googlebot","bingbot","yandex","uptime","pingdom","monitor",
-  "facebookexternalhit","slurp","baiduspider"
+
+  # Search engines
+  "googlebot","bingbot","yandex","baiduspider","slurp",
+
+  # Monitoring / uptime
+  "uptime","pingdom","monitor",
+
+  # CLI / scripting
+  "curl","wget","python","python-requests","scrapy",
+
+  # Headless / automation frameworks
+  "headless","phantomjs","selenium",
+  "playwright","puppeteer",
+
+  # Programmatic HTTP clients
+  "node-fetch","axios",
+  "go-http-client","libwww-perl","java/",
+  "httpclient",
+
+  # Social media fetchers
+  "facebookexternalhit",
+
+  # Additional suspicious / automation UAs
+  "okhttp",
+  "httpx",
+  "restsharp",
+  "powershell",
+  "postmanruntime",
+  "insomnia",
+  "apache-httpclient",
+  "ruby",
+  "perl",
+  "mechanize",
+  "feedfetcher",
+  "dataprovider",
+  "masscan",
+  "zgrab",
+  "nmap",
+  "gobuster",
+  "sqlmap"
+))
+
+bot_regex <- paste(bot_keywords, collapse = "|")
+
+residential_isp <- c(
+
+# --- 🇫🇷 France ---
+"Orange", # Orange S.A.
+"SFR", # SFR / Numericable
+"Bouygues Telecom", # Bbox
+"Free", # Free / Iliad
+"Iliad", # Free Mobile
+"Proxad", # Free anciennement Proxad
+"Nordnet", # Fournisseur secondaire
+"Wanadoo", # Anciennement Orange
+
+# --- 🇩🇪 Allemagne ---
+"Deutsche Telekom",
+"Vodafone Germany",
+"Telefonica Germany",
+"O2 Germany",
+"1&1 Versatel",
+
+# --- 🇬🇧 Royaume-Uni ---
+"BT",
+"Openreach",
+"Sky Broadband",
+"Virgin Media",
+"TalkTalk",
+"EE Limited",
+
+# --- 🇪🇸 Espagne ---
+"Telefonica",
+"Movistar",
+"Orange Spain",
+"Vodafone Spain",
+"MasMovil",
+
+# --- 🇮🇹 Italie ---
+"TIM",
+"Telecom Italia",
+"Vodafone Italia",
+"Wind Tre",
+"Fastweb",
+
+# --- 🇳🇱 Pays-Bas ---
+"KPN",
+"Ziggo",
+"T-Mobile Netherlands",
+"Odido",
+
+# --- 🇧🇪 Belgique ---
+"Proximus",
+"Telenet",
+"Orange Belgium",
+
+# --- 🇨🇭 Suisse ---
+"Swisscom",
+"Sunrise",
+"Salt Mobile",
+
+# --- 🇺🇸 États-Unis ---
+"Comcast",
+"Xfinity",
+"AT&T",
+"Verizon",
+"Charter Communications",
+"Spectrum",
+"Cox Communications",
+"Frontier Communications",
+"CenturyLink",
+"Windstream",
+
+# --- 🇨🇦 Canada ---
+"Bell Canada",
+"Rogers Communications",
+"Shaw Communications",
+"Telus",
+"Videotron",
+
+# --- 🇦🇺 Australie ---
+"Telstra",
+"Optus",
+"TPG Telecom",
+"iiNet",
+
+# --- 🇯🇵 Japon ---
+"NTT",
+"NTT Communications",
+"SoftBank",
+"KDDI",
+"au by KDDI",
+
+# --- 🇰🇷 Corée du Sud ---
+"KT Corporation",
+"SK Broadband",
+"LG Uplus",
+
+# --- 🇧🇷 Brésil ---
+"Vivo",
+"Claro Brasil",
+"TIM Brasil",
+"Oi"
 )
-bot_pat <- paste(bot_keywords, collapse = "|")
+
+residential_regex <- paste(residential_isp, collapse="|")
 
 mult_map <- c(
   h = 3600,

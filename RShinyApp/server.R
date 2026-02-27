@@ -122,21 +122,6 @@ function(input, output, session) {
     # -----------------------------
     if (!isTRUE(input$show_bots)) {
     
-      bot_regex <- paste(
-        c(
-          "bot","crawler","spider",
-          "ahrefs","semrush","mj12","dotbot",
-          "googlebot","bingbot","yandex","baiduspider",
-          "headless","phantomjs","selenium",
-          "playwright","puppeteer",
-          "node-fetch","axios",
-          "go-http-client","libwww-perl","java/",
-          "curl","wget","python-requests",
-          "httpclient","scrapy"
-        ),
-        collapse = "|"
-      )
-    
       # 1️⃣ Remove prefetch first
       df <- df %>%
         filter(!is_prefetch)
@@ -172,12 +157,17 @@ function(input, output, session) {
         mutate(
           next_date = lead(date),
           time_on_page = as.numeric(difftime(next_date, date, units = "secs")),
-          is_article = grepl("^/articles/.*\\.html$", target),
+          is_article = grepl(
+            "^/articles/[^/]*[A-Za-z][^/]*\\.html$",
+            target
+          ),
           is_bot_readtime = is_article &
                             !is.na(time_on_page) &
                             time_on_page < 30
         ) %>%
         ungroup()
+
+      cat("\n OK \n")
 
       # 6 Final bot flag
       df <- df %>%
@@ -206,8 +196,7 @@ function(input, output, session) {
       mutate(target = sub("\\?.*$", "", target),
 	     target = trimws(target)) %>%
       filter(
-        target == "/articles/" |
-        grepl("^/articles/.*\\.html$", target)
+        grepl("^/articles/[^/]*[A-Za-z][^/]*\\.html$", target)
       )
 
     # -----------------------------
@@ -234,14 +223,16 @@ function(input, output, session) {
       ungroup() %>%
       mutate(
         is_cloud_asn = grepl(cloud_asn_regex, asn_org, ignore.case = TRUE),
-        is_bot_asn = is_cloud_asn & total_requests > 3
+        is_bot_asn = is_cloud_asn & total_requests > 3,
+        is_residential = grepl(residential_regex, asn_org, ignore.case = TRUE)
     )
 
     df <- switch(
       input$strict,
       "low" = df,
       "medium" = df %>% filter(!is_bot_asn),
-      "high" = df %>% filter(!is_cloud_asn)
+      "high" = df %>% filter(!is_cloud_asn),
+      "very_high" = df %>% filter(is_residential)
     )
 
     df %>% filter(date >= cutoff)
@@ -295,6 +286,48 @@ function(input, output, session) {
   output$kpi_pages <- renderText({
     df <- filtered_data()
     format(dplyr::n_distinct(df$target), big.mark = " ")
+  })
+
+  article_readtime_stats <- reactive({
+  
+    df <- filtered_data()
+    req(nrow(df) > 0)
+  
+    df %>%
+      mutate(valid_read = !is.na(time_on_page) &
+                          time_on_page > 0 &
+                          time_on_page < 1500) %>%
+      group_by(target) %>%
+      summarise(
+        median_readtime = median(time_on_page[valid_read], na.rm = TRUE),
+        valid_reads = sum(valid_read),
+        .groups = "drop"
+      ) %>%
+      filter(valid_reads > 0) %>%   
+      arrange(desc(median_readtime))
+  })
+
+  output$kpi_med_readtime <- renderText({
+  
+    df <- filtered_data()
+  
+    req(nrow(df) > 0)
+  
+    median_time <- df %>%
+      filter(
+        !is.na(time_on_page),
+        time_on_page > 0,
+        time_on_page < 1500   # safety cap (1 hour max)
+      ) %>%
+      summarise(med = median(time_on_page)) %>%
+      pull(med)
+  
+    if (is.na(median_time)) return("—")
+  
+    mins <- floor(median_time / 60)
+    secs <- round(median_time %% 60)
+  
+    sprintf("%02d:%02d", mins, secs)
   })
 
   # Pie chart
@@ -442,6 +475,31 @@ function(input, output, session) {
       ),
       rownames = FALSE,
       escape=FALSE
+    )
+  })
+
+  output$read_time <- renderDT({
+  
+    stats <- article_readtime_stats()
+    req(nrow(stats) > 0)
+  
+    stats <- stats %>%
+      mutate(
+        median_seconds = median_readtime,
+        median_readtime = sprintf(
+          "%02d:%02d",
+          floor(median_readtime / 60),
+          round(median_readtime %% 60)
+        )
+      )
+  
+    datatable(
+      stats %>%
+        select(target, median_readtime, valid_reads),
+      options = list(
+        pageLength = 20
+      ),
+      rownames = FALSE
     )
   })
 
