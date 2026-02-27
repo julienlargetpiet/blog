@@ -368,6 +368,7 @@ This module is optional and intended for internal analytics.
   - **Low** – Behavioral filtering only  
   - **Medium** – Removes suspicious cloud / data center ASN  
   - **High** – Removes all cloud / hosting ASN  
+  - **Very High** – Residential ISP-only filtering  
 
 - ASN enrichment (GeoLite2-ASN)  
   - Autonomous System Number lookup  
@@ -375,10 +376,24 @@ This module is optional and intended for internal analytics.
   - Infrastructure-based traffic classification  
 
 - Country-level IP geolocation (GeoLite2-City)  
+
 - Traffic evolution over time  
 - Top visited pages (Top N + Other aggregation)  
+
+- Article-level engagement analytics  
+  - Log-based read time estimation (sequential request delta per IP)  
+  - Robust median read time calculation  
+  - Outlier control via configurable time cap  
+  - Valid-read filtering (excludes last-page NAs and unrealistic durations)  
+  - Per-article median read time ranking  
+  - Interactive sortable engagement table (DT)  
+
 - Country-level traffic mapping (Leaflet)  
+
 - Incremental GeoIP & ASN caching (RDS-based)  
+  - Only new IPs are enriched  
+  - Persistent cache across sessions  
+
 - Dark / Light mode  
 - Authentication via `shinymanager`  
 - Reverse proxy support (NGINX)  
