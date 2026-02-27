@@ -1,7 +1,176 @@
+# Statix — Deterministic Static Publishing with Infrastructure-Aware Analytics
+
+## Philosophy
+
+Statix is built around a simple idea:
+
+> Publishing should be deterministic, atomic, and observable.
+
+Modern blog platforms often mix:
+- runtime rendering
+- partial deployments
+- third-party tracking
+- opaque analytics pipelines
+
+Statix deliberately avoids that.
+
+### 1️⃣ Deterministic Builds
+
+Every build produces a fully isolated, immutable output.
+
+- No partial states
+- No in-place mutation
+- No runtime rendering
+- No dependency on application availability
+
+A build either succeeds and is promoted — or it does not exist.
+
+Production never sees intermediate artifacts.
+
+---
+
+### 2️⃣ Atomic Promotion
+
+Generated output is promoted to production **only after full success**.
+
+This guarantees:
+
+- No broken deploy windows
+- No half-built pages
+- No inconsistent state
+- No race conditions between content and serving
+
+Statix treats publishing as a controlled state transition, not a file overwrite.
+
+---
+
+### 3️⃣ Clear Separation of Concerns
+
+Statix separates responsibilities cleanly:
+
+- **Go admin backend** → content orchestration & build control
+- **NGINX** → static file serving
+- **MySQL/MariaDB** → structured content storage
+- **R Shiny module (optional)** → infrastructure-level analytics
+
+Each component has a single responsibility.
+
+---
+
+### 4️⃣ Privacy-Respecting Analytics
+
+The optional analytics module is:
+
+- Log-based
+- Server-side
+- Infrastructure-aware
+- JS-free
+- Cookie-free
+
+Instead of tracking users, Statix analyzes:
+
+- Request behavior
+- ASN infrastructure
+- Bot patterns
+- Median read-time estimation (log-derived)
+
+Analytics are derived from server logs — not client-side surveillance.
+
+---
+
+### 5️⃣ Infrastructure Awareness
+
+Statix does not treat all traffic equally.
+
+It can distinguish:
+
+- Residential ISP traffic
+- Cloud / hosting providers
+- Data center infrastructure
+- Suspicious behavioral patterns
+
+This allows infrastructure-level filtering and realistic engagement analysis.
+
+---
+
+## Architecture Overview
+
+### Publishing Pipeline
+
+```
+Editor / Admin
+        ↓
+Go Admin Backend (127.0.0.1:8080)
+        ↓
+Atomic Build Engine
+        ↓
+Isolated Immutable Output (dist/)
+        ↓
+Promotion to Production
+        ↓
+NGINX Static Serving
+        ↓
+End Users
+```
+
+Key properties:
+
+- Static output only
+- No runtime page rendering
+- NGINX serves files directly
+- Admin backend never exposed publicly
+- Promotion replaces state atomically
+
+---
+
+### Analytics Pipeline (Optional Module)
+
+```
+NGINX access.log
+        ↓
+R Shiny Log Analyzer
+        ↓
+GeoLite2 (ASN + City)
+        ↓
+Infrastructure Classification
+        ↓
+Behavioral Heuristics
+        ↓
+Engagement Metrics (Median Read Time)
+        ↓
+Interactive Dashboard
+```
+
+Key properties:
+
+- No client-side tracking
+- No third-party analytics
+- ASN-based traffic classification
+- Bot filtering via UA + behavior + infrastructure
+- Engagement estimated from inter-request deltas
+
+---
+
+## What Statix Is
+
+- Deterministic static publishing engine  
+- Production-first deployment model  
+- Infrastructure-aware analytics system  
+- Self-hosted and transparent  
+
+## What Statix Is Not
+
+- A dynamic CMS  
+- A SaaS blogging platform  
+- A JavaScript-based tracking system  
+- A marketing analytics suite  
+
+Statix prioritizes clarity, control, and system-level correctness over feature sprawl.
+
 # Statix (Go) — Production Deployment Guide  
 NGINX + MySQL/MariaDB + systemd
 
-Blog provides a build engine that operates in either localized or global mode. In localized mode, each page set or instance executes its build process independently. In global mode, a centralized engine orchestrates builds across multiple page sets or environments.
+Statix provides a build engine that operates in either localized or global mode. In localized mode, each page set or instance executes its build process independently. In global mode, a centralized engine orchestrates builds across multiple page sets or environments.
 
 Builds are atomic. Each generation produces an isolated, immutable output that is promoted to production only upon successful completion. No partial or intermediate state is ever exposed.
 
