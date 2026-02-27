@@ -24,6 +24,8 @@ credentials <- data.frame(
 Sys.setlocale("LC_TIME", "C")
 options(shiny.maxRequestSize = 300 * 1024^2)
 
+ip_exclude <- c("")
+
 bot_keywords <- unique(c(
   # Core bot terms
   "bot","crawler","spider",

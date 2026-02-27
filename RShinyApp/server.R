@@ -199,6 +199,11 @@ function(input, output, session) {
         grepl("^/articles/[^/]*[A-Za-z][^/]*\\.html$", target)
       )
 
+    if (length(ip_exclude) > 0 && any(nzchar(ip_exclude))) {
+      ip_exclude_regex <- paste(ip_exclude[nzchar(ip_exclude)], collapse="|")
+      df <- df %>% filter(!grepl(ip_exclude_regex, ip))
+    }
+
     # -----------------------------
     # TIME WINDOW FILTER
     # -----------------------------
