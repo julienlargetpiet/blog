@@ -28,10 +28,10 @@ CREATE TABLE articles (
 INSERT INTO subjects (title, slug)
 VALUES ('Default', 'default');
 
-CREATE TABLE author {
+CREATE TABLE author (
   id INT,
   html MEDIUMTEXT
-};
+);
 
 INSERT INTO author (id, html)
 VALUES (0, '<h2 id="author_talk">About me</h2><p>default author description</p><h2 id="contact">Contact</h2><p>contacts</p>');
