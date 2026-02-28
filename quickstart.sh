@@ -164,6 +164,13 @@ sudo -u "$APP_USER" \
       HOME="/var/www/go_blog" \
       /usr/local/go/bin/go build -buildvcs=false -o go_blog_admin ./cmd/admin
 
+log "Normalizing permissions (go_blog)..."
+
+find "$APP_DIR" -type d -exec chmod 755 {} \;
+find "$APP_DIR" -type f -exec chmod 644 {} \;
+
+chmod 755 "$APP_DIR/go_blog_admin"
+
 ########################################
 # Database (idempotent)
 ########################################
@@ -226,10 +233,11 @@ if [[ "$ENABLE_SHINY" -eq 1 ]]; then
 
   # Ensure external Shiny directory exists
   mkdir -p "$SHINY_DIR"
-  chown -R "$APP_USER:$APP_USER" "$SHINY_DIR"
 
   # Copy Shiny app from repo to dedicated location
   rsync -a --delete "$APP_DIR/RShinyApp/" "$SHINY_DIR/"
+
+  chown -R "$APP_USER:$APP_USER" "$SHINY_DIR"
 
   ########################################
   # Inject admin password into Shiny
@@ -243,6 +251,11 @@ if [[ "$ENABLE_SHINY" -eq 1 ]]; then
   else
     warn "Shiny global.R not found in $SHINY_DIR"
   fi
+
+  log "Normalizing permissions (RShinyApp)..."
+  
+  find "$SHINY_DIR" -type d -exec chmod 755 {} \;
+  find "$SHINY_DIR" -type f -exec chmod 644 {} \;
 
   ########################################
   # Install R + dependencies
