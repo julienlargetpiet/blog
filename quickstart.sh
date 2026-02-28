@@ -488,7 +488,43 @@ if [[ "$ENABLE_TLS" -eq 1 ]]; then
   enable_nginx
 fi
 
-log "Quickstart complete."
+echo
+echo "======================================="
+echo " Deployment Summary"
+echo "======================================="
+echo
+echo "Statix blog should now be accessible at:"
+echo "  http://$DOMAIN"
+[[ "$ENABLE_TLS" -eq 1 ]] && echo "  https://$DOMAIN"
+echo
+
+if [[ "$ENABLE_SHINY" -eq 1 ]]; then
+  echo "R Shiny dashboard is available at:"
+  echo "  http://$DOMAIN/shiny/"
+  [[ "$ENABLE_TLS" -eq 1 ]] && echo "  https://$DOMAIN/shiny/"
+  echo
+  echo "⚠ IMPORTANT — MaxMind GeoLite databases are NOT included."
+  echo
+  echo "You must manually download:"
+  echo "  - GeoLite2-City.mmdb"
+  echo "  - GeoLite2-ASN.mmdb"
+  echo
+  echo "Steps:"
+  echo "  1) Create a free account at:"
+  echo "     https://www.maxmind.com/en/geolite2/signup"
+  echo
+  echo "  2) Download the GeoLite2-City and GeoLite2-ASN databases (Binary format)"
+  echo
+  echo "  3) Place the files in:"
+  echo "     $SHINY_DIR/geo/"
+  echo
+  echo "  4) Restart Shiny:"
+  echo "     sudo systemctl restart shiny"
+  echo
+fi
+
+echo
+echo "Done."
 
 
 
