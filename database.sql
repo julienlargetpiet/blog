@@ -29,7 +29,7 @@ INSERT INTO subjects (title, slug)
 VALUES ('Default', 'default');
 
 CREATE TABLE author {
-  id INT
+  id INT,
   html MEDIUMTEXT
 };
 
