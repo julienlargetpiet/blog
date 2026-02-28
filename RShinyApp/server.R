@@ -19,6 +19,10 @@ function(input, output, session) {
     updateNumericInput(session, "last_n", value = input$last_n_2)
   })
 
+  observe({
+    session$sendCustomMessage("getTimezone", list())
+  })
+
   #observeEvent(input$dark_mode, ignoreInit = TRUE, {
   #
   #  session$setCurrentTheme(
@@ -468,15 +472,24 @@ function(input, output, session) {
 
   output$mytable <- renderDT({
     df <- geo_enriched_data()
+    req(input$client_tz)
+  
+    df <- df %>%
+      mutate(
+        date = lubridate::with_tz(date, tzone = input$client_tz),
+        date = format(date, "%Y-%m-%d %H:%M:%S")
+      )
   
     datatable(
       df %>% 
         arrange(desc(date)) %>% 
-        mutate(target = paste0('<a href="https://domain.com', 
-                                target,
-                                '" target="_blank">',
-                                target,
-                                "</a>")) %>%
+        mutate(target = paste0(
+          '<a href=\"https://domain.com', 
+          target,
+          '\" target=\"_blank\">',
+          target,
+          "</a>"
+        )) %>%
         select(country, asn_org, ip, date, target, time_on_page),
       options = list(
         pageLength = 100,
@@ -484,7 +497,7 @@ function(input, output, session) {
         ordering = TRUE
       ),
       rownames = FALSE,
-      escape=FALSE
+      escape = FALSE
     )
   })
 

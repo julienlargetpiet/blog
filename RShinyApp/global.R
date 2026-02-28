@@ -11,6 +11,7 @@ library(stringr)
 library(scales)
 library(leaflet)
 library(purrr)
+library(shinyjs)
 
 cat("GLOBAL LOADED\n")
 

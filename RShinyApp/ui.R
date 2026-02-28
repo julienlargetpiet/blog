@@ -14,6 +14,15 @@ ui <- fluidPage(
      code_font = font_google("Nunito")
   ),
 
+  useShinyjs(),
+
+  tags$script(HTML("
+    Shiny.addCustomMessageHandler('getTimezone', function(message) {
+      var tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      Shiny.setInputValue('client_tz', tz, {priority: 'event'});
+    });
+  ")),
+
   checkboxInput("dark_mode", "Dark mode", value = FALSE),
 
   navset_tab(

@@ -641,51 +641,42 @@ gdal-config --version
 
 ---
 
-# 3 Install Required R Packages
+# 3 Install Required R Packages (Custom Library – Production Safe)
 
-Start R:
+This setup uses a **dedicated R library directory** for the Shiny service.
+It avoids polluting the system R installation and ensures deterministic deployment.
+
+---
+
+## Step 1 — Create Dedicated Library Directory
 
 ```bash
-R
+sudo mkdir -p /var/www/Rlibs
+sudo chown -R goblog:goblog /var/www/Rlibs
+sudo chmod 755 /var/www/Rlibs
 ```
 
-(Optional — user-level library):
+This directory will store all R packages used by the Shiny service.
 
-```r
-.libPaths("~/.local/share/R/library")
+---
+
+## Step 2 — Install Packages Into the Custom Library
+
+Start R as the service user:
+
+```bash
+sudo -u goblog R
 ```
 
-## Core C++ dependency (required by sf/s2)
+Inside R:
 
 ```r
-install.packages("Rcpp")
-```
+.libPaths("/var/www/Rlibs")
 
-## Geometry engine used by sf
-
-```r
-install.packages("s2")
-```
-
-## Install sf
-
-If running on older Debian (e.g. GDAL 3.2.x), use compatible version:
-
-```r
-install.packages("remotes")
-remotes::install_version("sf", version = "1.0-14")
-```
-
-Otherwise:
-
-```r
-install.packages("sf")
-```
-
-## Install leaflet and application dependencies
-
-```r
 install.packages(c(
+  "Rcpp",
+  "s2",
+  "sf",
   "leaflet",
   "shiny",
   "plotly",
@@ -697,7 +688,8 @@ install.packages(c(
   "shinycssloaders",
   "DT",
   "stringr",
-  "purr"
+  "purrr",
+  "shinyjs"
 ))
 ```
 
@@ -706,6 +698,64 @@ Exit R:
 ```r
 q()
 ```
+
+All packages are now installed in:
+
+```
+/var/www/Rlibs
+```
+
+---
+
+## Step 3 — Configure systemd to Use This Library
+
+Edit:
+
+```
+/etc/systemd/system/shiny.service
+```
+
+Add the environment variable inside the `[Service]` section:
+
+```ini
+[Unit]
+Description=Julien Shiny App
+After=network.target
+
+[Service]
+Type=simple
+User=goblog
+WorkingDirectory=/var/www/RShinyApp
+
+Environment=R_LIBS_USER=/var/www/Rlibs
+
+ExecStart=/usr/local/bin/R --no-save --no-restore -e "shiny::runApp('/var/www/RShinyApp', host='127.0.0.1', port=7665)"
+
+Restart=always
+RestartSec=5
+
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
+```
+
+---
+
+## Important Notes
+
+- Do **not** use `.libPaths("~/.local/...")` in production.
+- Do **not** rely on user home directories.
+- Let `systemd` define the R library path explicitly.
+- No changes are required inside the Shiny application code.
+
+This setup ensures:
+
+- Deterministic package resolution
+- Service-level isolation
+- No dependency on interactive user environments
+- Clean production deployment
 ---
 
 # 4 GeoIP & ASN Setup (GeoLite2)
@@ -839,6 +889,8 @@ goblog adm
 R
 ```
 
+*After instaling pkgs at user level*
+
 ```r
 shiny::runApp('/var/www/RShinyApp', host='127.0.0.1', port=7665)
 ```
@@ -903,36 +955,7 @@ https://example.com/shiny/
 
 # 8 systemd Service for Shiny
 
-Create:
-
-```
-/etc/systemd/system/shiny.service
-```
-
-```ini
-[Unit]
-Description=Shiny Log Analyzer
-After=network.target
-
-[Service]
-Type=simple
-User=goblog
-Group=goblog
-WorkingDirectory=/var/www/RShinyApp
-
-ExecStart=/usr/bin/R --no-save --no-restore -e "shiny::runApp('/var/www/RShinyApp', host='127.0.0.1', port=7665)"
-
-Restart=always
-RestartSec=5
-
-NoNewPrivileges=true
-PrivateTmp=true
-ProtectSystem=full
-ProtectHome=true
-
-[Install]
-WantedBy=multi-user.target
-```
+Cf: part3
 
 Enable and start:
 
