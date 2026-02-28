@@ -70,7 +70,7 @@ DB_USER="blog_user"
 
 ADMIN_BIND="127.0.0.1:8080"
 
-SHINY_DIR="/var/www/R_Shiny_NGINX"
+SHINY_DIR="/var/www/RShinyApp"
 SHINY_PORT="7665"
 RLIBS_DIR="/var/www/Rlibs"
 
@@ -83,7 +83,7 @@ CERT_PRIVKEY="${CERT_DIR}/privkey.pem"
 ########################################
 log "Installing base packages (safe rerun)..."
 apt update
-apt install -y nginx mysql-server git curl wget
+apt install -y nginx default-mysql-server git curl wget rsync
 
 ########################################
 # Go install (idempotent)
@@ -101,7 +101,7 @@ fi
 ########################################
 if ! id -u "$APP_USER" >/dev/null 2>&1; then
   log "Creating system user $APP_USER"
-  useradd -r -s /bin/false "$APP_USER"
+  useradd -r -m -d /home/goblog -s /usr/sbin/nologin goblog
 fi
 
 mkdir -p /var/www
@@ -147,9 +147,22 @@ fi
 ########################################
 # Build binary (always rebuild)
 ########################################
-log "Building Go binary..."
+
+GO_CACHE="/var/www/go_blog/.gocache"
+GO_MODCACHE="/var/www/go_blog/.gomodcache"
+
+mkdir -p "$GO_CACHE" "$GO_MODCACHE"
+chown -R "$APP_USER:$APP_USER" "$GO_CACHE" "$GO_MODCACHE"
+
 cd "$APP_DIR"
-sudo -u "$APP_USER" /usr/local/go/bin/go build -buildvcs=false -o go_blog_admin ./cmd/admin
+
+log "Building Go binary..."
+
+sudo -u "$APP_USER" \
+  env GOCACHE="$GO_CACHE" \
+      GOMODCACHE="$GO_MODCACHE" \
+      HOME="/var/www/go_blog" \
+      /usr/local/go/bin/go build -buildvcs=false -o go_blog_admin ./cmd/admin
 
 ########################################
 # Database (idempotent)
@@ -208,7 +221,34 @@ systemctl restart go_blog
 # Optional Shiny
 ########################################
 if [[ "$ENABLE_SHINY" -eq 1 ]]; then
+
+  log "Preparing R Shiny directory..."
+
+  # Ensure external Shiny directory exists
+  mkdir -p "$SHINY_DIR"
+  chown -R "$APP_USER:$APP_USER" "$SHINY_DIR"
+
+  # Copy Shiny app from repo to dedicated location
+  rsync -a --delete "$APP_DIR/RShinyApp/" "$SHINY_DIR/"
+
+  ########################################
+  # Inject admin password into Shiny
+  ########################################
+  SHINY_GLOBAL="$SHINY_DIR/global.R"
+
+  if [[ -f "$SHINY_GLOBAL" ]]; then
+    log "Injecting Shiny admin password into global.R"
+
+    sed -i "s/password = c(\"[^\"]*\")/password = c(\"${ADMIN_PASS}\")/g" "$SHINY_GLOBAL"
+  else
+    warn "Shiny global.R not found in $SHINY_DIR"
+  fi
+
+  ########################################
+  # Install R + dependencies
+  ########################################
   log "Installing R dependencies (safe)..."
+
   apt install -y r-base libmaxminddb-dev libmaxminddb0 mmdb-bin \
     build-essential cmake pkg-config \
     libcurl4-openssl-dev libssl-dev libxml2-dev \
@@ -218,7 +258,6 @@ if [[ "$ENABLE_SHINY" -eq 1 ]]; then
   mkdir -p "$RLIBS_DIR"
   chown -R "$APP_USER:$APP_USER" "$RLIBS_DIR"
 
-  # Install R packages only if not already installed
   sudo -u "$APP_USER" R --no-save --no-restore -e "
     .libPaths('$RLIBS_DIR');
     pkgs <- c('Rcpp','s2','sf','leaflet','shiny','plotly','dplyr','lubridate','bslib',
@@ -227,29 +266,38 @@ if [[ "$ENABLE_SHINY" -eq 1 ]]; then
     if(length(missing)) install.packages(missing, repos='https://cloud.r-project.org');
   "
 
-  # Add goblog to adm for nginx log reading
+  ########################################
+  # Allow Shiny to read NGINX logs
+  ########################################
   if ! groups "$APP_USER" | grep -q "\badm\b"; then
     log "Adding $APP_USER to adm group"
     usermod -aG adm "$APP_USER"
   fi
 
+  ########################################
+  # Write systemd service
+  ########################################
+  log "Writing Shiny systemd service..."
+
   cat > /etc/systemd/system/shiny.service <<EOF
 [Unit]
-Description=Shiny Log Analyzer
+Description=Julien Shiny App
 After=network.target
 
 [Service]
 Type=simple
 User=$APP_USER
 WorkingDirectory=$SHINY_DIR
+
 Environment=R_LIBS_USER=$RLIBS_DIR
+
 ExecStart=/usr/bin/R --no-save --no-restore -e "shiny::runApp('$SHINY_DIR', host='127.0.0.1', port=$SHINY_PORT)"
+
 Restart=always
 RestartSec=5
+
 NoNewPrivileges=true
 PrivateTmp=true
-ProtectSystem=full
-ProtectHome=true
 
 [Install]
 WantedBy=multi-user.target
@@ -258,6 +306,7 @@ EOF
   systemctl daemon-reload
   systemctl enable shiny
   systemctl restart shiny
+
 fi
 
 ########################################
