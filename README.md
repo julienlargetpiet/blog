@@ -189,7 +189,25 @@ Domain placeholder used in this guide:
 
 Replace it with your real domain.
 
+Or folow the **Quickstart script**
+
 ---
+
+# QUICKSTART
+
+```
+$ sudo apt update
+$ sudo apt install git
+$ git clone https://github.com/julienlargetpiet/statix
+$ cd statix
+$ bash quickstart.sh
+```
+
+## Remove
+
+```
+$ bash uninstall.sh
+```
 
 # 1️⃣ Prerequisites
 
