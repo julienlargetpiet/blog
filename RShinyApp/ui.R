@@ -45,7 +45,12 @@ ui <- fluidPage(
               "Very High" = "very_high"
             ),
             selected = "low"
-          )        
+          ),
+          checkboxInput(
+            inputId = "only_articles",
+            label = "Only articles",
+            value = TRUE
+          )
         ),
 
         # KPI row + pie

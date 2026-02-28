@@ -194,9 +194,14 @@ function(input, output, session) {
 
     df <- df %>%
       mutate(target = sub("\\?.*$", "", target),
-	     target = trimws(target)) %>%
+	     target = trimws(target))
+
+    article_regex <- "^/articles/[^/]*[A-Za-z][^/]*\\.html$"
+    
+    df <- df %>%
       filter(
-        grepl("^/articles/[^/]*[A-Za-z][^/]*\\.html$", target)
+        grepl(article_regex, target) |
+        (!input$only_articles & target == "/")
       )
 
     if (length(ip_exclude) > 0 && any(nzchar(ip_exclude))) {
