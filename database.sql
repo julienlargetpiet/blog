@@ -1,6 +1,6 @@
 --CREATE DATABASE IF NOT EXISTS go_blog;
 
-DROP TABLE articles;
+DROP TABLE IF EXISTS articles;
 
 CREATE TABLE subjects (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -31,7 +31,7 @@ VALUES ('Default', 'default');
 CREATE TABLE author {
   id INT
   html MEDIUMTEXT
-}
+};
 
 INSERT INTO author (id, html)
 VALUES (0, '<h2 id="author_talk">About me</h2><p>default author description</p><h2 id="contact">Contact</h2><p>contacts</p>');
