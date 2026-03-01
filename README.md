@@ -9,7 +9,7 @@
 ## Presentation
 
 <details>
-  <summary><b>📝 Blog</b> — screenshots</summary>
+  <summary><b>📝 Blog</b> — screenshots (Dark Theme / Default)</summary>
   <br/>
 
   <p align="center">
