@@ -176,7 +176,7 @@ sed -i "s/username@domainname.com/${ESCAPED_EMAIL}/g" "$TEMPLATE_ARTICLE"
 
 ESCAPED_TITLE=$(printf '%s\n' "$BLOG_TITLE" | sed 's/[&/\]/\\&/g')
 
-TEMPLATE_INDEX="$APP_DIR/internal/templates/user/index.html"
+TEMPLATE_INDEX="$APP_DIR/internal/templates/users/index.html"
 
 log "Injecting blog title into index template..."
 
