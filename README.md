@@ -24,6 +24,11 @@
   </p>
   <p align="center">
     <img src="presentation_pics/blog/cap6.webp" width="260" />
+    <img src="presentation_pics/blog/cap7.webp" width="260" />
+    <img src="presentation_pics/blog/cap8.webp" width="260" />
+  </p>
+  <p align="center">
+    <img src="presentation_pics/blog/cap9.webp" width="260" />
   </p>
 </details>
 
