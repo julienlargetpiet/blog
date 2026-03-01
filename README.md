@@ -134,6 +134,36 @@ It can distinguish:
 
 This allows infrastructure-level filtering and realistic engagement analysis.
 
+### 6️⃣ First-Class Writing & Reading Experience
+
+Statix ships with **prebuilt authoring support** designed for frictionless content creation.
+
+Writers are not forced to fight tooling.
+
+Included out of the box:
+
+- **CodeMirror 6** → modern, extensible in-browser editor  
+- **KaTeX** → fast, deterministic LaTeX math rendering  
+- **Prism.js** → zero-runtime syntax highlighting  
+
+This enables:
+
+- Structured article writing  
+- Live code editing with language awareness  
+- Mathematical typesetting without client-side heavy engines  
+- Consistent, static-safe rendering  
+
+All rendering is deterministic and build-time resolved.
+
+There is no runtime interpretation layer.  
+There is no client-side compilation step.
+
+The output remains static, immutable, and production-safe.
+
+Statix does not compromise build guarantees to support rich content.
+
+It integrates expressive tooling — without sacrificing determinism.
+
 ---
 
 ## Architecture Overview
