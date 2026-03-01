@@ -2,6 +2,8 @@
   <img src="logo.png" alt="Statix Logo" width="220">
 </p>
 
+👉 **[Quickstart](#quickstart)** — Deploy Statix in minutes
+
 # Statix — Deterministic Static Publishing with Infrastructure-Aware Analytics
 
 ## Philosophy
