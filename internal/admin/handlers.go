@@ -6,6 +6,9 @@ import (
 	"strconv"
 	"strings"
     "os/exec"
+    "os"
+    "path/filepath"
+    "sort"
     "io"
     "bytes"
     "database/sql"
@@ -19,6 +22,58 @@ import (
 type EditArticleView struct {
 	Article  model.Article
 	Subjects []model.Subject
+}
+
+func (s *Server) listThemes() ([]string, error) {
+	base := "/var/www/go_blog/assets/css/themes"
+
+	entries, err := os.ReadDir(base)
+	if err != nil {
+		return nil, err
+	}
+
+	var themes []string
+	for _, e := range entries {
+		if !e.IsDir() && strings.HasSuffix(e.Name(), ".css") {
+			name := strings.TrimSuffix(e.Name(), ".css")
+			themes = append(themes, name)
+		}
+	}
+
+	sort.Strings(themes)
+	return themes, nil
+}
+
+func (s *Server) currentTheme() string {
+	link := "/var/www/go_blog/assets/css/theme.css"
+
+	target, err := os.Readlink(link)
+	if err != nil {
+		return ""
+	}
+
+	base := filepath.Base(target)
+	return strings.TrimSuffix(base, ".css")
+}
+
+func (s *Server) applyTheme(name string) error {
+	base := "/var/www/go_blog/assets/css"
+	target := filepath.Join(base, "themes", name+".css")
+	link := filepath.Join(base, "theme.css")
+	tmpLink := filepath.Join(base, "theme.css.tmp")
+
+	// ensure theme exists
+	if _, err := os.Stat(target); err != nil {
+		return err
+	}
+
+	os.Remove(tmpLink)
+
+	if err := os.Symlink(target, tmpLink); err != nil {
+		return err
+	}
+
+	return os.Rename(tmpLink, link) // atomic swap
 }
 
 func (s *Server) rebuildSite() error {
@@ -768,6 +823,67 @@ func (s *Server) handleBuildAll(w http.ResponseWriter, r *http.Request) {
 
 	// 5️⃣ Redirect back to admin
 	http.Redirect(w, r, "/admin", http.StatusSeeOther)
+}
+
+func (s *Server) handleCustomTheme(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method == http.MethodPost {
+		if err := r.ParseForm(); err != nil {
+			http.Error(w, "bad request", 400)
+			return
+		}
+
+		selected := r.FormValue("theme")
+
+		themes, err := s.listThemes()
+		if err != nil {
+			http.Error(w, "failed to list themes", 500)
+			return
+		}
+
+		valid := false
+		for _, t := range themes {
+			if t == selected {
+				valid = true
+				break
+			}
+		}
+
+		if !valid {
+			http.Error(w, "invalid theme", 400)
+			return
+		}
+
+		if err := s.applyTheme(selected); err != nil {
+			http.Error(w, "failed to apply theme", 500)
+			return
+		}
+
+		http.Redirect(w, r, "/admin/theme", http.StatusSeeOther)
+		return
+	}
+
+	themes, err := s.listThemes()
+	if err != nil {
+		http.Error(w, "failed to load themes", 500)
+		return
+	}
+
+	data := map[string]interface{}{
+		"Themes":       themes,
+		"CurrentTheme": s.currentTheme(),
+	}
+
+	tmpl, err := template.ParseFiles(
+		"internal/templates/base.html",
+		"internal/templates/admin/custom_theme.html",
+	)
+	if err != nil {
+		http.Error(w, "template error", 500)
+		return
+	}
+
+	tmpl.ExecuteTemplate(w, "base", data)
 }
 
 

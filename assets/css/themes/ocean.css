@@ -1,0 +1,100 @@
+:root {
+  --font-main: "Luciole", system-ui, sans-serif;
+  --line-height-base: 1.6;
+
+  --bg-main: #e6f2f8;
+  --bg-soft: #f4f9fc;
+  --bg-hover: #d6eaf5;
+
+  --text-main: #244052;
+  --text-strong: #162a36;
+
+  --accent: #1f7aa8;
+  --accent-hover: #155d82;
+
+  --border-soft: #b8d4e3;
+  --border-strong: #0e2a38;
+
+  --card-1: #ffffff;
+  --card-2: #eef6fb;
+  --card-3: #e3f0f8;
+  --card-4: #f0f7fb;
+
+  --code-bg: #eaf4fa;
+  --code-border: #cfe3ef;
+  --code-text: #1c2b33;
+
+  --syntax-comment: #5f7f8e;
+  --syntax-keyword: #0b6fa4;
+  --syntax-string:  #a14d2e;
+  --syntax-number:  #7a6a00;
+  --syntax-function:#1d6f5e;
+  --syntax-type:    #5a4fa3;
+  --syntax-operator:#244052;
+
+  --text-code: #1c2b33;
+
+  --btn-primary-hover-bg: #162a36;
+  --btn-primary-hover-text: #fff;
+
+  --slug-text: var(--text-strong);
+  --slug-bg: #ffffff;
+  --slug-border: var(--border-soft);
+
+  --status-public-text: #0f5132;
+  --status-public-bg: rgba(15, 81, 50, 0.12);
+  --status-public-border: rgba(15, 81, 50, 0.35);
+
+  --status-private-text: #9a3412;
+  --status-private-bg: rgba(234, 88, 12, 0.12);
+  --status-private-border: rgba(234, 88, 12, 0.35);
+
+  color-scheme: light;
+}
+
+/* Dark */
+:root[data-theme="dark"] {
+  --bg-main: #0c1c24;
+  --bg-soft: #10242d;
+  --bg-hover: #16313c;
+
+  --text-main: #d6e6ef;
+  --text-strong: #ffffff;
+
+  --accent: #4fb3e8;
+  --accent-hover: #7ac9f0;
+
+  --border-soft: #1f3c47;
+  --border-strong: #2a4d59;
+
+  --card-1: #0f2028;
+  --card-2: #132730;
+  --card-3: #162c36;
+  --card-4: #1a303a;
+
+  --code-bg: #0a171e;
+  --code-border: #1e3a45;
+  --code-text: #d6e6ef;
+
+  --syntax-comment: #6d8f9f;
+  --syntax-keyword: #4fb3e8;
+  --syntax-string:  #f1a97a;
+  --syntax-number:  #d4c37a;
+  --syntax-function:#7fd3c2;
+  --syntax-type:    #b9a8ff;
+  --syntax-operator:#d6e6ef;
+
+  --btn-primary-hover-bg: #ffffff;
+  --btn-primary-hover-text: #000;
+
+  --slug-text: #4fb3e8;
+  --slug-bg: rgba(79, 179, 232, 0.15);
+  --slug-border: rgba(79, 179, 232, 0.4);
+
+  --status-public-text: #4ade80;
+  --status-private-text: #fb923c;
+
+  color-scheme: dark;
+}
+
+

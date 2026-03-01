@@ -1,0 +1,111 @@
+:root {
+  --font-main: "Luciole", system-ui, sans-serif;
+  --line-height-base: 1.6;
+
+  --bg-main: #f5efe6;
+  --bg-soft: #fbf7f1;
+  --bg-hover: #e8dcc9;
+
+  --text-main: #5a4632;
+  --text-strong: #3e2f21;
+
+  --accent: #a0672a;
+  --accent-hover: #7c4d1f;
+
+  --border-soft: #d7c5ac;
+  --border-strong: #3e2f21;
+
+  --card-1: #ffffff;
+  --card-2: #f2e9dc;
+  --card-3: #efe3d3;
+  --card-4: #f7efe6;
+
+  --code-bg: #f0e6d8;
+  --code-border: #e1d2bd;
+  --code-text: #3e2f21;
+
+  --syntax-comment: #8b7b65;
+  --syntax-keyword: #a0672a;
+  --syntax-string:  #7b3f00;
+  --syntax-number:  #6c5b00;
+  --syntax-function:#4b6b4f;
+  --syntax-type:    #6b4fa3;
+  --syntax-operator:#5a4632;
+
+  --text-code: #3e2f21;
+
+  --btn-primary-hover-bg: #3e2f21;
+  --btn-primary-hover-text: #fff;
+
+  --slug-text: var(--text-strong);
+  --slug-bg: #ffffff;
+  --slug-border: var(--border-soft);
+
+  --status-public-text: #14532d;
+  --status-public-bg: rgba(20, 83, 45, 0.12);
+  --status-public-border: rgba(20, 83, 45, 0.35);
+
+  --status-private-text: #9a3412;
+  --status-private-bg: rgba(154, 52, 18, 0.12);
+  --status-private-border: rgba(154, 52, 18, 0.35);
+
+  color-scheme: light;
+}
+
+/* Dark variant */
+:root[data-theme="dark"] {
+  --bg-main: #1b1712;
+  --bg-soft: #231d16;
+  --bg-hover: #2d241b;
+
+  --text-main: #e7dacb;
+  --text-strong: #f5ece3;
+
+  --accent: #d4a373;
+  --accent-hover: #e6b98f;
+
+  --border-soft: #3a3025;
+  --border-strong: #4a3b2c;
+
+  --card-1: #211a14;
+  --card-2: #251e17;
+  --card-3: #292118;
+  --card-4: #2e251c;
+
+  --code-bg: #16120e;
+  --code-border: #3a3025;
+  --code-text: #e7dacb;
+
+  --syntax-comment: #a89b8c;
+  --syntax-keyword: #d4a373;
+  --syntax-string:  #f4a261;
+  --syntax-number:  #e9c46a;
+  --syntax-function:#84a98c;
+  --syntax-type:    #cdb4db;
+  --syntax-operator:#e7dacb;
+
+  --btn-primary-hover-bg: #ffffff;
+  --btn-primary-hover-text: #000;
+
+  --slug-text: #f4a261;
+  --slug-bg: rgba(244, 162, 97, 0.12);
+  --slug-border: rgba(244, 162, 97, 0.4);
+
+  --status-public-text: #4ade80;
+  --status-public-bg: rgba(74, 222, 128, 0.12);
+  --status-public-border: rgba(74, 222, 128, 0.4);
+
+  --status-private-text: #fb923c;
+  --status-private-bg: rgba(251, 146, 60, 0.15);
+  --status-private-border: rgba(251, 146, 60, 0.45);
+
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    color-scheme: dark;
+  }
+}
+
+
