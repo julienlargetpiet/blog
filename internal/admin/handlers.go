@@ -57,23 +57,46 @@ func (s *Server) currentTheme() string {
 }
 
 func (s *Server) applyTheme(name string) error {
-	base := "/var/www/go_blog/assets/css"
-	target := filepath.Join(base, "themes", name+".css")
-	link := filepath.Join(base, "theme.css")
-	tmpLink := filepath.Join(base, "theme.css.tmp")
+	baseCSS := "/var/www/go_blog/assets/css"
+	baseFavicon := "/var/www/go_blog/assets"
 
-	// ensure theme exists
-	if _, err := os.Stat(target); err != nil {
+	// ---- CSS ----
+	cssTarget := filepath.Join(baseCSS, "themes", name+".css")
+	cssLink := filepath.Join(baseCSS, "theme.css")
+	cssTmp := cssLink + ".tmp"
+
+	// ---- Favicon ----
+	favTarget := filepath.Join(baseFavicon, "favicons", name+".ico")
+	favLink := filepath.Join(baseFavicon, "favicon.ico")
+	favTmp := favLink + ".tmp"
+
+	// Validate existence
+	if _, err := os.Stat(cssTarget); err != nil {
+		return err
+	}
+	if _, err := os.Stat(favTarget); err != nil {
 		return err
 	}
 
-	os.Remove(tmpLink)
-
-	if err := os.Symlink(target, tmpLink); err != nil {
+	// --- Swap CSS symlink ---
+	os.Remove(cssTmp)
+	if err := os.Symlink(cssTarget, cssTmp); err != nil {
+		return err
+	}
+	if err := os.Rename(cssTmp, cssLink); err != nil {
 		return err
 	}
 
-	return os.Rename(tmpLink, link) // atomic swap
+	// --- Swap favicon symlink ---
+	os.Remove(favTmp)
+	if err := os.Symlink(favTarget, favTmp); err != nil {
+		return err
+	}
+	if err := os.Rename(favTmp, favLink); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *Server) rebuildSite() error {
