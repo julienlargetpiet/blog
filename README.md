@@ -149,7 +149,7 @@ Included out of the box:
 This enables:
 
 - Structured article writing  
-- Live code editing with language awareness  
+- Code Language awareness  
 - Mathematical typesetting without client-side heavy engines  
 - Consistent, static-safe rendering  
 
@@ -157,6 +157,8 @@ All rendering is deterministic and build-time resolved.
 
 There is no runtime interpretation layer.  
 There is no client-side compilation step.
+
+You can also **preview** your articles in the editing window.
 
 The output remains static, immutable, and production-safe.
 
