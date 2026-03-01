@@ -37,6 +37,17 @@ prompt_email() {
   done
 }
 
+prompt_text() {
+  local var_name="$1" label="$2"
+  local value
+  while true; do
+    read -rp "$label: " value
+    [[ -n "$value" ]] || { echo "Value cannot be empty."; continue; }
+    eval "$var_name=\"$value\""
+    break
+  done
+}
+
 yes_no_prompt() {
   local var_name="$1" label="$2" answer
   read -rp "$label [y/N]: " answer
@@ -60,6 +71,7 @@ read -rp "Domain (e.g. example.com): " DOMAIN
 [[ -n "$DOMAIN" ]] || die "Domain required."
 
 prompt_email ADMIN_EMAIL "Admin contact email: "
+prompt_text BLOG_TITLE "Blog title (e.g. Julien's Blog)"
 prompt_password DB_PASS "Database password"
 prompt_password ADMIN_PASS "Admin password"
 
@@ -159,6 +171,18 @@ ESCAPED_EMAIL=$(printf '%s\n' "$ADMIN_EMAIL" | sed 's/[&/\]/\\&/g')
 
 sed -i "s/username@domainname.com/${ESCAPED_EMAIL}/g" "$TEMPLATE_BASE"
 sed -i "s/username@domainname.com/${ESCAPED_EMAIL}/g" "$TEMPLATE_ARTICLE"
+
+# Replace by user title
+
+ESCAPED_TITLE=$(printf '%s\n' "$BLOG_TITLE" | sed 's/[&/\]/\\&/g')
+
+TEMPLATE_INDEX="$APP_DIR/internal/templates/user/index.html"
+
+log "Injecting blog title into index template..."
+
+sed -i "s/YourName's Blog/${ESCAPED_TITLE}/g" "$TEMPLATE_INDEX"
+
+
 
 SHINY_GLOBAL="$APP_DIR/RShinyApp/global.R"
 
