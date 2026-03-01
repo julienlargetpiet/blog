@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="/assets/img/logo.png" alt="Statix Logo" width="220">
+  <img src="logo.png" alt="Statix Logo" width="220">
 </p>
 
 # Statix — Deterministic Static Publishing with Infrastructure-Aware Analytics
