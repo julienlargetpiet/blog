@@ -66,8 +66,8 @@ func (s *Server) applyTheme(name string) error {
 	cssTmp := cssLink + ".tmp"
 
 	// ---- Favicon ----
-	favTarget := filepath.Join(baseFavicon, "favicons", name+".ico")
-	favLink := filepath.Join(baseFavicon, "favicon.ico")
+	favTarget := filepath.Join(baseFavicon, "favicons", name+".svg")
+	favLink := filepath.Join(baseFavicon, "favicon.svg")
 	favTmp := favLink + ".tmp"
 
 	// Validate existence
