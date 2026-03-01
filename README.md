@@ -1122,4 +1122,10 @@ You now have a self-hosted NGINX log analytics dashboard:
 - Secure reverse proxy exposure
 
 
+<p align="center">
+  <a href="https://star-history.com/#julienlargetpiet/statix&Date">
+    <img src="https://api.star-history.com/svg?repos=julienlargetpiet/statix&type=Date" />
+  </a>
+</p>
+
 
