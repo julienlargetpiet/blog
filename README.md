@@ -171,6 +171,25 @@ Statix does not compromise build guarantees to support rich content.
 
 It integrates expressive tooling — without sacrificing determinism.
 
+### 7️⃣ Personalization — Without Compromise
+
+Statix allows visual customization without breaking determinism.
+
+Themes are prebuilt, curated, and fully versioned.  
+Switching a theme is an atomic state transition — not a file mutation.
+
+- No in-place CSS edits  
+- No partial writes  
+- No runtime rendering  
+- No rebuild required  
+
+A theme change is promoted the same way content is:
+
+Deterministically. Atomically. Safely.
+
+Express identity freely —  
+without sacrificing infrastructure integrity.
+
 ---
 
 ## Architecture Overview
