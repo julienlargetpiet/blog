@@ -4,6 +4,41 @@
 
 👉 **[Quickstart](#quickstart)** — Deploy Statix in minutes
 
+## Presentation
+
+<details>
+  <summary><b>📝 Blog</b> — screenshots</summary>
+  <br/>
+
+  <p align="center">
+    <img src="presentation_pics/blog/cap0.webp" width="260" />
+    <img src="presentation_pics/blog/cap1.webp" width="260" />
+    <img src="presentation_pics/blog/cap2.webp" width="260" />
+  </p>
+  <p align="center">
+    <img src="presentation_pics/blog/cap3.webp" width="260" />
+    <img src="presentation_pics/blog/cap4.webp" width="260" />
+    <img src="presentation_pics/blog/cap5.webp" width="260" />
+  </p>
+  <p align="center">
+    <img src="presentation_pics/blog/cap6.webp" width="260" />
+  </p>
+</details>
+
+<details>
+  <summary><b>✨ Shiny</b> — screenshots</summary>
+  <br/>
+
+  <p align="center">
+    <img src="presentation_pics/shiny/caps0.webp" width="260" />
+    <img src="presentation_pics/shiny/caps1.webp" width="260" />
+  </p>
+  <p align="center">
+    <img src="presentation_pics/shiny/caps3.webp" width="260" />
+    <img src="presentation_pics/shiny/caps4.webp" width="260" />
+  </p>
+</details>
+
 # Statix — Deterministic Static Publishing with Infrastructure-Aware Analytics
 
 ## Philosophy
