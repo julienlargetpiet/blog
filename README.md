@@ -2,6 +2,8 @@
   <img src="logo.png" alt="Statix Logo" width="220">
 </p>
 
+# **“Express your ideas without friction.”**
+
 👉 **[Quickstart](#quickstart)** — Deploy Statix in minutes
 
 ## Presentation
@@ -38,10 +40,6 @@
     <img src="presentation_pics/shiny/caps4.webp" width="260" />
   </p>
 </details>
-
-<blockquote>
-  Express your ideas without friction.
-</blockquote>
 
 # Statix — Deterministic Static Publishing with Infrastructure-Aware Analytics
 
