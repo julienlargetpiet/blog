@@ -2,7 +2,7 @@
   <img src="logo.png" alt="Statix Logo" width="220">
 </p>
 
-# **“Express your ideas without friction.”**
+<h2 align="center">“Express your ideas without friction.”</h2>
 
 👉 **[Quickstart](#quickstart)** — Deploy Statix in minutes
 
