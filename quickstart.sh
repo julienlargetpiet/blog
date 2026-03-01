@@ -24,6 +24,19 @@ prompt_password() {
   done
 }
 
+prompt_email() {
+  local var_name="$1" label="$2"
+  local p1 p2
+  while true; do
+    read -rp "$label: " p1; echo
+    read -rp "Confirm $label: " p2; echo
+    [[ -n "$p1" ]] || { echo "Email cannot be empty."; continue; }
+    [[ "$p1" == "$p2" ]] || { echo "Emails do not match."; continue; }
+    eval "$var_name=\"$p1\""
+    break
+  done
+}
+
 yes_no_prompt() {
   local var_name="$1" label="$2" answer
   read -rp "$label [y/N]: " answer
@@ -46,6 +59,7 @@ echo
 read -rp "Domain (e.g. example.com): " DOMAIN
 [[ -n "$DOMAIN" ]] || die "Domain required."
 
+prompt_email ADMIN_EMAIL "Admin contact email: "
 prompt_password DB_PASS "Database password"
 prompt_password ADMIN_PASS "Admin password"
 
@@ -133,6 +147,18 @@ sed -i "s/getEnv(\"BLOG_DB_NAME\", \"[^\"]*\")/getEnv(\"BLOG_DB_NAME\", \"${DB_N
 
 # Replace default admin password
 sed -i "s/getEnv(\"BLOG_ADMIN_PASSWORD\", \"[^\"]*\")/getEnv(\"BLOG_ADMIN_PASSWORD\", \"${ADMIN_PASS}\")/g" "$CONFIG_FILE"
+
+# Replace by user email
+
+TEMPLATE_BASE="$APP_DIR/internal/templates/base.html"
+TEMPLATE_ARTICLE="$APP_DIR/internal/templates/base_article.html"
+
+log "Injecting admin contact email into templates..."
+
+ESCAPED_EMAIL=$(printf '%s\n' "$ADMIN_EMAIL" | sed 's/[&/\]/\\&/g')
+
+sed -i "s/username@domainname.com/${ESCAPED_EMAIL}/g" "$TEMPLATE_BASE"
+sed -i "s/username@domainname.com/${ESCAPED_EMAIL}/g" "$TEMPLATE_ARTICLE"
 
 SHINY_GLOBAL="$APP_DIR/RShinyApp/global.R"
 
@@ -332,9 +358,19 @@ NGINX_LINK="/etc/nginx/sites-enabled/${DOMAIN}"
 write_nginx_http() {
 
 cat > "$NGINX_SITE" <<EOF
+
+# --- Statix custom log format ---
+log_format statix_main '\$remote_addr - \$remote_user [\$time_local] '
+                        '"\$request" \$status \$body_bytes_sent '
+                        '"\$http_referer" "\$http_user_agent" '
+                        '"\$http_x_prefetch"';
+
 server {
     listen 80;
     server_name ${DOMAIN} www.${DOMAIN};
+
+    # --- Custom access log for Statix ---
+    access_log /var/log/nginx/statix.log statix_main;
 
     # --- Go admin backend ---
     location /admin {
@@ -394,6 +430,13 @@ EOF
 write_nginx_https() {
 
 cat > "$NGINX_SITE" <<EOF
+
+# --- Statix custom log format ---
+log_format statix_main '\$remote_addr - \$remote_user [\$time_local] '
+                        '"\$request" \$status \$body_bytes_sent '
+                        '"\$http_referer" "\$http_user_agent" '
+                        '"\$http_x_prefetch"';
+
 server {
     listen 80;
     server_name ${DOMAIN} www.${DOMAIN};
@@ -406,6 +449,9 @@ server {
 
     ssl_certificate     ${CERT_FULLCHAIN};
     ssl_certificate_key ${CERT_PRIVKEY};
+
+    # --- Custom access log for Statix ---
+    access_log /var/log/nginx/statix.log statix_main;
 
     # --- Go admin backend ---
     location /admin {
