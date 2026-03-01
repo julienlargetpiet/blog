@@ -33,6 +33,20 @@
 </details>
 
 <details>
+  <summary><b>Some Default Themes</b> — screenshots</summary>
+  <br/>
+
+  <p align="center">
+    <img src="presentation_pics/themes/theme0.webp" width="260" />
+    <img src="presentation_pics/themes/theme1.webp" width="260" />
+  </p>
+  <p align="center">
+    <img src="presentation_pics/themes/theme2.webp" width="260" />
+    <img src="presentation_pics/themes/theme3.webp" width="260" />
+  </p>
+</details>
+
+<details>
   <summary><b>✨ Shiny</b> — screenshots</summary>
   <br/>
 
