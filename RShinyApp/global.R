@@ -509,4 +509,11 @@ lookup_asns <- function(ips, db_path) {
   cache %>% filter(ip %in% ips)
 }
 
+clear_ip_caches <- function() {
+  if (file.exists(geo_cache_path)) file.remove(geo_cache_path)
+  if (file.exists(asn_cache_path)) file.remove(asn_cache_path)
+}
+
+
+
 

@@ -59,7 +59,20 @@ ui <- fluidPage(
             inputId = "only_articles",
             label = "Only articles",
             value = TRUE
-          )
+          ),
+          fileInput(
+            inputId = "upload_asn_mmdb",
+            label = "Upload GeoLite2-ASN.mmdb",
+            accept = c(".mmdb"),
+            multiple = FALSE
+          ),
+          fileInput(
+            inputId = "upload_city_mmdb",
+            label = "Upload GeoLite2-City.mmdb",
+            accept = c(".mmdb"),
+            multiple = FALSE
+          ),
+          uiOutput("mmdb_status")
         ),
 
         # KPI row + pie

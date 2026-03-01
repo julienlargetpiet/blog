@@ -19,6 +19,68 @@ function(input, output, session) {
     updateNumericInput(session, "last_n", value = input$last_n_2)
   })
 
+  mmdb_bump <- reactiveVal(0)
+
+  observeEvent(input$upload_asn_mmdb, {
+    req(input$upload_asn_mmdb)
+  
+    src <- input$upload_asn_mmdb$datapath
+    dst <- asn_db_path
+  
+    ok <- file.copy(src, dst, overwrite = TRUE)
+    if (!ok) {
+      showNotification(paste("Failed to write:", dst), type = "error")
+      return()
+    }
+
+    clear_ip_caches()
+    geo_cache_reactive(NULL)
+    last_ips(character())
+
+    mmdb_bump(mmdb_bump() + 1)
+    
+    showNotification("ASN DB uploaded and installed.", type = "message")
+
+  })
+  
+  observeEvent(input$upload_city_mmdb, {
+    req(input$upload_city_mmdb)
+  
+    src <- input$upload_city_mmdb$datapath
+    dst <- geo_db_path
+  
+    ok <- file.copy(src, dst, overwrite = TRUE)
+    if (!ok) {
+      showNotification(paste("Failed to write:", dst), type = "error")
+      return()
+    }
+  
+    clear_ip_caches()
+    geo_cache_reactive(NULL)
+    last_ips(character())
+
+    mmdb_bump(mmdb_bump() + 1)
+
+    showNotification("City DB uploaded and installed.", type = "message")
+
+  })
+
+  output$mmdb_status <- renderUI({
+
+    mmdb_bump()
+    asn_ok  <- file.exists(asn_db_path)
+    city_ok <- file.exists(geo_db_path)
+  
+    tags$div(
+      tags$small(
+        HTML(paste0(
+          "<b>ASN DB:</b> ", if (asn_ok) "✅ present" else "❌ missing",
+          "<br><b>City DB:</b> ", if (city_ok) "✅ present" else "❌ missing"
+        ))
+      )
+    )
+  })
+
   observe({
     session$sendCustomMessage("getTimezone", list())
   })
@@ -115,6 +177,8 @@ function(input, output, session) {
   })
 
   filtered_data <- reactive({
+
+    mmdb_bump()
 
     req(input$time_unit, input$last_n)
 
@@ -283,7 +347,9 @@ function(input, output, session) {
     if (!is.null(geo)) {
       df <- df %>% left_join(geo, by = "ip")
     }
-  
+ 
+    df
+
   })
 
   # KPIs
