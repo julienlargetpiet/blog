@@ -39,6 +39,10 @@
   </p>
 </details>
 
+<blockquote>
+  Express your ideas without friction.
+</blockquote>
+
 # Statix — Deterministic Static Publishing with Infrastructure-Aware Analytics
 
 ## Philosophy
@@ -471,6 +475,14 @@ journalctl -u go_blog -f
 ---
 
 # 🔟 NGINX Reverse Proxy + Static Serving
+
+## Note on `/etc/nginx/nginx.conf`
+
+To be comfortable uploading file when it comes to their size add this in `http {...}` block:
+
+```
+client_max_body_size 200M;
+```
 
 Create:
 
