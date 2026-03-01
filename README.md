@@ -33,7 +33,7 @@
 </details>
 
 <details>
-  <summary><b>Some Default Themes</b> — screenshots</summary>
+  <summary><b>Some Default Themes & Selection</b> — screenshots</summary>
   <br/>
 
   <p align="center">
