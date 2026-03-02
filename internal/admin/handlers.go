@@ -384,7 +384,13 @@ func (s *Server) handleEditArticle(w http.ResponseWriter, r *http.Request) {
         	http.Error(w, err.Error(), http.StatusInternalServerError)
         	return
         }
-    
+   
+        if r.Header.Get("X-Statix-Token") != "" {
+            w.WriteHeader(http.StatusOK)
+            w.Write([]byte("article edited\n"))
+            return
+        }
+
     	http.Redirect(w, r, "/admin", http.StatusSeeOther)
     	return
     }
