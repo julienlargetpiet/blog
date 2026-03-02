@@ -1289,6 +1289,14 @@ address a:hover {
   }
 }
 
+.article-summary {
+  direction: rtl;
+}
+
+.summary-inner {
+  direction: ltr;
+}
+
 /* Anchor heading offsets under sticky header */
 .article-content h2,
 .article-content h3 {
