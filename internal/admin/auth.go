@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"net/http"
     "strings"
+    "os"
 )
 
 const sessionCookie = "admin_session"
@@ -55,6 +56,16 @@ func isAuthenticated(r *http.Request, secret string) bool {
 
 func (s *Server) requireAuth(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		publishToken := os.Getenv("STATIX_PUBLISH_TOKEN")
+		if publishToken != "" &&
+			r.Method == http.MethodPost &&
+			r.Header.Get("X-Statix-Token") == publishToken {
+
+			next(w, r)
+			return
+		}
+
 		if isAuthenticated(r, s.AdminPass) {
 			next(w, r)
 			return

@@ -518,6 +518,12 @@ func (s *Server) handleNewArticle(w http.ResponseWriter, r *http.Request) {
         	return
         }
 
+        if r.Header.Get("X-Statix-Token") != "" {
+            w.WriteHeader(http.StatusOK)
+            w.Write([]byte("article published\n"))
+            return
+        }
+
 		http.Redirect(w, r, "/admin", http.StatusSeeOther)
 		return
 	}
