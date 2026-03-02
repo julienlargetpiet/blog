@@ -9,7 +9,34 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+    "strconv"
+    "encoding/json"
+    "time"
+    "sort"
 )
+
+const (
+	colorReset  = "\033[0m"
+	colorBold   = "\033[1m"
+	colorGreen  = "\033[32m"
+	colorYellow = "\033[33m"
+	colorCyan   = "\033[36m"
+)
+
+func bold(s string) string   { return colorBold + s + colorReset }
+func green(s string) string  { return colorGreen + s + colorReset }
+func yellow(s string) string { return colorYellow + s + colorReset }
+func cyan(s string) string   { return colorCyan + s + colorReset }
+
+var httpClient = &http.Client{
+	Timeout: 15 * time.Second,
+}
+
+func nicknameFromFile(path string) string {
+	base := filepath.Base(path)
+	ext := filepath.Ext(base)
+	return strings.TrimSuffix(base, ext)
+}
 
 type Config struct {
 	URL   string
@@ -41,18 +68,19 @@ func loadConfig() (*Config, error) {
 	}, nil
 }
 
-func publish(title string, 
-             subjectID string, 
-             isPublic string, 
-             filePath string) error {
+func publish(title string,
+	subjectID string,
+	isPublic string,
+	filePath string) (int64, error) {
+
 	cfg, err := loadConfig()
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	content, err := os.ReadFile(filePath)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	data := url.Values{}
@@ -63,25 +91,35 @@ func publish(title string,
 
 	req, err := http.NewRequest("POST", cfg.URL+"/admin/new", strings.NewReader(data.Encode()))
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("X-Statix-Token", cfg.Token)
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+    resp, err := httpClient.Do(req)
+
 	if err != nil {
-		return err
+		return 0, err
 	}
 	defer resp.Body.Close()
 
-	body, _ := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return 0, err
+	}
 
-	fmt.Printf("Status: %s\n", resp.Status)
-	fmt.Println(string(body))
+	if resp.StatusCode != http.StatusOK {
+		return 0, fmt.Errorf("server returned %s:\n%s", resp.Status, string(body))
+	}
 
-	return nil
+	idStr := strings.TrimSpace(string(body))
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("failed to parse article ID: %s", idStr)
+	}
+
+	return id, nil
 }
 
 func editArticle(id, title, subjectID, isPublic, filePath string) error {
@@ -111,51 +149,60 @@ func editArticle(id, title, subjectID, isPublic, filePath string) error {
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("X-Statix-Token", cfg.Token)
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
+    resp, err := httpClient.Do(req)
+	
+    if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
 
 	body, _ := io.ReadAll(resp.Body)
 
-	fmt.Printf("Status: %s\n", resp.Status)
-	fmt.Println(string(body))
+    if resp.StatusCode != http.StatusOK {
+        return fmt.Errorf("server returned %s:\n%s", resp.Status, string(body))
+    }
 
 	return nil
 }
 
-func listArticles() error {
-	cfg, err := loadConfig()
+func listNicknames() error {
+	store, err := loadNicknames()
 	if err != nil {
 		return err
 	}
 
-	req, err := http.NewRequest("GET", cfg.URL+"/admin/api/articles", nil)
-	if err != nil {
-		return err
+	if len(store) == 0 {
+		fmt.Println("No nicknames defined.")
+		return nil
 	}
 
-	req.Header.Set("X-Statix-Token", cfg.Token)
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return err
+	// Extract keys
+	names := make([]string, 0, len(store))
+	for name := range store {
+		names = append(names, name)
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("server returned %s:\n%s", resp.Status, string(body))
+	// Sort alphabetically
+	sort.Strings(names)
+
+	// Print in order
+	for _, name := range names {
+		meta := store[name]
+
+		status := yellow("unpublished")
+		if meta.ArticleID != 0 {
+			status = green(fmt.Sprintf("id=%d", meta.ArticleID))
+		}
+
+		fmt.Printf(
+			"%s  %s  %s  %s\n",
+			bold(name),
+			cyan(meta.Title),
+			fmt.Sprintf("(subject=%d, public=%t)", meta.SubjectID, meta.IsPublic),
+			status,
+		)
 	}
 
-	fmt.Print(string(body))
 	return nil
 }
 
@@ -172,8 +219,40 @@ func listSubjects() error {
 
 	req.Header.Set("X-Statix-Token", cfg.Token)
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+    resp, err := httpClient.Do(req)
+	
+    if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("server returned %s:\n%s", resp.Status, string(body))
+	}
+
+	fmt.Print(string(body))
+	return nil
+}
+
+func listArticles() error {
+	cfg, err := loadConfig()
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest("GET", cfg.URL+"/admin/api/articles", nil)
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("X-Statix-Token", cfg.Token)
+
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return err
 	}
@@ -192,99 +271,352 @@ func listSubjects() error {
 	return nil
 }
 
+type ArticleMeta struct {
+	Title     string `json:"title"`
+	SubjectID int64  `json:"subject_id"`
+	IsPublic  bool   `json:"is_public"`
+	ArticleID int64  `json:"article_id,omitempty"`
+}
+
+type NicknameStore map[string]ArticleMeta
+
+func nicknameFilePath() string {
+	return ".statix_articles.json"
+}
+
+func loadNicknames() (NicknameStore, error) {
+	path := nicknameFilePath()
+
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return NicknameStore{}, nil
+	}
+
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	var store NicknameStore
+	if err := json.Unmarshal(b, &store); err != nil {
+		return nil, err
+	}
+
+	return store, nil
+}
+
+func getNickname(name string) (ArticleMeta, error) {
+	store, err := loadNicknames()
+	if err != nil {
+		return ArticleMeta{}, err
+	}
+
+	meta, ok := store[name]
+	if !ok {
+		return ArticleMeta{}, fmt.Errorf("nickname not found")
+	}
+
+	return meta, nil
+}
+
+func saveNicknames(store NicknameStore) error {
+	b, err := json.MarshalIndent(store, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(nicknameFilePath(), b, 0644)
+}
+
+func createNickname(name string, 
+                    title string, 
+                    subjectID int64, 
+                    isPublic bool) error {
+	store, err := loadNicknames()
+	if err != nil {
+		return err
+	}
+
+	if _, exists := store[name]; exists {
+		return fmt.Errorf("nickname already exists")
+	}
+
+	store[name] = ArticleMeta{
+		Title:     title,
+		SubjectID: subjectID,
+		IsPublic:  isPublic,
+	}
+
+	return saveNicknames(store)
+}
+
+func setArticleID(name string, id int64) error {
+	store, err := loadNicknames()
+	if err != nil {
+		return err
+	}
+
+	meta, ok := store[name]
+	if !ok {
+		return fmt.Errorf("nickname not found")
+	}
+
+	meta.ArticleID = id
+	store[name] = meta
+
+	return saveNicknames(store)
+}
+
+func removeNickname(name string) error {
+	store, err := loadNicknames()
+	if err != nil {
+		return err
+	}
+
+	if _, exists := store[name]; !exists {
+		return fmt.Errorf("nickname not found")
+	}
+
+	delete(store, name)
+
+	return saveNicknames(store)
+}
+
+func renameNickname(oldName, newName string) error {
+	store, err := loadNicknames()
+	if err != nil {
+		return err
+	}
+
+	meta, exists := store[oldName]
+	if !exists {
+		return fmt.Errorf("nickname not found")
+	}
+
+	if _, already := store[newName]; already {
+		return fmt.Errorf("target nickname already exists")
+	}
+
+	// Move entry
+	store[newName] = meta
+	delete(store, oldName)
+
+	return saveNicknames(store)
+}
+
+func usage() {
+	fmt.Println("stx - Statix Publishing CLI")
+	fmt.Println()
+	fmt.Println("Commands:")
+	fmt.Println("  set-credentials --url URL --password TOKEN")
+	fmt.Println("  publish --file FILE [NAME]")
+	fmt.Println("  nickname create --title TITLE --subject_id ID --is_public true|false NAME")
+	fmt.Println("  nickname remove NAME")
+    fmt.Println("  nickname list")
+    fmt.Println("  nickname rename OLD_NAME NEW_NAME")
+	fmt.Println("  articles")
+	fmt.Println("  subjects")
+	fmt.Println()
+}
+
 func main() {
 
-    flag.Usage = func() {
-    	fmt.Println("stx - Statix Publishing CLI")
-    	fmt.Println()
-    	fmt.Println("Usage:")
-    	fmt.Println("  stx -set-credentials --url URL --password TOKEN")
-    	fmt.Println("  stx -publish --title TITLE --subject_id ID --is_public true|false --file FILE")
-    	fmt.Println("  stx -edit --id ID --title TITLE --subject_id ID --is_public true|false --file FILE")
-    	fmt.Println("  stx -articles")
-    	fmt.Println("  stx -subjects")
-    	fmt.Println()
-    }
+	if len(os.Args) < 2 {
+		usage()
+		return
+	}
 
+	switch os.Args[1] {
 
-	setCreds := flag.Bool("set-credentials", false, "Set credentials")
-	publishFlag := flag.Bool("publish", false, "Publish article")
+	// ---------------- set-credentials ----------------
 
-    articlesFlag := flag.Bool("articles", false, "List articles (id + title)")
+	case "set-credentials":
+		cmd := flag.NewFlagSet("set-credentials", flag.ExitOnError)
+		urlStr := cmd.String("url", "", "Base URL")
+		password := cmd.String("password", "", "Token")
+		cmd.Parse(os.Args[2:])
 
-    subjectsFlag := flag.Bool("subjects", false, "List subjects")
-
-    editFlag := flag.Bool("edit", false, "Edit article")
-    id := flag.String("id", "", "Article ID")
-
-	password := flag.String("password", "", "Token")
-	urlStr := flag.String("url", "", "Base URL")
-
-	title := flag.String("title", "", "Article title")
-	subjectID := flag.String("subject_id", "", "Subject ID")
-	isPublic := flag.String("is_public", "true", "Visibility")
-	file := flag.String("file", "", "HTML file path")
-
-	flag.Parse()
-
-	if *setCreds {
-		if *password == "" || *urlStr == "" {
-			fmt.Println("Missing --password or --url")
+		if *urlStr == "" || *password == "" {
+			fmt.Println("Missing --url or --password")
 			return
 		}
-		err := saveConfig(*urlStr, *password)
-		if err != nil {
+
+		if err := saveConfig(*urlStr, *password); err != nil {
 			fmt.Println("Error:", err)
 			return
 		}
+
 		fmt.Println("Credentials saved.")
-		return
-	}
 
-	if *publishFlag {
-		if *title == "" || *subjectID == "" || *file == "" {
-			fmt.Println("Missing required publish flags.")
-			return
-		}
-		err := publish(*title, *subjectID, *isPublic, *file)
-		if err != nil {
-			fmt.Println("Error:", err)
-		}
-		return
-	}
+	// ---------------- publish ----------------
 
-    if *editFlag {
-    	if *id == "" || *title == "" || *subjectID == "" || *file == "" {
-    		fmt.Println("Missing required edit flags.")
+    case "publish":
+    	cmd := flag.NewFlagSet("publish", flag.ExitOnError)
+    	file := cmd.String("file", "", "HTML file path")
+    	cmd.Parse(os.Args[2:])
+    
+    	if *file == "" {
+    		fmt.Println("Missing --file")
     		return
     	}
     
-    	err := editArticle(*id, *title, *subjectID, *isPublic, *file)
-    	if err != nil {
-    		fmt.Println("Error:", err)
+    	var name string
+    
+    	if cmd.NArg() >= 1 {
+    		name = cmd.Arg(0)
+    	} else {
+    		name = nicknameFromFile(*file)
+    		fmt.Println("Auto-detected nickname:", name)
     	}
-    	return
-    }
+		
+		meta, err := getNickname(name)
+		if err != nil {
+			fmt.Println("Error:", err)
+			return
+		}
 
-    if *articlesFlag {
-    	if err := listArticles(); err != nil {
-    		fmt.Println("Error:", err)
-    	}
-    	return
-    }
+		subIDStr := strconv.FormatInt(meta.SubjectID, 10)
+		publicStr := strconv.FormatBool(meta.IsPublic)
 
-    if *subjectsFlag {
-    	if err := listSubjects(); err != nil {
-    		fmt.Println("Error:", err)
-    	}
-    	return
-    }
+		if meta.ArticleID != 0 {
+			err = editArticle(
+				strconv.FormatInt(meta.ArticleID, 10),
+				meta.Title,
+				subIDStr,
+				publicStr,
+				*file,
+			)
+			if err != nil {
+				fmt.Println("Error:", err)
+				return
+			}
+			fmt.Println("Article updated.")
+			return
+		}
 
-	flag.Usage()
+		newID, err := publish(meta.Title, subIDStr, publicStr, *file)
+		if err != nil {
+			fmt.Println("Error:", err)
+			return
+		}
 
+		if err := setArticleID(name, newID); err != nil {
+			fmt.Println("Published but failed to update nickname:", err)
+			return
+		}
+
+		fmt.Println("Article published and nickname updated.")
+
+	// ---------------- nickname ----------------
+
+	case "nickname":
+		if len(os.Args) < 3 {
+			fmt.Println("Usage: stx nickname [create|remove|rename|list]")
+			return
+		}
+
+		switch os.Args[2] {
+
+		case "create":
+			cmd := flag.NewFlagSet("nickname create", flag.ExitOnError)
+			title := cmd.String("title", "", "Article title")
+			subjectID := cmd.String("subject_id", "", "Subject ID")
+			isPublic := cmd.String("is_public", "true", "Visibility")
+			cmd.Parse(os.Args[3:])
+
+			if cmd.NArg() < 1 {
+				fmt.Println("Usage: stx nickname create NAME --title ... --subject_id ...")
+				return
+			}
+
+			name := cmd.Arg(0)
+
+			if *title == "" || *subjectID == "" {
+				fmt.Println("Missing --title or --subject_id")
+				return
+			}
+
+			subID, err := strconv.ParseInt(*subjectID, 10, 64)
+			if err != nil {
+				fmt.Println("Invalid subject_id")
+				return
+			}
+
+			publicBool, err := strconv.ParseBool(*isPublic)
+			if err != nil {
+				fmt.Println("Invalid is_public value")
+				return
+			}
+
+			if err := createNickname(name, *title, subID, publicBool); err != nil {
+				fmt.Println("Error:", err)
+				return
+			}
+
+			fmt.Println("Nickname created.")
+
+		case "remove":
+			cmd := flag.NewFlagSet("nickname remove", flag.ExitOnError)
+			cmd.Parse(os.Args[3:])
+
+			if cmd.NArg() < 1 {
+				fmt.Println("Usage: stx nickname remove NAME")
+				return
+			}
+
+			name := cmd.Arg(0)
+
+			if err := removeNickname(name); err != nil {
+				fmt.Println("Error:", err)
+				return
+			}
+
+			fmt.Println("Nickname removed.")
+
+        case "list":
+            if err := listNicknames(); err != nil {
+                fmt.Println("Error:", err)
+            }
+
+        case "rename":
+        	cmd := flag.NewFlagSet("nickname rename", flag.ExitOnError)
+        	cmd.Parse(os.Args[3:])
+        
+        	if cmd.NArg() < 2 {
+        		fmt.Println("Usage: stx nickname rename OLD_NAME NEW_NAME")
+        		return
+        	}
+        
+        	oldName := cmd.Arg(0)
+        	newName := cmd.Arg(1)
+        
+        	if err := renameNickname(oldName, newName); err != nil {
+        		fmt.Println("Error:", err)
+        		return
+        	}
+        
+        	fmt.Println("Nickname renamed.")
+
+		default:
+			fmt.Println("Unknown nickname command.")
+		}
+
+	// ---------------- articles ----------------
+
+	case "articles":
+		if err := listArticles(); err != nil {
+			fmt.Println("Error:", err)
+		}
+
+	// ---------------- subjects ----------------
+
+	case "subjects":
+		if err := listSubjects(); err != nil {
+			fmt.Println("Error:", err)
+		}
+
+	default:
+		usage()
+	}
 }
-
-
-
 
 
