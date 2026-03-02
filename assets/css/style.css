@@ -729,7 +729,7 @@ pre:not(.code-block pre) {
 }*/
 
 main {
-  max-width: 70em;
+  max-width: 48em;
   margin: auto;
   padding: 0 1.5em;
 }
