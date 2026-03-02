@@ -159,12 +159,47 @@ func listArticles() error {
 	return nil
 }
 
+func listSubjects() error {
+	cfg, err := loadConfig()
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest("GET", cfg.URL+"/admin/api/subjects", nil)
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("X-Statix-Token", cfg.Token)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("server returned %s:\n%s", resp.Status, string(body))
+	}
+
+	fmt.Print(string(body))
+	return nil
+}
+
 func main() {
 	setCreds := flag.Bool("set-credentials", false, "Set credentials")
 	publishFlag := flag.Bool("publish", false, "Publish article")
 
     articlesFlag := flag.Bool("articles", false, "List articles (id + title)")
-    
+
+    subjectsFlag := flag.Bool("subjects", false, "List subjects")
+
     editFlag := flag.Bool("edit", false, "Edit article")
     id := flag.String("id", "", "Article ID")
 
@@ -219,6 +254,13 @@ func main() {
 
     if *articlesFlag {
     	if err := listArticles(); err != nil {
+    		fmt.Println("Error:", err)
+    	}
+    	return
+    }
+
+    if *subjectsFlag {
+    	if err := listSubjects(); err != nil {
     		fmt.Println("Error:", err)
     	}
     	return

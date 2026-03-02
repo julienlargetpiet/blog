@@ -146,4 +146,46 @@ func (r *SubjectRepo) GetSlugByID(id int64) (string, error) {
 	return slug_val, nil
 }
 
+func (r *SubjectRepo) ListIDAndTitle() ([]struct {
+	ID    int64
+	Title string
+}, error) {
 
+	rows, err := r.DB.Query(`
+		SELECT id, title
+		FROM subjects
+		ORDER BY title ASC
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var result []struct {
+		ID    int64
+		Title string
+	}
+
+	for rows.Next() {
+		var id int64
+		var title string
+
+		if err := rows.Scan(&id, &title); err != nil {
+			return nil, err
+		}
+
+		result = append(result, struct {
+			ID    int64
+			Title string
+		}{
+			ID:    id,
+			Title: title,
+		})
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}

@@ -944,5 +944,24 @@ func (s *Server) handleRequestArticles(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (s *Server) handleRequestSubjects(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
 
+	repo := db.SubjectRepo{DB: s.DB}
 
+	subjects, err := repo.ListIDAndTitle()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+
+	for _, s := range subjects {
+		fmt.Fprintf(w, "%d\t%s\n", s.ID, s.Title)
+	}
+}

@@ -43,7 +43,8 @@ func NewRouter(db *sql.DB, adminPass string) http.Handler {
 	mux.HandleFunc("/admin/theme",  s.requireAuth(s.handleCustomTheme))
 
     mux.HandleFunc("/admin/api/articles", s.requireAuth(s.handleRequestArticles))
-
+    mux.HandleFunc("/admin/api/subjects", s.requireAuth(s.handleRequestSubjects))
+    
     mux.Handle(
     	"/assets/",
     	http.StripPrefix(
