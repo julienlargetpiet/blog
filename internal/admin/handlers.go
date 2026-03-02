@@ -13,6 +13,7 @@ import (
     "bytes"
     "database/sql"
     "errors"
+    "fmt"
 
 	"blog/internal/db"
 	"blog/internal/generator"
@@ -914,5 +915,28 @@ func (s *Server) handleCustomTheme(w http.ResponseWriter, r *http.Request) {
 
 	tmpl.ExecuteTemplate(w, "base", data)
 }
+
+func (s *Server) handleRequestArticles(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	repo := db.ArticleRepo{DB: s.DB}
+
+	articles, err := repo.ListIDAndTitle()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+
+	for _, a := range articles {
+		fmt.Fprintf(w, "%d\t%s\n", a.ID, a.Title)
+	}
+}
+
 
 

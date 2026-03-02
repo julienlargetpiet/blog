@@ -233,4 +233,46 @@ func (r *ArticleRepo) GetByTitleURL(title_url string) (model.Article, error) {
 	return a, err
 }
 
+func (r *ArticleRepo) ListIDAndTitle() ([]struct {
+	ID    int64
+	Title string
+}, error) {
 
+	rows, err := r.DB.Query(`
+		SELECT id, title
+		FROM articles
+		ORDER BY id DESC
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var result []struct {
+		ID    int64
+		Title string
+	}
+
+	for rows.Next() {
+		var id int64
+		var title string
+
+		if err := rows.Scan(&id, &title); err != nil {
+			return nil, err
+		}
+
+		result = append(result, struct {
+			ID    int64
+			Title string
+		}{
+			ID:    id,
+			Title: title,
+		})
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}

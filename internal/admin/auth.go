@@ -59,8 +59,7 @@ func (s *Server) requireAuth(next http.HandlerFunc) http.HandlerFunc {
 
 		publishToken := os.Getenv("STATIX_PUBLISH_TOKEN")
 		if publishToken != "" &&
-			r.Method == http.MethodPost &&
-			r.Header.Get("X-Statix-Token") == publishToken {
+		   r.Header.Get("X-Statix-Token") == publishToken {
 
 			next(w, r)
 			return
