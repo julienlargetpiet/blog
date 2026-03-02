@@ -513,6 +513,7 @@ User=goblog
 Group=goblog
 WorkingDirectory=/var/www/go_blog
 ExecStart=/var/www/go_blog/go_blog_admin
+Environment="STATIX_PUBLISH_TOKEN=your_long_random_token"
 
 Restart=on-failure
 RestartSec=3

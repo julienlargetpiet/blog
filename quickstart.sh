@@ -109,7 +109,7 @@ CERT_PRIVKEY="${CERT_DIR}/privkey.pem"
 ########################################
 log "Installing base packages (safe rerun)..."
 apt update
-apt install -y nginx default-mysql-server git curl wget rsync
+apt install -y nginx default-mysql-server git curl wget rsync openssl
 
 ########################################
 # Go install (idempotent)
@@ -249,6 +249,10 @@ fi
 # systemd (always overwrite safely)
 ########################################
 log "Writing systemd service..."
+PUBLISH_TOKEN=$(openssl rand -hex 32)
+
+echo "Publish token: $PUBLISH_TOKEN"
+
 cat > /etc/systemd/system/go_blog.service <<EOF
 [Unit]
 Description=Go Blog Admin Server
@@ -259,6 +263,9 @@ Type=simple
 User=$APP_USER
 WorkingDirectory=$APP_DIR
 ExecStart=$APP_DIR/go_blog_admin
+
+Environment="STATIX_PUBLISH_TOKEN=$PUBLISH_TOKEN"
+
 Restart=on-failure
 RestartSec=3
 NoNewPrivileges=true
@@ -269,6 +276,8 @@ ProtectHome=true
 [Install]
 WantedBy=multi-user.target
 EOF
+
+chmod 600 /etc/systemd/system/go_blog.service
 
 systemctl daemon-reload
 systemctl enable go_blog
@@ -355,6 +364,8 @@ WorkingDirectory=$SHINY_DIR
 Environment=R_LIBS_USER=$RLIBS_DIR
 
 ExecStart=/usr/bin/R --no-save --no-restore -e "shiny::runApp('$SHINY_DIR', host='127.0.0.1', port=$SHINY_PORT)"
+
+SupplementaryGroups=adm
 
 Restart=always
 RestartSec=5
