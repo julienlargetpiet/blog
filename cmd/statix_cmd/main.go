@@ -193,6 +193,20 @@ func listSubjects() error {
 }
 
 func main() {
+
+    flag.Usage = func() {
+    	fmt.Println("stx - Statix Publishing CLI")
+    	fmt.Println()
+    	fmt.Println("Usage:")
+    	fmt.Println("  stx -set-credentials --url URL --password TOKEN")
+    	fmt.Println("  stx -publish --title TITLE --subject_id ID --is_public true|false --file FILE")
+    	fmt.Println("  stx -edit --id ID --title TITLE --subject_id ID --is_public true|false --file FILE")
+    	fmt.Println("  stx -articles")
+    	fmt.Println("  stx -subjects")
+    	fmt.Println()
+    }
+
+
 	setCreds := flag.Bool("set-credentials", false, "Set credentials")
 	publishFlag := flag.Bool("publish", false, "Publish article")
 
@@ -266,7 +280,8 @@ func main() {
     	return
     }
 
-	fmt.Println("No valid command.")
+	flag.Usage()
+
 }
 
 
