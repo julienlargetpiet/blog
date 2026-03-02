@@ -1121,14 +1121,53 @@ address a:hover {
    Article Summary (Left Panel)
    ================================ */
 
+/* ================================
+   Article Summary + Toggle (Drop-in)
+   Anchored to centered main (48em)
+   ================================ */
+
+:root {
+  --main-max: 48em;
+  --summary-w: 16rem;
+  --summary-gap: 2rem;
+  --toggle-w: 3rem;          /* approx; adjust if needed */
+  --edge-min: 1rem;          /* min distance from viewport edge */
+  --edge-max: 2rem;          /* max “comfort” distance */
+}
+
+/* Where is the LEFT edge of main? 50% - half(main) */
+:root {
+  --main-left: calc(50% - (var(--main-max) / 2));
+}
+
+/* Panel target X: left of main, minus its width + gap */
+:root {
+  --summary-left: calc(var(--main-left) - var(--summary-w) - var(--summary-gap));
+}
+
+/* Toggle default X: slightly left of the panel (or adjust to taste) */
+:root {
+  --toggle-left: calc(var(--summary-left) - var(--toggle-w));
+}
+
+/* Toggle when panel is open: sit right next to content (left edge of main) */
+:root {
+  --toggle-open-left: calc(var(--main-left) - var(--summary-gap));
+}
+
+/* ================================
+   Article Summary (Left Panel)
+   ================================ */
+
 .article-summary {
   position: fixed;
   top: 8rem;
-  left: 2rem;
 
-  width: 16rem;
+  /* Keep it on-screen if calc goes negative */
+  left: max(1rem, calc(50% - 24em - 16rem - 2rem));
+
+  width: var(--summary-w);
   max-height: 70vh;
-
   padding: 1.2rem;
 
   background: var(--bg-soft);
@@ -1151,7 +1190,6 @@ address a:hover {
   z-index: 200;
 }
 
-/* When opened */
 .article-summary.open {
   transform: translateX(0);
   opacity: 1;
@@ -1181,10 +1219,6 @@ address a:hover {
   color: var(--text-strong);
 }
 
-.article-summary.open + .summary-toggle {
-  left: 18.5rem; /* width + spacing */
-}
-
 /* ================================
    Toggle Button
    ================================ */
@@ -1192,7 +1226,9 @@ address a:hover {
 .summary-toggle {
   position: fixed;
   top: 6rem;
-  left: 1rem;
+
+
+  left: max(1rem, calc(50% - 24em - 16rem - 5rem));
 
   z-index: 210;
 
@@ -1203,7 +1239,7 @@ address a:hover {
   padding: 0.4rem 0.6rem;
   cursor: pointer;
 
-  transition: background-color 0.15s ease;
+  transition: background-color 0.15s ease, left 0.25s ease;
 }
 
 .summary-toggle:hover {
@@ -1211,17 +1247,32 @@ address a:hover {
 }
 
 /* ================================
-   Mobile Drawer
+   Responsive breakpoints
    ================================ */
 
-@media (max-width: 768px) {
+/* At <=1000px, just pin both to 2rem (simple + predictable) */
+@media (max-width: 1000px) {
+  .article-summary {
+    left: 2rem;
+  }
 
+  .summary-toggle {
+    left: 2rem;
+  }
+
+  .article-summary.open ~ .summary-toggle {
+    left: 2rem;
+  }
+}
+
+/* Mobile drawer */
+@media (max-width: 768px) {
   .article-summary {
     left: 0;
     width: 100%;
     max-height: none;
 
-    top: 4.5rem; /* same height as your sticky header */
+    top: 4.5rem;
     height: calc(100vh - 5.5rem);
 
     border-radius: 0;
@@ -1230,22 +1281,18 @@ address a:hover {
 
   .summary-toggle {
     top: 5.5rem;
+    left: 0;
+  }
+
+  .article-summary.open ~ .summary-toggle {
+    left: 0;
   }
 }
 
+/* Anchor heading offsets under sticky header */
 .article-content h2,
 .article-content h3 {
   scroll-margin-top: 8.25rem;
-}
-
-.article-summary.open ~ .summary-toggle {
-  left: 2rem;
-}
-
-@media (max-width: 768px) {
-  .summary-toggle {
-    top: 6rem;
-  }
 }
 
 .flash-message {
