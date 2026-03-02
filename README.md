@@ -872,6 +872,8 @@ Environment=R_LIBS_USER=/var/www/Rlibs
 
 ExecStart=/usr/local/bin/R --no-save --no-restore -e "shiny::runApp('/var/www/RShinyApp', host='127.0.0.1', port=7665)"
 
+SupplementaryGroups=adm
+
 Restart=always
 RestartSec=5
 
