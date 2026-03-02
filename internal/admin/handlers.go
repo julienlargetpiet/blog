@@ -515,20 +515,24 @@ func (s *Server) handleNewArticle(w http.ResponseWriter, r *http.Request) {
         }
 
 		// 1️⃣ Insert into DB
-		if _, err := articleRepo.Create(title, subjectId, isPublic, html); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+        newID, err := articleRepo.Create(title, subjectId, isPublic, html)
+        if err != nil {
+        	http.Error(w, err.Error(), http.StatusInternalServerError)
+        	return
+        }
 
         if err := s.rebuildSiteLocalize(title, subjectId, true, false); err != nil {
         	http.Error(w, err.Error(), http.StatusInternalServerError)
         	return
         }
 
-        if r.Header.Get("X-Statix-Token") != "" {
-            w.WriteHeader(http.StatusOK)
-            w.Write([]byte("article published\n"))
-            return
+        publishToken := os.Getenv("STATIX_PUBLISH_TOKEN")
+        
+        if r.Header.Get("X-Statix-Token") == publishToken {
+        	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+        	w.WriteHeader(http.StatusOK)
+        	fmt.Fprintf(w, "%d\n", newID)
+        	return
         }
 
 		http.Redirect(w, r, "/admin", http.StatusSeeOther)
