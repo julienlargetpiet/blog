@@ -969,3 +969,71 @@ func (s *Server) handleRequestSubjects(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "%d\t%s\n", s.ID, s.Title)
 	}
 }
+
+func (s *Server) handleImportArticle(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+    idStr := strings.TrimPrefix(r.URL.Path, "/admin/api/articles/")
+    if idStr == "" {
+        http.NotFound(w, r)
+        return
+    }
+
+    id, err := strconv.ParseInt(idStr, 10, 64)
+    if err != nil {
+		http.Error(w, "Invalid Article Id", http.StatusBadRequest)
+        return
+    }
+
+	repo := db.ArticleRepo{DB: s.DB}
+
+	title, subject_id, is_public, err := repo.ImportByID(id)
+	if err != nil {
+        if errors.Is(err, sql.ErrNoRows) {
+            http.NotFound(w, r)
+            return
+        }
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+
+	fmt.Fprintf(w, "%s\t%d\t%t\n", title, subject_id, is_public)
+}
+
+func (s *Server) handleImportArticleContent(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	idStr := strings.TrimSuffix(
+		strings.TrimPrefix(r.URL.Path, "/admin/api/articles/"),
+		"/content",
+	)
+
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		http.Error(w, "invalid article id", http.StatusBadRequest)
+		return
+	}
+
+	repo := db.ArticleRepo{DB: s.DB}
+
+	html, err := repo.GetHTMLByID(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(html))
+}
+
+

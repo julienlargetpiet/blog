@@ -68,6 +68,36 @@ func (r *ArticleRepo) GetByID(id int64) (model.Article, error) {
 	return a, err
 }
 
+func (r *ArticleRepo) ImportByID(id int64) (string, int64, bool, error) {
+	var title string
+    var subject_id int64
+    var is_public bool
+
+	err := r.DB.QueryRow(`
+		SELECT title, subject_id, is_public
+		FROM articles
+		WHERE id = ?
+	`, id).Scan(
+		&title,
+        &subject_id,
+		&is_public,
+	)
+
+	return title, subject_id, is_public, err
+}
+
+func (r *ArticleRepo) GetHTMLByID(id int64) (string, error) {
+	var html string
+
+	err := r.DB.QueryRow(`
+		SELECT html
+		FROM articles
+		WHERE id = ?
+	`, id).Scan(&html)
+
+	return html, err
+}
+
 func (r *ArticleRepo) Update(id int64, 
                              title string, 
                              subjectId int64, 
