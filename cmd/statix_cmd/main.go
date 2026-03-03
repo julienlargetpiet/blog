@@ -568,22 +568,27 @@ func uploadFiles(paths []string) error {
 	var body bytes.Buffer
 	writer := multipart.NewWriter(&body)
 
-	for _, path := range paths {
-		file, err := os.Open(path)
-		if err != nil {
-			return err
-		}
-		defer file.Close()
-
-		part, err := writer.CreateFormFile("files", filepath.Base(path))
-		if err != nil {
-			return err
-		}
-
-		if _, err := io.Copy(part, file); err != nil {
-			return err
-		}
-	}
+    for _, path := range paths {
+    	file, err := os.Open(path)
+    	if err != nil {
+    		return err
+    	}
+    
+    	safeName := filepath.Base(path)
+    
+    	part, err := writer.CreateFormFile("files", safeName)
+    	if err != nil {
+    		file.Close()
+    		return err
+    	}
+    
+    	if _, err := io.Copy(part, file); err != nil {
+    		file.Close()
+    		return err
+    	}
+    
+    	file.Close()
+    }
 
 	if err := writer.Close(); err != nil {
 		return err
@@ -605,11 +610,73 @@ func uploadFiles(paths []string) error {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusSeeOther && resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(resp.Body)
 		return fmt.Errorf("server returned %s:\n%s", resp.Status, string(bodyBytes))
 	}
 
+	return nil
+}
+
+func deleteFileRemote(name string) error {
+	cfg, err := loadConfig()
+	if err != nil {
+		return err
+	}
+
+	url := fmt.Sprintf("%s/admin/files/delete/%s", cfg.URL, name)
+
+	req, err := http.NewRequest("POST", url, nil)
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("X-Statix-Token", cfg.Token)
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("server returned %s:\n%s", resp.Status, string(body))
+	}
+
+	return nil
+}
+
+func listFilesRemote() error {
+	cfg, err := loadConfig()
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest("GET", cfg.URL+"/admin/api/files", nil)
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("X-Statix-Token", cfg.Token)
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("server returned %s:\n%s", resp.Status, string(body))
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	fmt.Print(string(body))
 	return nil
 }
 
@@ -626,6 +693,8 @@ func usage() {
     fmt.Println("  nickname list")
     fmt.Println("  nickname rename OLD_NAME NEW_NAME")
     fmt.Println("  file upload FILE...")
+    fmt.Println("  file delete FILE")
+    fmt.Println("  file list")
 	fmt.Println("  articles")
 	fmt.Println("  subjects")
 	fmt.Println()
@@ -893,7 +962,7 @@ func main() {
 
     case "file":
     	if len(os.Args) < 3 {
-    		fmt.Println("Usage: stx file upload FILE...")
+    		fmt.Println("Usage: stx file [upload|delete|list]")
     		return
     	}
     
@@ -915,7 +984,30 @@ func main() {
     
     		fmt.Println("Files uploaded successfully.")
     
-    	default:
+        case "delete":
+		    cmd := flag.NewFlagSet("file delete", flag.ExitOnError)
+		    cmd.Parse(os.Args[3:])
+
+		    if cmd.NArg() < 1 {
+		    	fmt.Println("Usage: stx file delete NAME")
+		    	return
+		    }
+
+		    name := cmd.Arg(0)
+
+		    if err := deleteFileRemote(name); err != nil {
+		    	fmt.Println("Error:", err)
+		    	return
+		    }
+
+		    fmt.Println("File deleted successfully.")
+    
+        case "list":
+        	if err := listFilesRemote(); err != nil {
+        		fmt.Println("Error:", err)
+        	}
+
+        default:
     		fmt.Println("Unknown file command.")
     	}
 
@@ -923,5 +1015,7 @@ func main() {
 		usage()
 	}
 }
+
+
 
 

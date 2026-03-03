@@ -148,6 +148,26 @@ func publishFileAtomically(fh *multipart.FileHeader) error {
 	return nil
 }
 
+func (s *Server) handleListFilesAPI(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	files, err := listPublishedFiles()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+
+	for _, f := range files {
+		fmt.Fprintf(w, "%s\t%s\n", f.Name, f.Size)
+	}
+}
+
 func listPublishedFiles() ([]UploadedFile, error) {
 	entries, err := os.ReadDir(publicDir)
 	if err != nil {
