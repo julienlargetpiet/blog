@@ -16,6 +16,8 @@ import (
     "bytes"
     "mime/multipart"
     htmlmd "github.com/JohannesKaufmann/html-to-markdown"
+
+    "blog/cmd/statix_cmd/mdtostatix"
 )
 
 const (
@@ -81,16 +83,26 @@ func publish(title string,
 		return 0, err
 	}
 
-	content, err := os.ReadFile(filePath)
+	rawContent, err := os.ReadFile(filePath)
 	if err != nil {
 		return 0, err
+	}
+
+	content := string(rawContent)
+
+	if strings.HasSuffix(strings.ToLower(filePath), ".md") {
+		htmlContent, err := mdtostatix.MarkdownToStatixHTML(content)
+		if err != nil {
+			return 0, fmt.Errorf("markdown conversion failed: %w", err)
+		}
+		content = htmlContent
 	}
 
 	data := url.Values{}
 	data.Set("title", title)
 	data.Set("subject_id", subjectID)
 	data.Set("is_public", isPublic)
-	data.Set("html", string(content))
+	data.Set("html", content)
 
 	req, err := http.NewRequest("POST", cfg.URL+"/admin/new", strings.NewReader(data.Encode()))
 	if err != nil {
@@ -100,8 +112,7 @@ func publish(title string,
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("X-Statix-Token", cfg.Token)
 
-    resp, err := httpClient.Do(req)
-
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return 0, err
 	}
@@ -131,16 +142,29 @@ func editArticle(id, title, subjectID, isPublic, filePath string) error {
 		return err
 	}
 
-	content, err := os.ReadFile(filePath)
+	rawContent, err := os.ReadFile(filePath)
 	if err != nil {
 		return err
+	}
+
+	content := string(rawContent)
+
+	// 🔥 Detect markdown and convert
+	if strings.HasSuffix(strings.ToLower(filePath), ".md") {
+
+		htmlContent, err := mdtostatix.MarkdownToStatixHTML(content)
+		if err != nil {
+			return fmt.Errorf("markdown conversion failed: %w", err)
+		}
+
+		content = htmlContent
 	}
 
 	data := url.Values{}
 	data.Set("title", title)
 	data.Set("subject_id", subjectID)
 	data.Set("is_public", isPublic)
-	data.Set("html", string(content))
+	data.Set("html", content)
 
 	endpoint := fmt.Sprintf("%s/admin/articles/%s", cfg.URL, id)
 
@@ -152,18 +176,17 @@ func editArticle(id, title, subjectID, isPublic, filePath string) error {
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("X-Statix-Token", cfg.Token)
 
-    resp, err := httpClient.Do(req)
-	
-    if err != nil {
+	resp, err := httpClient.Do(req)
+	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
 
 	body, _ := io.ReadAll(resp.Body)
 
-    if resp.StatusCode != http.StatusOK {
-        return fmt.Errorf("server returned %s:\n%s", resp.Status, string(body))
-    }
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("server returned %s:\n%s", resp.Status, string(body))
+	}
 
 	return nil
 }
@@ -733,7 +756,7 @@ func main() {
 
     case "publish":
     	cmd := flag.NewFlagSet("publish", flag.ExitOnError)
-    	file := cmd.String("file", "", "HTML file path")
+    	file := cmd.String("file", "", "HTML/MD file path")
     	cmd.Parse(os.Args[2:])
     
     	if *file == "" {
@@ -749,7 +772,11 @@ func main() {
     		name = nicknameFromFile(*file)
     		fmt.Println("Auto-detected nickname:", name)
     	}
-		
+	
+        if strings.HasSuffix(strings.ToLower(*file), ".md") {
+        	fmt.Println("Detected Markdown → converting to Statix HTML")
+        }
+
 		meta, err := getNickname(name)
 		if err != nil {
 			fmt.Println("Error:", err)
