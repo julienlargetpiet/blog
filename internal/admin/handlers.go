@@ -1012,10 +1012,12 @@ func (s *Server) handleImportArticleContent(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	idStr := strings.TrimSuffix(
-		strings.TrimPrefix(r.URL.Path, "/admin/api/articles/"),
-		"/content",
-	)
+	idStr := strings.TrimPrefix(r.URL.Path, "/admin/api/articles-content/")
+
+    if idStr == "" {
+    	http.NotFound(w, r)
+    	return
+    }
 
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
