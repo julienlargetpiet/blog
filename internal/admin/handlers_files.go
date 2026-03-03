@@ -75,6 +75,13 @@ func (s *Server) handleFiles(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
+        if r.Header.Get("X-Statix-Token") != "" {
+        	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+        	w.WriteHeader(http.StatusOK)
+        	w.Write([]byte("file uploaded\n"))
+        	return
+        }
+
 		http.Redirect(w, r, "/admin/files", http.StatusSeeOther)
 
 	default:
@@ -201,6 +208,13 @@ func (s *Server) handleDeleteFile(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+    if r.Header.Get("X-Statix-Token") != "" {
+    	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+    	w.WriteHeader(http.StatusOK)
+    	w.Write([]byte("file deleted\n"))
+    	return
+    }
 
 	http.Redirect(w, r, "/admin/files", http.StatusSeeOther)
 }
