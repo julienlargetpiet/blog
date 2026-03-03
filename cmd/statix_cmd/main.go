@@ -13,6 +13,7 @@ import (
     "encoding/json"
     "time"
     "sort"
+    htmlmd "github.com/JohannesKaufmann/html-to-markdown"
 )
 
 const (
@@ -403,6 +404,130 @@ func renameNickname(oldName, newName string) error {
 	return saveNicknames(store)
 }
 
+func importNickname(articleID int64, nickname string) error {
+	cfg, err := loadConfig()
+	if err != nil {
+		return err
+	}
+
+	url := fmt.Sprintf("%s/admin/api/articles/%d", cfg.URL, articleID)
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("X-Statix-Token", cfg.Token)
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("server returned %s:\n%s", resp.Status, string(body))
+	}
+
+	parts := strings.Split(strings.TrimSpace(string(body)), "\t")
+	if len(parts) != 3 {
+		return fmt.Errorf("invalid server response: %s", string(body))
+	}
+
+	title := parts[0]
+
+	subjectID, err := strconv.ParseInt(parts[1], 10, 64)
+	if err != nil {
+		return fmt.Errorf("invalid subject_id from server")
+	}
+
+	isPublic, err := strconv.ParseBool(parts[2])
+	if err != nil {
+		return fmt.Errorf("invalid is_public from server")
+	}
+
+	store, err := loadNicknames()
+	if err != nil {
+		return err
+	}
+
+	if _, exists := store[nickname]; exists {
+		return fmt.Errorf("nickname already exists")
+	}
+
+	store[nickname] = ArticleMeta{
+		Title:     title,
+		SubjectID: subjectID,
+		IsPublic:  isPublic,
+		ArticleID: articleID,
+	}
+
+	return saveNicknames(store)
+}
+
+func importContent(articleID int64, nickname string, asMarkdown bool) error {
+	cfg, err := loadConfig()
+	if err != nil {
+		return err
+	}
+
+	url := fmt.Sprintf("%s/admin/api/articles-content/%d", cfg.URL, articleID)
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("X-Statix-Token", cfg.Token)
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("server returned %s:\n%s", resp.Status, string(body))
+	}
+
+	content := string(body)
+
+	if asMarkdown {
+
+        cleanHTML := strings.ReplaceAll(
+            content,
+            `<button class="copy-btn">Copy</button>`,
+            "",
+        )
+
+        converter := htmlmd.NewConverter("", true, nil)
+		md, err := converter.ConvertString(cleanHTML)
+		if err != nil {
+			return err
+		}
+		content = md
+	}
+
+	ext := ".html"
+	if asMarkdown {
+		ext = ".md"
+	}
+
+	filename := nickname + ext
+
+	return os.WriteFile(filename, []byte(content), 0644)
+}
+
 func usage() {
 	fmt.Println("stx - Statix Publishing CLI")
 	fmt.Println()
@@ -410,6 +535,8 @@ func usage() {
 	fmt.Println("  set-credentials --url URL --password TOKEN")
 	fmt.Println("  publish --file FILE [NAME]")
 	fmt.Println("  nickname create --title TITLE --subject_id ID --is_public true|false NAME")
+    fmt.Println("  nickname import ARTICLE_ID NAME")
+    fmt.Println("  nickname import-content ARTICLE_ID NAME [--markdown]")
 	fmt.Println("  nickname remove NAME")
     fmt.Println("  nickname list")
     fmt.Println("  nickname rename OLD_NAME NEW_NAME")
@@ -510,7 +637,7 @@ func main() {
 
 	case "nickname":
 		if len(os.Args) < 3 {
-			fmt.Println("Usage: stx nickname [create|remove|rename|list]")
+			fmt.Println("Usage: stx nickname [create|import|import-content|remove|rename|list]")
 			return
 		}
 
@@ -554,6 +681,31 @@ func main() {
 
 			fmt.Println("Nickname created.")
 
+        case "import":
+        	cmd := flag.NewFlagSet("nickname import", flag.ExitOnError)
+        	cmd.Parse(os.Args[3:])
+        
+        	if cmd.NArg() < 2 {
+        		fmt.Println("Usage: stx nickname import ARTICLE_ID NAME")
+        		return
+        	}
+        
+        	idStr := cmd.Arg(0)
+        	name := cmd.Arg(1)
+        
+        	id, err := strconv.ParseInt(idStr, 10, 64)
+        	if err != nil {
+        		fmt.Println("Invalid article ID")
+        		return
+        	}
+        
+        	if err := importNickname(id, name); err != nil {
+        		fmt.Println("Error:", err)
+        		return
+        	}
+        
+        	fmt.Println("Nickname imported successfully.")
+
 		case "remove":
 			cmd := flag.NewFlagSet("nickname remove", flag.ExitOnError)
 			cmd.Parse(os.Args[3:])
@@ -571,6 +723,30 @@ func main() {
 			}
 
 			fmt.Println("Nickname removed.")
+
+        case "import-content":
+        	cmd := flag.NewFlagSet("nickname import-content", flag.ExitOnError)
+            asMarkdown := cmd.Bool("markdown", false, "Convert to Markdown")
+        	cmd.Parse(os.Args[3:])
+        
+        	if cmd.NArg() < 2 {
+                fmt.Println("Usage: stx nickname import-content ARTICLE_ID NAME [--markdown]")
+        		return
+        	}
+        
+        	idStr := cmd.Arg(0)
+        	name := cmd.Arg(1)
+        
+        	id, err := strconv.ParseInt(idStr, 10, 64)
+        	if err != nil {
+        		fmt.Println("Invalid article ID")
+        		return
+        	}
+        
+        	if err := importContent(id, name, *asMarkdown); err != nil {
+        		fmt.Println("Error:", err)
+        		return
+        	}
 
         case "list":
             if err := listNicknames(); err != nil {
