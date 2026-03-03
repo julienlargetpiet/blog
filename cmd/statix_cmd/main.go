@@ -149,7 +149,6 @@ func editArticle(id, title, subjectID, isPublic, filePath string) error {
 
 	content := string(rawContent)
 
-	// 🔥 Detect markdown and convert
 	if strings.HasSuffix(strings.ToLower(filePath), ".md") {
 
 		htmlContent, err := mdtostatix.MarkdownToStatixHTML(content)
