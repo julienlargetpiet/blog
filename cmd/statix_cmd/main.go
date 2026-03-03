@@ -382,6 +382,35 @@ func removeNickname(name string) error {
 	return saveNicknames(store)
 }
 
+func deleteRemoteArticle(id int64) error {
+	cfg, err := loadConfig()
+	if err != nil {
+		return err
+	}
+
+	url := fmt.Sprintf("%s/admin/delete/%d", cfg.URL, id)
+
+	req, err := http.NewRequest("POST", url, nil)
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("X-Statix-Token", cfg.Token)
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusSeeOther && resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("server returned %s:\n%s", resp.Status, string(body))
+	}
+
+	return nil
+}
+
 func renameNickname(oldName, newName string) error {
 	store, err := loadNicknames()
 	if err != nil {
@@ -536,8 +565,8 @@ func usage() {
 	fmt.Println("  publish --file FILE [NAME]")
 	fmt.Println("  nickname create --title TITLE --subject_id ID --is_public true|false NAME")
     fmt.Println("  nickname import ARTICLE_ID NAME")
-    fmt.Println("  nickname import-content ARTICLE_ID NAME [--markdown]")
-	fmt.Println("  nickname remove NAME")
+    fmt.Println("  nickname import-content [--markdown] ARTICLE_ID NAME")
+	fmt.Println("  nickname remove [--sync] NAME")
     fmt.Println("  nickname list")
     fmt.Println("  nickname rename OLD_NAME NEW_NAME")
 	fmt.Println("  articles")
@@ -706,23 +735,38 @@ func main() {
         
         	fmt.Println("Nickname imported successfully.")
 
-		case "remove":
-			cmd := flag.NewFlagSet("nickname remove", flag.ExitOnError)
-			cmd.Parse(os.Args[3:])
-
-			if cmd.NArg() < 1 {
-				fmt.Println("Usage: stx nickname remove NAME")
-				return
-			}
-
-			name := cmd.Arg(0)
-
-			if err := removeNickname(name); err != nil {
-				fmt.Println("Error:", err)
-				return
-			}
-
-			fmt.Println("Nickname removed.")
+        case "remove":
+        	cmd := flag.NewFlagSet("nickname remove", flag.ExitOnError)
+        	syncFlag := cmd.Bool("sync", false, "Delete remote article too")
+        	cmd.Parse(os.Args[3:])
+        
+        	if cmd.NArg() < 1 {
+        		fmt.Println("Usage: stx nickname remove NAME [--sync]")
+        		return
+        	}
+        
+        	name := cmd.Arg(0)
+        
+        	meta, err := getNickname(name)
+        	if err != nil {
+        		fmt.Println("Error:", err)
+        		return
+        	}
+        
+        	if *syncFlag && meta.ArticleID != 0 {
+        		if err := deleteRemoteArticle(meta.ArticleID); err != nil {
+        			fmt.Println("Remote deletion failed:", err)
+        			return
+        		}
+        		fmt.Println("Remote article deleted.")
+        	}
+        
+        	if err := removeNickname(name); err != nil {
+        		fmt.Println("Error:", err)
+        		return
+        	}
+        
+            fmt.Println("Nickname removed.")
 
         case "import-content":
         	cmd := flag.NewFlagSet("nickname import-content", flag.ExitOnError)
