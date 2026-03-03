@@ -13,6 +13,8 @@ import (
     "encoding/json"
     "time"
     "sort"
+    "bytes"
+    "mime/multipart"
     htmlmd "github.com/JohannesKaufmann/html-to-markdown"
 )
 
@@ -557,6 +559,60 @@ func importContent(articleID int64, nickname string, asMarkdown bool) error {
 	return os.WriteFile(filename, []byte(content), 0644)
 }
 
+func uploadFiles(paths []string) error {
+	cfg, err := loadConfig()
+	if err != nil {
+		return err
+	}
+
+	var body bytes.Buffer
+	writer := multipart.NewWriter(&body)
+
+	for _, path := range paths {
+		file, err := os.Open(path)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+
+		part, err := writer.CreateFormFile("files", filepath.Base(path))
+		if err != nil {
+			return err
+		}
+
+		if _, err := io.Copy(part, file); err != nil {
+			return err
+		}
+	}
+
+	if err := writer.Close(); err != nil {
+		return err
+	}
+
+	url := cfg.URL + "/admin/files"
+
+	req, err := http.NewRequest("POST", url, &body)
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	req.Header.Set("X-Statix-Token", cfg.Token)
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusSeeOther && resp.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("server returned %s:\n%s", resp.Status, string(bodyBytes))
+	}
+
+	return nil
+}
+
 func usage() {
 	fmt.Println("stx - Statix Publishing CLI")
 	fmt.Println()
@@ -569,6 +625,7 @@ func usage() {
 	fmt.Println("  nickname remove [--sync] NAME")
     fmt.Println("  nickname list")
     fmt.Println("  nickname rename OLD_NAME NEW_NAME")
+    fmt.Println("  file upload FILE...")
 	fmt.Println("  articles")
 	fmt.Println("  subjects")
 	fmt.Println()
@@ -833,6 +890,34 @@ func main() {
 		if err := listSubjects(); err != nil {
 			fmt.Println("Error:", err)
 		}
+
+    case "file":
+    	if len(os.Args) < 3 {
+    		fmt.Println("Usage: stx file upload FILE...")
+    		return
+    	}
+    
+    	switch os.Args[2] {
+    
+    	case "upload":
+    		cmd := flag.NewFlagSet("file upload", flag.ExitOnError)
+    		cmd.Parse(os.Args[3:])
+    
+    		if cmd.NArg() < 1 {
+    			fmt.Println("Usage: stx file upload FILE...")
+    			return
+    		}
+    
+    		if err := uploadFiles(cmd.Args()); err != nil {
+    			fmt.Println("Error:", err)
+    			return
+    		}
+    
+    		fmt.Println("Files uploaded successfully.")
+    
+    	default:
+    		fmt.Println("Unknown file command.")
+    	}
 
 	default:
 		usage()
