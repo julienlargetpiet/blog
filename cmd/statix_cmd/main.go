@@ -558,7 +558,7 @@ func importContent(articleID int64, nickname string, asMarkdown bool) error {
 
 	if asMarkdown {
 
-        cleanHTML, err := statixtoclean.StripStatixWrappers(content)
+        cleanHTML, tables, err := statixtoclean.StripStatixWrappers(content)
         if err != nil {
             return err
         }
@@ -568,7 +568,23 @@ func importContent(articleID int64, nickname string, asMarkdown bool) error {
 		if err != nil {
 			return err
 		}
-		content = md
+      
+        for i, table := range tables {
+        
+        	placeholder := fmt.Sprintf("STATIXTABLETOKEN%d", i)
+        
+        	md = strings.ReplaceAll(
+        		md,
+        		placeholder,
+        		"\n\n"+table+"\n\n",
+        	)
+        }
+
+        md = strings.ReplaceAll(md, "* * *", "---")
+        md = strings.ReplaceAll(md, `\[x\]`, `[x]`)
+        md = strings.ReplaceAll(md, `\[ \]`, `[ ]`)
+		
+        content = md
 	}
 
 	ext := ".html"

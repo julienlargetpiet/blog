@@ -134,19 +134,5 @@ func (r *statixRenderer) renderTable(
 	return ast.WalkContinue, nil
 }
 
-func extractText(n ast.Node, source []byte) string {
-  // very simple: concatenate all Text nodes inside
-  var b strings.Builder
-  ast.Walk(n, func(child ast.Node, entering bool) (ast.WalkStatus, error) {
-    if entering {
-      if t, ok := child.(*ast.Text); ok {
-        b.Write(t.Segment.Value(source))
-      }
-    }
-    return ast.WalkContinue, nil
-  })
-  return strings.TrimSpace(b.String())
-}
-
 
 
