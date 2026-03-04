@@ -719,6 +719,12 @@ func (s *Server) handleEditSubject(w http.ResponseWriter, r *http.Request) {
         	return
         }
 
+        if r.Header.Get("X-Statix-Token") != "" {
+            w.WriteHeader(http.StatusOK)
+            w.Write([]byte("subject added\n"))
+            return
+        }
+
 	    // 4️⃣ Redirect
 	    http.Redirect(w, r, "/admin/subjects", http.StatusSeeOther)
 
@@ -792,6 +798,12 @@ func (s *Server) handleDeleteSubject(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
+
+    if r.Header.Get("X-Statix-Token") != "" {
+        w.WriteHeader(http.StatusOK)
+        w.Write([]byte("subject deleted\n"))
+        return
+    }
 
 	http.Redirect(w, r, "/admin/subjects", http.StatusSeeOther)
 }
@@ -1037,5 +1049,34 @@ func (s *Server) handleImportArticleContent(w http.ResponseWriter, r *http.Reque
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(html))
 }
+
+func (s *Server) handleRequestSubject(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	slug := strings.TrimPrefix(r.URL.Path, "/admin/api/subject/")
+	if slug == "" {
+		http.NotFound(w, r)
+		return
+	}
+
+	subjectRepo := db.SubjectRepo{DB: s.DB}
+
+	id, err := subjectRepo.GetIDBySlug(slug)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			http.NotFound(w, r)
+			return
+		}
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, "%d\n", id)
+}
+
 
 

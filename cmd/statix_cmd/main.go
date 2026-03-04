@@ -34,6 +34,12 @@ func green(s string) string  { return colorGreen + s + colorReset }
 func yellow(s string) string { return colorYellow + s + colorReset }
 func cyan(s string) string   { return colorCyan + s + colorReset }
 
+func Slugify(s string) string {
+	s = strings.ToLower(strings.TrimSpace(s))
+	s = regexp.MustCompile(`[^a-z0-9]+`).ReplaceAllString(s, "-")
+	return strings.Trim(s, "-")
+}
+
 var httpClient = &http.Client{
 	Timeout: 15 * time.Second,
 }
@@ -718,6 +724,116 @@ func listFilesRemote() error {
 	return nil
 }
 
+func addSubject(name string) error {
+	cfg, err := loadConfig()
+	if err != nil {
+		return err
+	}
+
+	data := url.Values{}
+	data.Set("subject", name)
+
+	req, err := http.NewRequest(
+		"POST",
+		cfg.URL+"/admin/subjects/add",
+		strings.NewReader(data.Encode()),
+	)
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("X-Statix-Token", cfg.Token)
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("server returned %s:\n%s", resp.Status, string(body))
+	}
+
+	fmt.Print(string(body))
+	return nil
+}
+
+func getSubjectID(slug string) (string, error) {
+	cfg, err := loadConfig()
+	if err != nil {
+		return "", err
+	}
+
+	url := fmt.Sprintf("%s/admin/api/subject/%s", cfg.URL, slug)
+
+	req, err := http.NewRequest("POST", url, nil)
+	if err != nil {
+		return "", err
+	}
+
+	req.Header.Set("X-Statix-Token", cfg.Token)
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("server returned %s:\n%s", resp.Status, string(body))
+	}
+
+	return strings.TrimSpace(string(body)), nil
+}
+
+func deleteSubject(slug string) error {
+
+	id, err := getSubjectID(slug)
+	if err != nil {
+		return err
+	}
+
+	cfg, err := loadConfig()
+	if err != nil {
+		return err
+	}
+
+	url := fmt.Sprintf("%s/admin/subjects/delete/%s", cfg.URL, id)
+
+	req, err := http.NewRequest("POST", url, nil)
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("X-Statix-Token", cfg.Token)
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	body, _ := io.ReadAll(resp.Body)
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("server returned %s:\n%s", resp.Status, string(body))
+	}
+
+	fmt.Print(string(body))
+	return nil
+}
+
 func usage() {
 	fmt.Println("stx - Statix Publishing CLI")
 	fmt.Println()
@@ -735,6 +851,8 @@ func usage() {
     fmt.Println("  file list")
 	fmt.Println("  articles")
 	fmt.Println("  subjects")
+    fmt.Println("  subject add NAME")
+    fmt.Println("  subject delete NAME")
 	fmt.Println()
 }
 
@@ -1002,6 +1120,54 @@ func main() {
 			fmt.Println("Error:", err)
 		}
 
+    // ---------------- subject ----------------
+    
+    case "subject":
+    	if len(os.Args) < 3 {
+    		fmt.Println("Usage: stx subject [add|delete]")
+    		return
+    	}
+    
+    	switch os.Args[2] {
+    
+    	case "add":
+    		cmd := flag.NewFlagSet("subject add", flag.ExitOnError)
+    		cmd.Parse(os.Args[3:])
+    
+    		if cmd.NArg() < 1 {
+    			fmt.Println("Usage: stx subject add NAME")
+    			return
+    		}
+    
+    		name := cmd.Arg(0)
+    
+    		if err := addSubject(name); err != nil {
+    			fmt.Println("Error:", err)
+    			return
+    		}
+    
+        case "delete":
+        	cmd := flag.NewFlagSet("subject delete", flag.ExitOnError)
+        	cmd.Parse(os.Args[3:])
+        
+        	if cmd.NArg() < 1 {
+        		fmt.Println("Usage: stx subject delete SLUG")
+        		return
+        	}
+        
+        	slug := cmd.Arg(0)
+        
+        	if err := deleteSubject(slug); err != nil {
+        		fmt.Println("Error:", err)
+        		return
+        	}   
+
+    	default:
+    		fmt.Println("Unknown subject command.")
+    	}
+
+    // ---------------- file --------------------
+
     case "file":
     	if len(os.Args) < 3 {
     		fmt.Println("Usage: stx file [upload|delete|list]")
@@ -1036,8 +1202,9 @@ func main() {
 		    }
 
 		    name := cmd.Arg(0)
+            slug := Slugify(name)
 
-		    if err := deleteFileRemote(name); err != nil {
+		    if err := deleteFileRemote(slug); err != nil {
 		    	fmt.Println("Error:", err)
 		    	return
 		    }

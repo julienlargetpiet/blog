@@ -189,3 +189,21 @@ func (r *SubjectRepo) ListIDAndTitle() ([]struct {
 
 	return result, nil
 }
+
+func (r *SubjectRepo) GetIDBySlug(slug string) (int64, error) {
+	var id int64
+
+	err := r.DB.QueryRow(`
+		SELECT id
+		FROM subjects
+		WHERE slug = ?
+	`, slug).Scan(&id)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return id, nil
+}
+
+
