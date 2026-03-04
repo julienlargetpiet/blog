@@ -42,26 +42,6 @@ func MarkdownToStatixHTML(md string) (string, error) {
 	return buf.String(), nil
 }
 
-func renderRow(w util.BufWriter, row ast.Node, source []byte, isHeader bool) {
-    _, _ = w.WriteString("  <tr>")
-
-    for cell := row.FirstChild(); cell != nil; cell = cell.NextSibling() {
-        if cell.Kind() != extast.KindTableCell {
-            continue
-        }
-
-        tag := "td"
-        if isHeader {
-            tag = "th"
-        }
-
-        txt := extractText(cell, source)
-        _, _ = w.WriteString("<" + tag + ">" + html.EscapeString(txt) + "</" + tag + ">")
-    }
-
-    _, _ = w.WriteString("</tr>\n")
-}
-
 type statixRenderer struct {
 }
 
@@ -126,51 +106,32 @@ func (r *statixRenderer) renderFencedCodeBlock(w util.BufWriter,
   return ast.WalkSkipChildren, nil
 }
 
-func (r *statixRenderer) renderTable(w util.BufWriter, 
-                                     source []byte, 
-                                     node ast.Node, 
-                                     entering bool) (ast.WalkStatus, error) {
-  // We render the whole table when entering and skip children
-  if !entering {
-    return ast.WalkContinue, nil
-  }
+func (r *statixRenderer) renderTable(
+	w util.BufWriter,
+	source []byte,
+	node ast.Node,
+	entering bool,
+) (ast.WalkStatus, error) {
 
-  // The table node contains header/body rows as children.
-  // We'll walk rows manually and render simple <th>/<td>.
+	if entering {
 
-  // Ensure node is actually a *extension.Table.
-  t, ok := node.(*extast.Table)
-  if !ok {
-      return ast.WalkContinue, nil
-  }
+		_, _ = w.WriteString(`<section class="form-section">` + "\n\n")
 
-  _, _ = w.WriteString(`<section class="form-section">` + "\n\n")
-  _, _ = w.WriteString(`<div class="admin-table-scroll-top">` + "\n")
-  _, _ = w.WriteString(`  <div class="admin-table-scroll-inner"></div>` + "\n")
-  _, _ = w.WriteString(`</div>` + "\n\n")
-  _, _ = w.WriteString(`<div class="admin-table-wrapper">` + "\n")
-  _, _ = w.WriteString(`<table class="admin-table">` + "\n")
+		_, _ = w.WriteString(`<div class="admin-table-scroll-top">` + "\n")
+		_, _ = w.WriteString(`  <div class="admin-table-scroll-inner"></div>` + "\n")
+		_, _ = w.WriteString(`</div>` + "\n\n")
 
-  for child := t.FirstChild(); child != nil; child = child.NextSibling() {
-  
-      if child.Kind() == extast.KindTableHeader {
-          // header contains one row
-          headerRow := child.FirstChild()
-          if headerRow != nil {
-              renderRow(w, headerRow, source, true)
-          }
-          continue
-      }
-  
-      if child.Kind() == extast.KindTableRow {
-          renderRow(w, child, source, false)
-      }
-  }
-  _, _ = w.WriteString(`</table>` + "\n")
-  _, _ = w.WriteString(`</div>` + "\n")
-  _, _ = w.WriteString(`</section>` + "\n")
+		_, _ = w.WriteString(`<div class="admin-table-wrapper">` + "\n")
+		_, _ = w.WriteString(`<table class="admin-table">` + "\n")
 
-  return ast.WalkSkipChildren, nil
+	} else {
+
+		_, _ = w.WriteString(`</table>` + "\n")
+		_, _ = w.WriteString(`</div>` + "\n")
+		_, _ = w.WriteString(`</section>` + "\n")
+	}
+
+	return ast.WalkContinue, nil
 }
 
 func extractText(n ast.Node, source []byte) string {

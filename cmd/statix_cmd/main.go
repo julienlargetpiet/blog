@@ -18,6 +18,7 @@ import (
     htmlmd "github.com/JohannesKaufmann/html-to-markdown"
 
     "blog/cmd/statix_cmd/mdtostatix"
+    "blog/cmd/statix_cmd/statixtoclean"
 )
 
 const (
@@ -557,11 +558,10 @@ func importContent(articleID int64, nickname string, asMarkdown bool) error {
 
 	if asMarkdown {
 
-        cleanHTML := strings.ReplaceAll(
-            content,
-            `<button class="copy-btn">Copy</button>`,
-            "",
-        )
+        cleanHTML, err := statixtoclean.StripStatixWrappers(content)
+        if err != nil {
+            return err
+        }
 
         converter := htmlmd.NewConverter("", true, nil)
 		md, err := converter.ConvertString(cleanHTML)
