@@ -835,6 +835,34 @@ func deleteSubject(slug string) error {
 	return nil
 }
 
+func editNickname(name string, title *string, subjectID *int64, isPublic *bool) error {
+	store, err := loadNicknames()
+	if err != nil {
+		return err
+	}
+
+	meta, exists := store[name]
+	if !exists {
+		return fmt.Errorf("nickname not found")
+	}
+
+	if title != nil {
+		meta.Title = *title
+	}
+
+	if subjectID != nil {
+		meta.SubjectID = *subjectID
+	}
+
+	if isPublic != nil {
+		meta.IsPublic = *isPublic
+	}
+
+	store[name] = meta
+
+	return saveNicknames(store)
+}
+
 func usage() {
 	fmt.Println("stx - Statix Publishing CLI")
 	fmt.Println()
@@ -844,6 +872,7 @@ func usage() {
 	fmt.Println("  nickname create --title TITLE --subject_id ID --is_public true|false NAME")
     fmt.Println("  nickname import ARTICLE_ID NAME")
     fmt.Println("  nickname import-content [--markdown] ARTICLE_ID NAME")
+    fmt.Println("  nickname edit NAME [--title TITLE] [--subject_id ID] [--is_public true|false]")
 	fmt.Println("  nickname remove [--sync] NAME")
     fmt.Println("  nickname list")
     fmt.Println("  nickname rename OLD_NAME NEW_NAME")
@@ -953,11 +982,60 @@ func main() {
 
 	case "nickname":
 		if len(os.Args) < 3 {
-			fmt.Println("Usage: stx nickname [create|import|import-content|remove|rename|list]")
+			fmt.Println("Usage: stx nickname [create|import|import-content|edit|remove|rename|list]")
 			return
 		}
 
 		switch os.Args[2] {
+
+        case "edit":
+        	cmd := flag.NewFlagSet("nickname edit", flag.ExitOnError)
+        
+        	title := cmd.String("title", "", "New title")
+        	subjectID := cmd.String("subject_id", "", "New subject ID")
+        	isPublic := cmd.String("is_public", "", "true|false")
+        
+        	cmd.Parse(os.Args[3:])
+        
+        	if cmd.NArg() < 1 {
+        		fmt.Println("Usage: stx nickname edit NAME [--title ...] [--subject_id ...] [--is_public true|false]")
+        		return
+        	}
+        
+        	name := cmd.Arg(0)
+        
+        	var subjectPtr *int64
+        	var publicPtr *bool
+        	var titlePtr *string
+        
+        	if *title != "" {
+        		titlePtr = title
+        	}
+        
+        	if *subjectID != "" {
+        		val, err := strconv.ParseInt(*subjectID, 10, 64)
+        		if err != nil {
+        			fmt.Println("Invalid subject_id")
+        			return
+        		}
+        		subjectPtr = &val
+        	}
+        
+        	if *isPublic != "" {
+        		val, err := strconv.ParseBool(*isPublic)
+        		if err != nil {
+        			fmt.Println("Invalid is_public value")
+        			return
+        		}
+        		publicPtr = &val
+        	}
+        
+        	if err := editNickname(name, titlePtr, subjectPtr, publicPtr); err != nil {
+        		fmt.Println("Error:", err)
+        		return
+        	}
+        
+        	fmt.Println("Nickname metadata updated.")
 
 		case "create":
 			cmd := flag.NewFlagSet("nickname create", flag.ExitOnError)
