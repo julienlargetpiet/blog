@@ -998,7 +998,7 @@ func main() {
         	cmd.Parse(os.Args[3:])
         
         	if cmd.NArg() < 1 {
-        		fmt.Println("Usage: stx nickname edit NAME [--title ...] [--subject_id ...] [--is_public true|false]")
+        		fmt.Println("Usage: stx nickname edit [--title ...] [--subject_id ...] [--is_public true|false] NAME")
         		return
         	}
         
