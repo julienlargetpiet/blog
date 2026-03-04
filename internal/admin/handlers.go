@@ -669,6 +669,11 @@ func (s *Server) handleNewSubject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := s.rebuildSite(); err != nil {
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
     if r.Header.Get("X-Statix-Token") != "" {
         w.WriteHeader(http.StatusOK)
         w.Write([]byte("subject added\n"))

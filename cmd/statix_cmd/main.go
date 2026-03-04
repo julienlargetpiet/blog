@@ -773,7 +773,7 @@ func getSubjectID(slug string) (string, error) {
 
 	url := fmt.Sprintf("%s/admin/api/subject/%s", cfg.URL, slug)
 
-	req, err := http.NewRequest("POST", url, nil)
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return "", err
 	}
