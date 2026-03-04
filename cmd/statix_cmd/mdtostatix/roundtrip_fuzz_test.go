@@ -14,15 +14,40 @@ import (
 func FuzzMarkdownRoundTrip(f *testing.F) {
 
     tokens := []string{
-    	"#", "##", "###",
-    	"*", "**", "_", "__",
-    	"`", "```",
-    	"- ", "* ",
-    	"[x]", "[ ]",
-    	"|", "---",
-    	"(", ")", "[", "]",
-    }
+        // headings
+        "#", "##", "###",
     
+        // emphasis
+        "*", "**", "_", "__",
+    
+        // code
+        "`", "```",
+    
+        // lists
+        "- ", "* ",
+    
+        // checkboxes
+        "[x]", "[ ]",
+    
+        // tables
+        "|", "---",
+    
+        // brackets
+        "(", ")", "[", "]",
+    
+        // TEXT seeds (important)
+        "a",
+        "hello",
+        "markdown",
+        "text text text",
+    
+        // mixed
+        "text **bold** text",
+        "hello `code` world",
+        "- item",
+        "| a | b |",
+    }   
+
     for _, t := range tokens {
     	f.Add(t)
     }
