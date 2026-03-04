@@ -15,6 +15,7 @@ import (
     "sort"
     "bytes"
     "mime/multipart"
+    "regexp"
     htmlmd "github.com/JohannesKaufmann/html-to-markdown"
 
     "blog/cmd/statix_cmd/mdtostatix"
@@ -1156,6 +1157,7 @@ func main() {
         	}
         
         	slug := cmd.Arg(0)
+            slug = Slugify(name)
         
         	if err := deleteSubject(slug); err != nil {
         		fmt.Println("Error:", err)
@@ -1202,9 +1204,8 @@ func main() {
 		    }
 
 		    name := cmd.Arg(0)
-            slug := Slugify(name)
 
-		    if err := deleteFileRemote(slug); err != nil {
+		    if err := deleteFileRemote(name); err != nil {
 		    	fmt.Println("Error:", err)
 		    	return
 		    }

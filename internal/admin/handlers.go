@@ -669,6 +669,12 @@ func (s *Server) handleNewSubject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+    if r.Header.Get("X-Statix-Token") != "" {
+        w.WriteHeader(http.StatusOK)
+        w.Write([]byte("subject added\n"))
+        return
+    }
+
 	http.Redirect(w, r, "/admin/subjects", http.StatusSeeOther)
 }
 
@@ -721,7 +727,7 @@ func (s *Server) handleEditSubject(w http.ResponseWriter, r *http.Request) {
 
         if r.Header.Get("X-Statix-Token") != "" {
             w.WriteHeader(http.StatusOK)
-            w.Write([]byte("subject added\n"))
+            w.Write([]byte("subject edited\n"))
             return
         }
 
