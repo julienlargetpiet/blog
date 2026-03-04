@@ -1157,7 +1157,7 @@ func main() {
         	}
         
         	slug := cmd.Arg(0)
-            slug = Slugify(name)
+            slug = Slugify(slug)
         
         	if err := deleteSubject(slug); err != nil {
         		fmt.Println("Error:", err)
