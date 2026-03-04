@@ -872,7 +872,7 @@ func usage() {
 	fmt.Println("  nickname create --title TITLE --subject_id ID --is_public true|false NAME")
     fmt.Println("  nickname import ARTICLE_ID NAME")
     fmt.Println("  nickname import-content [--markdown] ARTICLE_ID NAME")
-    fmt.Println("  nickname edit NAME [--title TITLE] [--subject_id ID] [--is_public true|false]")
+    fmt.Println("  nickname edit [--title TITLE] [--subject_id ID] [--is_public true|false] NAME")
 	fmt.Println("  nickname remove [--sync] NAME")
     fmt.Println("  nickname list")
     fmt.Println("  nickname rename OLD_NAME NEW_NAME")
@@ -1004,31 +1004,33 @@ func main() {
         
         	name := cmd.Arg(0)
         
+        	var titlePtr *string
         	var subjectPtr *int64
         	var publicPtr *bool
-        	var titlePtr *string
         
-        	if *title != "" {
-        		titlePtr = title
-        	}
+        	cmd.Visit(func(f *flag.Flag) {
+        		switch f.Name {
         
-        	if *subjectID != "" {
-        		val, err := strconv.ParseInt(*subjectID, 10, 64)
-        		if err != nil {
-        			fmt.Println("Invalid subject_id")
-        			return
+        		case "title":
+        			titlePtr = title
+        
+        		case "subject_id":
+        			val, err := strconv.ParseInt(*subjectID, 10, 64)
+        			if err != nil {
+        				fmt.Println("Invalid subject_id")
+        				os.Exit(1)
+        			}
+        			subjectPtr = &val
+        
+        		case "is_public":
+        			val, err := strconv.ParseBool(*isPublic)
+        			if err != nil {
+        				fmt.Println("Invalid is_public value")
+        				os.Exit(1)
+        			}
+        			publicPtr = &val
         		}
-        		subjectPtr = &val
-        	}
-        
-        	if *isPublic != "" {
-        		val, err := strconv.ParseBool(*isPublic)
-        		if err != nil {
-        			fmt.Println("Invalid is_public value")
-        			return
-        		}
-        		publicPtr = &val
-        	}
+        	})
         
         	if err := editNickname(name, titlePtr, subjectPtr, publicPtr); err != nil {
         		fmt.Println("Error:", err)
