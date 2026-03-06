@@ -190,6 +190,39 @@ func (s *Server) rebuildSiteLocalize(title string,
 
 }
 
+func (s *Server) rebuildSubjectEvent() error {
+	
+	articleRepo := db.ArticleRepo{DB: s.DB}
+	subjectRepo := db.SubjectRepo{DB: s.DB}
+
+	articles, err := articleRepo.ListAll()
+	if err != nil {
+		return err
+	}
+
+	subjects, err := subjectRepo.ListAll()
+	if err != nil {
+		return err
+	}
+
+	gen := generator.Generator{
+        AuthorContent: template.HTML(""),
+        ArticleRepo: articleRepo,
+        SubjectRepo: subjectRepo,
+		Articles: articles,
+		Subjects: subjects,
+		OutDir:   "dist",
+	}
+
+    err = gen.SubjectEventBuild()
+    if err != nil {
+        return err
+    }
+
+    return gen.BuildSitemap()
+
+}
+
 func (s *Server) rebuildAuthor() error {
 
 	articleRepo := db.ArticleRepo{DB: s.DB}
@@ -669,7 +702,7 @@ func (s *Server) handleNewSubject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := s.rebuildSite(); err != nil {
+	if err := s.rebuildSubjectEvent(); err != nil {
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -805,7 +838,7 @@ func (s *Server) handleDeleteSubject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := s.rebuildSite(); err != nil {
+	if err := s.rebuildSubjectEvent(); err != nil {
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}

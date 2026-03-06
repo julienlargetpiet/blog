@@ -192,6 +192,16 @@ func (g *Generator) LocalizedBuild(title string,
 
 }
 
+func (g* Generator) SubjectEventBuild() error {
+	
+    if err := g.buildIndex(); err != nil {
+		return err
+	}
+
+    return nil
+
+}
+
 func (g *Generator) buildArticles() error {
 	tmpl, err := template.ParseFiles(
 		"internal/templates/base_article.html",
