@@ -223,6 +223,44 @@ func (s *Server) rebuildSubjectEvent() error {
 
 }
 
+func (s *Server) rebuildSubjectEdit(subject_id int64) error {
+  
+    articleRepo := db.ArticleRepo{DB: s.DB}
+	subjectRepo := db.SubjectRepo{DB: s.DB}
+
+	articles, err := articleRepo.ListAll()
+	if err != nil {
+		return err
+	}
+
+	subjects, err := subjectRepo.ListAll()
+	if err != nil {
+		return err
+	}
+
+	gen := generator.Generator{
+        AuthorContent: template.HTML(""),
+        ArticleRepo: articleRepo,
+        SubjectRepo: subjectRepo,
+		Articles: articles,
+		Subjects: subjects,
+		OutDir:   "dist",
+	}
+
+    err = gen.SubjectEditBuild(subject_id)
+    if err != nil {
+        return err
+    }
+
+    err = gen.BuildRSS()
+    if err != nil {
+        return err
+    }
+
+    return gen.BuildSitemap()
+
+}
+
 func (s *Server) rebuildAuthor() error {
 
 	articleRepo := db.ArticleRepo{DB: s.DB}
@@ -752,13 +790,12 @@ func (s *Server) handleEditSubject(w http.ResponseWriter, r *http.Request) {
             return
         }
 
-	    // 1️⃣ Insert subject
 	    if err := subjectRepo.Update(subjectId, name); err != nil {
 	    	http.Error(w, err.Error(), http.StatusInternalServerError)
 	    	return
 	    }
 
-        if err := s.rebuildSite(); err != nil {
+        if err := s.rebuildSubjectEdit(subjectId); err != nil {
         	http.Error(w, err.Error(), http.StatusInternalServerError)
         	return
         }
@@ -769,7 +806,6 @@ func (s *Server) handleEditSubject(w http.ResponseWriter, r *http.Request) {
             return
         }
 
-	    // 4️⃣ Redirect
 	    http.Redirect(w, r, "/admin/subjects", http.StatusSeeOther)
 
         return

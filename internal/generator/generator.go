@@ -97,6 +97,38 @@ func (g *Generator) BuildArticleViews() []model.ArticleView {
 	return views
 }
 
+func (g *Generator) BuildArticleViewsForSubject(subject_id int64) []model.ArticleView {
+	subjectMap := g.BuildSubjectMap()
+
+	views := make([]model.ArticleView, 0, len(g.Articles))
+
+    for i := range g.Articles {
+        a := &g.Articles[i]
+   
+        if a.SubjectId != subject_id {
+            continue
+        }
+
+        subject, ok := subjectMap[a.SubjectId]
+        if !ok {
+            panic(fmt.Sprintf("subject %d not found", a.SubjectId))
+        }
+    
+        views = append(views, model.ArticleView{
+            ID:        a.ID,
+            Title:     a.Title,
+            TitleURL:  a.TitleURL,
+            SubjectId: a.SubjectId,
+            Slug:      subject.Slug,
+            IsPublic:  a.IsPublic,
+            HTML:      template.HTML(a.HTML),
+            CreatedAt: a.CreatedAt,
+        })
+    }
+
+	return views
+}
+
 var htmlTagRe = regexp.MustCompile(`<[^>]+>`)
 
 func excerpt(htmlContent string, words int) string {
@@ -200,6 +232,53 @@ func (g* Generator) SubjectEventBuild() error {
 
     return nil
 
+}
+
+func (g* Generator) SubjectEditBuild(subject_id int64) error {
+	
+    if err := g.buildIndex(); err != nil {
+		return err
+	}
+
+    if err := g.buildArticlesForSubject(subject_id); err != nil {
+		return err
+	} 
+
+    if err := g.buildSubjects(); err != nil {
+		return err
+	} 
+
+    return nil
+
+}
+
+func (g *Generator) buildArticlesForSubject(subject_id int64) error {
+	tmpl, err := template.ParseFiles(
+		"internal/templates/base_article.html",
+		"internal/templates/users/article.html",
+	)
+	if err != nil {
+		return err
+	}
+
+	views := g.BuildArticleViewsForSubject(subject_id)
+
+	for _, view := range views {
+
+		filename := filepath.Join(
+			g.OutDir,
+			"articles",
+			view.TitleURL + ".html",
+		)
+
+        if err := writeFileAtomic(filename, func(f *os.File) error {
+            return tmpl.ExecuteTemplate(f, "base_article", view)
+        }); err != nil {
+            return err
+        }
+	}
+
+	return nil
 }
 
 func (g *Generator) buildArticles() error {
