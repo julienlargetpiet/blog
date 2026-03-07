@@ -980,6 +980,7 @@ func usage() {
     fmt.Println("  subject delete NAME")
     fmt.Println("  subject rename OLD_NAME NEW_NAME")
 	fmt.Println("  dumpdb")
+	fmt.Println("  completion [bash|zsh]")
 	fmt.Println()
 }
 
