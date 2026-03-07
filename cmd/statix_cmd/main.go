@@ -863,6 +863,50 @@ func editNickname(name string, title *string, subjectID *int64, isPublic *bool) 
 	return saveNicknames(store)
 }
 
+func renameSubject(oldSlug, newName string) error {
+
+	id, err := getSubjectID(oldSlug)
+	if err != nil {
+		return err
+	}
+
+	cfg, err := loadConfig()
+	if err != nil {
+		return err
+	}
+
+	data := url.Values{}
+	data.Set("subject_id", id)
+	data.Set("subject", newName)
+
+	req, err := http.NewRequest(
+		"POST",
+		cfg.URL+"/admin/subjects/edit",
+		strings.NewReader(data.Encode()),
+	)
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("X-Statix-Token", cfg.Token)
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	body, _ := io.ReadAll(resp.Body)
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("server returned %s:\n%s", resp.Status, string(body))
+	}
+
+	fmt.Print(string(body))
+	return nil
+}
+
 func usage() {
 	fmt.Println("stx - Statix Publishing CLI")
 	fmt.Println()
@@ -883,6 +927,7 @@ func usage() {
 	fmt.Println("  subjects")
     fmt.Println("  subject add NAME")
     fmt.Println("  subject delete NAME")
+    fmt.Println("  subject rename OLD_NAME NEW_NAME")
 	fmt.Println()
 }
 
@@ -1244,9 +1289,30 @@ func main() {
         		return
         	}   
 
-    	default:
-    		fmt.Println("Unknown subject command.")
-    	}
+        case "rename":
+        	cmd := flag.NewFlagSet("subject rename", flag.ExitOnError)
+        	cmd.Parse(os.Args[3:])
+        
+        	if cmd.NArg() < 2 {
+        		fmt.Println("Usage: stx subject rename OLD_NAME NEW_NAME")
+        		return
+        	}
+        
+        	oldName := cmd.Arg(0)
+        	newName := cmd.Arg(1)
+        
+        	oldSlug := Slugify(oldName)
+        
+        	if err := renameSubject(oldSlug, newName); err != nil {
+        		fmt.Println("Error:", err)
+        		return
+        	}
+        
+        	fmt.Println("Subject renamed.")
+        
+        default:
+        	fmt.Println("Unknown subject command.")
+        }
 
     // ---------------- file --------------------
 
