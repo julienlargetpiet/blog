@@ -9,6 +9,8 @@
 
 👉 **[CLI](#cli)** — Command Line Interface
 
+👉 **[NeoVim](#neovim-integration)** — WorkFlow with NeoVim
+
 ## Presentation
 
 <details>
