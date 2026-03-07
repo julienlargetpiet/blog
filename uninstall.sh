@@ -95,7 +95,7 @@ rm -rf "$RLIBS_DIR"
 # Remove CLI
 ########################################
 
-log "Removing application directories..."
+log "Removing CLI binary..."
 
 rm -f /usr/local/bin/stx
 
