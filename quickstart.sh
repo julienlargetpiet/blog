@@ -284,6 +284,33 @@ else
     stx set-credentials --url "http://$DOMAIN" --password "$PUBLISH_TOKEN"
 fi
 
+log "Installing shell completion..."
+
+SHELL_NAME="$(basename "$SHELL")"
+
+case "$SHELL_NAME" in
+
+    bash)
+        log "Detected bash shell"
+        stx completion bash | tee /etc/bash_completion.d/stx > /dev/null
+        ;;
+
+    zsh)
+        log "Detected zsh shell"
+
+        mkdir -p /usr/local/share/zsh/site-functions
+        stx completion zsh | tee /usr/local/share/zsh/site-functions/_stx > /dev/null
+        ;;
+
+    *)
+        log "Unknown shell ($SHELL_NAME). Skipping completion install."
+        ;;
+
+esac
+
+echo "Restart your shell or run:"
+echo "  source /etc/bash_completion"
+
 
 cat > /etc/systemd/system/go_blog.service <<EOF
 [Unit]

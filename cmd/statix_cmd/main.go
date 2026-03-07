@@ -20,6 +20,7 @@ import (
 
     "blog/cmd/statix_cmd/mdtostatix"
     "blog/cmd/statix_cmd/statixtoclean"
+    "blog/cmd/statix_cmd/completions"
 )
 
 const (
@@ -1425,6 +1426,26 @@ func main() {
 	    if err := dumpDB(); err != nil {
 	    	fmt.Println("Error:", err)
 	    }
+
+    // ------------- Completion Script --------
+
+    case "completion":
+        if len(os.Args) < 3 {
+            fmt.Println("Usage: stx completion [bash|zsh]")
+            return
+        }
+
+        switch os.Args[2] {
+
+        case "bash":
+            fmt.Print(completions.BashCompletion)
+
+        case "zsh":
+            fmt.Print(completions.ZshCompletion)
+
+        default:
+            fmt.Println("Unsupported shell")
+        }
 
 	default:
 		usage()
