@@ -130,7 +130,7 @@ function(input, output, session) {
     session$setCurrentTheme(theme_reactive())
   }, ignoreInit = TRUE)
 
-  file_path <- "/var/log/nginx/access.log"
+  file_path <- "/var/log/nginx/statix.log"
 
   raw_data <- reactive({
     fp <- file_path

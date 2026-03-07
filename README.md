@@ -7,6 +7,8 @@
 
 👉 **[Quickstart](#quickstart)** — Deploy Statix in minutes
 
+👉 **[CLI](#cli)** — Command Line Interface
+
 ## Presentation
 
 <details>
@@ -572,6 +574,8 @@ server {
     ssl_certificate     /etc/letsencrypt/live/example.com/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/example.com/privkey.pem;
 
+    access_log /var/log/statix.log;
+
     location /admin {
         proxy_pass http://127.0.0.1:8080;
 
@@ -708,6 +712,28 @@ This module is optional and intended for internal analytics.
 - Authentication via `shinymanager`  
 - Reverse proxy support (NGINX)  
 - systemd-managed background service  
+
+# CLI
+
+Technically you can publish your articles like so:
+
+```
+curl -L -X POST URL \
+  -H "X-Statix-Token: PASSWORD" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  --data-urlencode title="TITLE" \
+  --data-urlencode subject_id=ID_ARTICLE \
+  --data-urlencode is_public=VISIBILITY \
+  --data-urlencode html@FILE
+```
+
+Where **PASSWORD** is the environment variable defined in `/etc/systemd/system/go_blog.service`
+
+```
+/cmd/statix_cmd/main.go
+```
+
+Provides a complete CLI interface to do the following:
 
 ---
 
