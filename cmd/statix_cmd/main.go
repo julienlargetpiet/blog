@@ -1250,7 +1250,7 @@ func main() {
     
     case "subject":
     	if len(os.Args) < 3 {
-    		fmt.Println("Usage: stx subject [add|delete]")
+    		fmt.Println("Usage: stx subject [add|delete|rename]")
     		return
     	}
     
