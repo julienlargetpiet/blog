@@ -713,7 +713,7 @@ This module is optional and intended for internal analytics.
 - Reverse proxy support (NGINX)  
 - systemd-managed background service  
 
-## Statix CLI (`stx`) — Command Line Publishing
+## CLI
 
 The **Statix CLI** (`stx`) is the command-line interface used to interact with a Statix publishing server. It allows you to publish articles, manage article nicknames (editable handles for content), upload assets, and administrate subjects directly from the terminal.
 
