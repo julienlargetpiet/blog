@@ -100,6 +100,15 @@ log "Removing CLI binary..."
 rm -f /usr/local/bin/stx
 
 ########################################
+# Remove CLI autocompletion
+########################################
+
+log "Removing CLI autocompletion..."
+
+rm -f /etc/bash_completion.d/stx
+rm -f /usr/local/share/zsh/site-functions/_stx
+
+########################################
 # Remove NGINX logs
 ########################################
 
