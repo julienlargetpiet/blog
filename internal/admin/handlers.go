@@ -644,7 +644,7 @@ func (s *Server) handleDumpDb(w http.ResponseWriter, r *http.Request) {
     cmd := exec.Command(
         "/usr/bin/mysqldump",
         "-u", "goblog",
-        "-pm",
+        "-pPASSWORD",
         "go_blog",
     )
     

@@ -907,6 +907,56 @@ func renameSubject(oldSlug, newName string) error {
 	return nil
 }
 
+func dumpDB() error {
+
+	cfg, err := loadConfig()
+	if err != nil {
+		return err
+	}
+
+	url := cfg.URL + "/admin/dump"
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("X-Statix-Token", cfg.Token)
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("server returned %s:\n%s", resp.Status, string(body))
+	}
+
+	filename := fmt.Sprintf(
+		"dump-%s.sql",
+		time.Now().Format("2006-01-02"),
+	)
+
+	file, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	fmt.Println("Downloading database dump...")
+
+	_, err = io.Copy(file, resp.Body)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Saved to", filename)
+
+	return nil
+}
+
 func usage() {
 	fmt.Println("stx - Statix Publishing CLI")
 	fmt.Println()
@@ -928,6 +978,7 @@ func usage() {
     fmt.Println("  subject add NAME")
     fmt.Println("  subject delete NAME")
     fmt.Println("  subject rename OLD_NAME NEW_NAME")
+	fmt.Println("  dumpdb")
 	fmt.Println()
 }
 
@@ -1366,6 +1417,14 @@ func main() {
         default:
     		fmt.Println("Unknown file command.")
     	}
+
+    // ------------ DumpDB -------------------
+
+    case "dumpdb":
+
+	    if err := dumpDB(); err != nil {
+	    	fmt.Println("Error:", err)
+	    }
 
 	default:
 		usage()
