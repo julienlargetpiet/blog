@@ -258,7 +258,32 @@ fi
 log "Writing systemd service..."
 PUBLISH_TOKEN=$(openssl rand -hex 32)
 
-echo "Publish token: $PUBLISH_TOKEN"
+echo
+echo "Publish token for CLI credentials: $PUBLISH_TOKEN"
+echo
+echo "On client machine run:"
+echo "  stx set-credentials --url https://$DOMAIN --password $PUBLISH_TOKEN"
+echo
+
+log "Building stx CLI..."
+
+env GOCACHE="$GO_CACHE" \
+    GOMODCACHE="$GO_MODCACHE" \
+    HOME="/var/www/go_blog" \
+    /usr/local/go/bin/go build -buildvcs=false -o stx ./cmd/statix_cmd
+
+log "Installing stx CLI..."
+
+install -m 755 stx /usr/local/bin/stx
+
+log "Configuring CLI credentials..."
+
+if [[ "$ENABLE_TLS" -eq 1 ]]; then
+    stx set-credentials --url "https://$DOMAIN" --password "$PUBLISH_TOKEN"
+else
+    stx set-credentials --url "http://$DOMAIN" --password "$PUBLISH_TOKEN"
+fi
+
 
 cat > /etc/systemd/system/go_blog.service <<EOF
 [Unit]
