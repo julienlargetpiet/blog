@@ -75,6 +75,9 @@ prompt_text BLOG_TITLE "Blog title (e.g. Julien's Blog)"
 prompt_password DB_PASS "Database password"
 prompt_password ADMIN_PASS "Admin password"
 
+ESCAPED_DB_PASS=$(printf '%s\n' "$DB_PASS" | sed 's/[\/&]/\\&/g')
+ESCAPED_ADMIN_PASS=$(printf '%s\n' "$ADMIN_PASS" | sed 's/[\/&]/\\&/g')
+
 yes_no_prompt ENABLE_SHINY "Enable optional R Shiny log analyzer?"
 yes_no_prompt ENABLE_TLS   "Enable HTTPS via Let's Encrypt?"
 
@@ -152,13 +155,17 @@ log "Injecting DB/Admin credentials into config.go"
 sed -i "s/getEnv(\"BLOG_DB_USER\", \"[^\"]*\")/getEnv(\"BLOG_DB_USER\", \"${DB_USER}\")/g" "$CONFIG_FILE"
 
 # Replace default DB password
-sed -i "s/getEnv(\"BLOG_DB_PASSWORD\", \"[^\"]*\")/getEnv(\"BLOG_DB_PASSWORD\", \"${DB_PASS}\")/g" "$CONFIG_FILE"
+sed -i "s/getEnv(\"BLOG_DB_PASSWORD\", \"[^\"]*\")/getEnv(\"BLOG_DB_PASSWORD\", \"${ESCAPED_DB_PASS}\")/g" "$CONFIG_FILE"
 
 # Replace default DB name
 sed -i "s/getEnv(\"BLOG_DB_NAME\", \"[^\"]*\")/getEnv(\"BLOG_DB_NAME\", \"${DB_NAME}\")/g" "$CONFIG_FILE"
 
 # Replace default admin password
-sed -i "s/getEnv(\"BLOG_ADMIN_PASSWORD\", \"[^\"]*\")/getEnv(\"BLOG_ADMIN_PASSWORD\", \"${ADMIN_PASS}\")/g" "$CONFIG_FILE"
+sed -i "s/getEnv(\"BLOG_ADMIN_PASSWORD\", \"[^\"]*\")/getEnv(\"BLOG_ADMIN_PASSWORD\", \"${ESCAPED_ADMIN_PASS}\")/g" "$CONFIG_FILE"
+
+HANDLER_FILE="$APP_DIR/internal/admin/handlers.go"
+
+sed -i "s/PASSWORD/${ESCAPED_DB_PASS}/" "$HANDLER_FILE"
 
 # Replace by user email
 
@@ -167,14 +174,14 @@ TEMPLATE_ARTICLE="$APP_DIR/internal/templates/base_article.html"
 
 log "Injecting admin contact email into templates..."
 
-ESCAPED_EMAIL=$(printf '%s\n' "$ADMIN_EMAIL" | sed 's/[&/\]/\\&/g')
+ESCAPED_EMAIL=$(printf '%s\n' "$ADMIN_EMAIL" | sed 's/[\/&]/\\&/g')
 
 sed -i "s/username@domainname.com/${ESCAPED_EMAIL}/g" "$TEMPLATE_BASE"
 sed -i "s/username@domainname.com/${ESCAPED_EMAIL}/g" "$TEMPLATE_ARTICLE"
 
 # Replace by user title
 
-ESCAPED_TITLE=$(printf '%s\n' "$BLOG_TITLE" | sed 's/[&/\]/\\&/g')
+ESCAPED_TITLE=$(printf '%s\n' "$BLOG_TITLE" | sed 's/[\/&]/\\&/g')
 
 TEMPLATE_INDEX="$APP_DIR/internal/templates/users/index.html"
 
