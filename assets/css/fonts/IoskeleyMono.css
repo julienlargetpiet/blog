@@ -1,0 +1,38 @@
+/* ================================
+   Fonts
+   ================================ */
+
+@font-face {
+  font-family: 'IosKeleyMono';
+  src: url('../fonts/IoskeleyMono_webfonts/IoskeleyMono-Bold/IoskeleyMono-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'IosKeleyMono';
+  src: url('../fonts/IoskeleyMono_webfonts/IoskeleyMono-Italic/IoskeleyMono-Italic.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'IosKeleyMono';
+  src: url('../fonts/IoskeleyMono_webfonts/IoskeleyMono-BoldItalic/IoskeleyMono-BoldItalic.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'IosKeleyMono';
+  src: url('../fonts/IoskeleyMono_webfonts/IoskeleyMono-Regular/IoskeleyMono-Regular.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+
+

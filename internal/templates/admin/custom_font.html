@@ -1,0 +1,34 @@
+{{ define "title" }}Font Settings{{ end }}
+
+{{ define "content" }}
+
+<main class="admin-page">
+  <h1>Font Selection</h1>
+
+  <form method="POST">
+    <div class="theme-grid">
+      {{ range .Fonts }}
+        <label class="theme-option">
+          <input 
+            type="radio" 
+            name="font" 
+            value="{{ . }}"
+            {{ if eq . $.CurrentFont }}checked{{ end }}
+          >
+          <span>{{ . }}</span>
+        </label>
+      {{ end }}
+    </div>
+
+    <button type="submit" class="btn">Apply Font</button>
+  </form>
+
+  <br>
+
+  <a href="/admin" class="btn">Back</a>
+
+</main>
+
+{{ end }}
+
+

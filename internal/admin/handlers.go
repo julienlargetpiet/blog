@@ -45,8 +45,40 @@ func (s *Server) listThemes() ([]string, error) {
 	return themes, nil
 }
 
+func (s *Server) listFonts() ([]string, error) {
+	base := "/var/www/go_blog/assets/css/fonts"
+
+	entries, err := os.ReadDir(base)
+	if err != nil {
+		return nil, err
+	}
+
+	var fonts []string
+	for _, e := range entries {
+		if !e.IsDir() && strings.HasSuffix(e.Name(), ".css") {
+			name := strings.TrimSuffix(e.Name(), ".css")
+			fonts = append(fonts, name)
+		}
+	}
+
+	sort.Strings(fonts)
+	return fonts, nil
+}
+
 func (s *Server) currentTheme() string {
 	link := "/var/www/go_blog/assets/css/theme.css"
+
+	target, err := os.Readlink(link)
+	if err != nil {
+		return ""
+	}
+
+	base := filepath.Base(target)
+	return strings.TrimSuffix(base, ".css")
+}
+
+func (s *Server) currentFont() string {
+	link := "/var/www/go_blog/assets/css/font.css"
 
 	target, err := os.Readlink(link)
 	if err != nil {
@@ -94,6 +126,31 @@ func (s *Server) applyTheme(name string) error {
 		return err
 	}
 	if err := os.Rename(favTmp, favLink); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Server) applyFont(name string) error {
+	baseCSS := "/var/www/go_blog/assets/css"
+
+	// ---- CSS ----
+	fontTarget := filepath.Join(baseCSS, "fonts", name+".css")
+	fontLink := filepath.Join(baseCSS, "font.css")
+	cssTmp := fontLink + ".tmp"
+
+	// Validate existence
+	if _, err := os.Stat(fontTarget); err != nil {
+		return err
+	}
+
+	// --- Swap CSS symlink ---
+	os.Remove(cssTmp)
+	if err := os.Symlink(fontTarget, cssTmp); err != nil {
+		return err
+	}
+	if err := os.Rename(cssTmp, fontLink); err != nil {
 		return err
 	}
 
@@ -1009,6 +1066,67 @@ func (s *Server) handleCustomTheme(w http.ResponseWriter, r *http.Request) {
 	tmpl, err := template.ParseFiles(
 		"internal/templates/base.html",
 		"internal/templates/admin/custom_theme.html",
+	)
+	if err != nil {
+		http.Error(w, "template error", 500)
+		return
+	}
+
+	tmpl.ExecuteTemplate(w, "base", data)
+}
+
+func (s *Server) handleCustomFont(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method == http.MethodPost {
+		if err := r.ParseForm(); err != nil {
+			http.Error(w, "bad request", 400)
+			return
+		}
+
+		selected := r.FormValue("font")
+
+		fonts, err := s.listFonts()
+		if err != nil {
+			http.Error(w, "failed to list fonts", 500)
+			return
+		}
+
+		valid := false
+		for _, t := range fonts {
+			if t == selected {
+				valid = true
+				break
+			}
+		}
+
+		if !valid {
+			http.Error(w, "invalid font", 400)
+			return
+		}
+
+		if err := s.applyFont(selected); err != nil {
+			http.Error(w, "failed to apply font", 500)
+			return
+		}
+
+		http.Redirect(w, r, "/admin/font", http.StatusSeeOther)
+		return
+	}
+
+	fonts, err := s.listFonts()
+	if err != nil {
+		http.Error(w, "failed to load fonts", 500)
+		return
+	}
+
+	data := map[string]interface{}{
+		"Fonts":       fonts,
+		"CurrentFont": s.currentFont(),
+	}
+
+	tmpl, err := template.ParseFiles(
+		"internal/templates/base.html",
+		"internal/templates/admin/custom_font.html",
 	)
 	if err != nil {
 		http.Error(w, "template error", 500)
