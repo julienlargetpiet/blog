@@ -92,6 +92,22 @@ rm -rf "$SHINY_DIR"
 rm -rf "$RLIBS_DIR"
 
 ########################################
+# Remove CLI
+########################################
+
+log "Removing application directories..."
+
+rm -f /usr/local/bin/stx
+
+########################################
+# Remove NGINX logs
+########################################
+
+log "Removing NGINX logs..."
+
+rm -f /var/log/nginx/statix.log
+
+########################################
 # Final
 ########################################
 log "Statix completely removed."
