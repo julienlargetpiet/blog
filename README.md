@@ -192,7 +192,7 @@ It integrates expressive tooling — without sacrificing determinism.
 
 Statix allows visual customization without breaking determinism.
 
-Themes are prebuilt, curated, and fully versioned.  
+Themes and Fonts are prebuilt, curated, and fully versioned.  
 Switching a theme is an atomic state transition — not a file mutation.
 
 - No in-place CSS edits  
@@ -713,28 +713,314 @@ This module is optional and intended for internal analytics.
 - Reverse proxy support (NGINX)  
 - systemd-managed background service  
 
-# CLI
+## Statix CLI (`stx`) — Command Line Publishing
 
-Technically you can publish your articles like so:
+The **Statix CLI** (`stx`) is the command-line interface used to interact with a Statix publishing server. It allows you to publish articles, manage article nicknames (editable handles for content), upload assets, and administrate subjects directly from the terminal.
 
-```
-curl -L -X POST URL \
-  -H "X-Statix-Token: PASSWORD" \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  --data-urlencode title="TITLE" \
-  --data-urlencode subject_id=ID_ARTICLE \
-  --data-urlencode is_public=VISIBILITY \
-  --data-urlencode html@FILE
-```
-
-Where **PASSWORD** is the environment variable defined in `/etc/systemd/system/go_blog.service`
+This makes it easy to integrate publishing into **scripts, editors, or CI pipelines**.
 
 ```
-/cmd/statix_cmd/main.go
+stx - Statix Publishing CLI
+
+Commands:
+  set-credentials --url URL --password TOKEN
+  publish --file FILE [NAME]
+  nickname create --title TITLE --subject_id ID --is_public true|false NAME
+  nickname import ARTICLE_ID NAME
+  nickname import-content [--markdown] ARTICLE_ID NAME
+  nickname edit [--title TITLE] [--subject_id ID] [--is_public true|false] NAME
+  nickname remove [--sync] NAME
+  nickname list
+  nickname rename OLD_NAME NEW_NAME
+  file upload FILE...
+  file delete FILE
+  file list
+  articles
+  subjects
+  subject add NAME
+  subject delete NAME
+  subject rename OLD_NAME NEW_NAME
+  dumpdb
+  completion [bash|zsh]
 ```
 
-Provides a complete CLI interface to do the following:
+---
 
+# Authentication
+
+Before using the CLI, configure your credentials once:
+
+```bash
+stx set-credentials --url https://your-statix-server --password API_TOKEN
+```
+
+This stores the server URL and authentication token locally so future commands can communicate with the Statix backend.
+
+---
+
+# Publishing Articles
+
+To publish a file directly:
+
+```bash
+stx publish --file article.md
+```
+
+You can optionally provide a **nickname** (a unique identifier for the article):
+
+```bash
+stx publish --file article.md my-article
+```
+
+The nickname acts as a **stable handle** for the article and can later be used to update metadata, rename it, or manage it.
+
+---
+
+# Nicknames
+
+Nicknames are **persistent identifiers for articles**.  
+They provide a stable reference to a piece of content independent of the file used to publish it.
+
+Example nickname:
+
+```
+deep-learning-introduction
+```
+
+Once a nickname exists, it becomes the **canonical identifier** for the article.
+
+---
+
+## Project-Scoped Nicknames
+
+Nicknames are **not global** and are **not stored in your home directory (`~/`)**.
+
+Instead, they are **scoped to the current project directory**, similar to how **Git repositories work**.
+
+This means:
+
+- Nicknames belong to the **project you are currently in**
+- Two different directories can have different nickname sets
+- Moving to another directory changes the active nickname context
+
+Example workflow:
+
+```
+~/blog-project
+    → nickname list
+    → shows blog project nicknames
+
+~/another-project
+    → nickname list
+    → shows a completely different set
+```
+
+This makes it easy to maintain **multiple independent publishing projects**.
+
+---
+
+# Creating a Nickname
+
+```bash
+stx nickname create \
+  --title "My Article" \
+  --subject_id 2 \
+  --is_public true \
+  my-article
+```
+
+Parameters:
+
+- **title**: article title
+- **subject_id**: subject/category identifier
+- **is_public**: whether the article is publicly visible
+- **NAME**: nickname identifier
+
+---
+
+# Importing Existing Articles
+
+You can associate an already existing article with a nickname.
+
+```bash
+stx nickname import ARTICLE_ID my-article
+```
+
+To import the **content itself**:
+
+```bash
+stx nickname import-content ARTICLE_ID my-article
+```
+
+Or force Markdown conversion:
+
+```bash
+stx nickname import-content --markdown ARTICLE_ID my-article
+```
+
+---
+
+# Editing a Nickname
+
+Modify metadata of an existing nickname:
+
+```bash
+stx nickname edit \
+  --title "New Title" \
+  --subject_id 3 \
+  --is_public false \
+  my-article
+```
+
+Only the specified fields are updated.
+
+---
+
+# Listing Nicknames
+
+```bash
+stx nickname list
+```
+
+---
+
+# Renaming a Nickname
+
+```bash
+stx nickname rename old-name new-name
+```
+
+---
+
+# Removing a Nickname
+
+```bash
+stx nickname remove my-article
+```
+
+Optionally synchronize deletion with the remote server:
+
+```bash
+stx nickname remove --sync my-article
+```
+
+---
+
+# Managing Files
+
+Files usually correspond to **assets such as images or attachments**.
+
+Upload files:
+
+```bash
+stx file upload image.png
+```
+
+Upload multiple files:
+
+```bash
+stx file upload image1.png image2.png
+```
+
+List files:
+
+```bash
+stx file list
+```
+
+Delete a file:
+
+```bash
+stx file delete image.png
+```
+
+---
+
+# Listing Articles
+
+```bash
+stx articles
+```
+
+---
+
+# Subjects (Categories)
+
+Subjects categorize articles.
+
+List subjects:
+
+```bash
+stx subjects
+```
+
+Create a subject:
+
+```bash
+stx subject add programming
+```
+
+Delete a subject:
+
+```bash
+stx subject delete programming
+```
+
+Rename a subject:
+
+```bash
+stx subject rename programming systems
+```
+
+---
+
+# Database Dump
+
+Export the server database state:
+
+```bash
+stx dumpdb
+```
+
+Useful for backups or migrations.
+
+---
+
+# Neovim Integration
+
+Because `stx` is a CLI tool, it integrates naturally with editors like **Neovim**.
+
+The simplest integration is to define a command that publishes the **currently open file**.
+
+Add the following to your `init.lua`:
+
+```lua
+vim.api.nvim_create_user_command("Publish", function()
+  vim.cmd("write")
+
+  local file = vim.api.nvim_buf_get_name(0)
+
+  vim.cmd("!" .. "stx publish --file " .. file)
+end, {})
+```
+
+Usage inside Neovim:
+
+```
+:Publish
+```
+
+This command:
+
+1. Saves the current file
+2. Retrieves its path
+3. Runs
+
+```
+stx publish --file current_file.md
+```
+
+This provides a **minimal and explicit publishing workflow directly from Neovim**, making it easy to write and publish articles without leaving the editor.
 ---
 
 # 1 Install R & mmdblookup (Debian / Ubuntu)
