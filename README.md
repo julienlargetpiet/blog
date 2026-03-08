@@ -5,7 +5,7 @@
   <img src="logo.png" alt="Statix Logo" width="220">
 </p>
 
-👉 **[Quickstart](#quickstart)** — Deploy Statix in minutes
+👉 **[Quickstart](#quickstart)** — Deploy Statix in seconds
 
 👉 **[CLI](#cli)** — Command Line Interface
 
