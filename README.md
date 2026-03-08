@@ -11,6 +11,8 @@
 
 👉 **[NeoVim](#neovim-integration)** — WorkFlow with NeoVim
 
+👉 **[Example](https://julienlargetpiet.tech)** — Running Statix Blog Example
+
 ## Presentation
 
 <details>
