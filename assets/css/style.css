@@ -1394,4 +1394,9 @@ address a:hover {
   display: inline-block;   /* force shrink to content */
 }
 
+img {
+  max-width: 100%;
+  height: auto;
+}
+
 
