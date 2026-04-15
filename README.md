@@ -1027,6 +1027,10 @@ stx publish --file current_file.md
 This provides a **minimal and explicit publishing workflow directly from Neovim**, making it easy to write and publish articles without leaving the editor.
 ---
 
+Learn more on how to work with the CLI here:
+
+[https://github.com/julienlargetpiet/ArticlesRepo](https://github.com/julienlargetpiet/ArticlesRepo)
+
 # 1 Install R & mmdblookup (Debian / Ubuntu)
 
 Update system:
