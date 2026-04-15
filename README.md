@@ -760,6 +760,8 @@ stx set-credentials --url https://your-statix-server --password API_TOKEN
 
 This stores the server URL and authentication token locally so future commands can communicate with the Statix backend.
 
+The file is `~/.statix_config`.
+
 ---
 
 # Publishing Articles
