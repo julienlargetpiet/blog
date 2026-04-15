@@ -240,7 +240,7 @@ func listPublishedFiles(path string) ([]UploadedFile, error) {
 		}
 
 		files = append(files, UploadedFile{
-			Name: fullPath, // or trim prefix if needed
+			Name: fullPath,
 			Size: humanSize(info.Size()),
 		})
 	}
