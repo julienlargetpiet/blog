@@ -25,7 +25,7 @@ func (s *Server) handleFiles(w http.ResponseWriter, r *http.Request) {
 
 	// -------- GET: list + form --------
 	case http.MethodGet:
-		files, err := listPublishedFiles()
+		files, err := listPublishedFiles(publicDir)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -154,7 +154,7 @@ func (s *Server) handleListFilesAPI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	files, err := listPublishedFiles()
+	files, err := listPublishedFiles(publicDir)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -168,8 +168,44 @@ func (s *Server) handleListFilesAPI(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func listPublishedFiles() ([]UploadedFile, error) {
-	entries, err := os.ReadDir(publicDir)
+//func listPublishedFiles() ([]UploadedFile, error) {
+//	entries, err := os.ReadDir(publicDir)
+//	if err != nil {
+//		if os.IsNotExist(err) {
+//			return nil, nil
+//		}
+//		return nil, err
+//	}
+//
+//	var files []UploadedFile
+//	for _, e := range entries {
+//		if e.IsDir() {
+//			continue
+//		}
+//
+//		info, err := e.Info()
+//		if err != nil {
+//			continue
+//		}
+//
+//		name := info.Name()
+//
+//		// Skip hidden / temp files
+//		if name == "" || name[0] == '.' {
+//			continue
+//		}
+//
+//		files = append(files, UploadedFile{
+//			Name: name,
+//			Size: humanSize(info.Size()),
+//		})
+//	}
+//
+//	return files, nil
+//}
+
+func listPublishedFiles(path string) ([]UploadedFile, error) {
+	entries, err := os.ReadDir(path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
@@ -178,8 +214,23 @@ func listPublishedFiles() ([]UploadedFile, error) {
 	}
 
 	var files []UploadedFile
+
 	for _, e := range entries {
+		name := e.Name()
+
+		// Skip hidden / temp files
+		if name == "" || name[0] == '.' {
+			continue
+		}
+
+		fullPath := filepath.Join(path, name)
+
 		if e.IsDir() {
+			subFiles, err := listPublishedFiles(fullPath)
+			if err != nil {
+				continue
+			}
+			files = append(files, subFiles...)
 			continue
 		}
 
@@ -188,15 +239,8 @@ func listPublishedFiles() ([]UploadedFile, error) {
 			continue
 		}
 
-		name := info.Name()
-
-		// Skip hidden / temp files
-		if name == "" || name[0] == '.' {
-			continue
-		}
-
 		files = append(files, UploadedFile{
-			Name: name,
+			Name: fullPath, // or trim prefix if needed
 			Size: humanSize(info.Size()),
 		})
 	}
