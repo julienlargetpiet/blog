@@ -728,7 +728,7 @@ stx - Statix Publishing CLI
 
 Commands:
   set-credentials --url URL --password TOKEN
-  publish --file FILE [NAME]
+  publish --file FILE -m MESAGE
   nickname create --title TITLE --subject_id ID --is_public true|false NAME
   nickname import ARTICLE_ID NAME
   nickname import-content [--markdown] ARTICLE_ID NAME
@@ -736,7 +736,7 @@ Commands:
   nickname remove [--sync] NAME
   nickname list
   nickname rename OLD_NAME NEW_NAME
-  file upload FILE...
+  file upload -m MESSAGE FILE...
   file delete FILE
   file list
   articles
@@ -763,6 +763,12 @@ This stores the server URL and authentication token locally so future commands c
 The file is `~/.statix_config`.
 
 ---
+
+# Works With Git
+
+Anywhere you see the `-m` in rovided commands, that comment has an interraction with your git server that supports all your uploaded files and articles.
+
+See [https://github.com/julienlargetpiet/ArticlesRepo](https://github.com/julienlargetpiet/ArticlesRepo) for a common organization of your blog repo.
 
 # Publishing Articles
 
