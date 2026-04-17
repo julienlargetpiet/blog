@@ -768,7 +768,7 @@ The file is `~/.statix_config`.
 
 Anywhere you see the `-m` in rovided commands, that comment has an interraction with your git server that supports all your uploaded files and articles.
 
-See [https://github.com/julienlargetpiet/ArticlesRepo](https://github.com/julienlargetpiet/ArticlesRepo) for a common organization of your blog repo.
+See [https://github.com/julienlargetpiet/ArticlesRepo](https://github.com/julienlargetpiet/ArticlesRepo) as an example of a typical organization of your blog repo.
 
 # Publishing Articles
 
