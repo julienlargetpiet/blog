@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+    "os/exec"
 	"path/filepath"
 	"strings"
     "strconv"
@@ -963,7 +964,7 @@ func usage() {
 	fmt.Println()
 	fmt.Println("Commands:")
 	fmt.Println("  set-credentials --url URL --password TOKEN")
-	fmt.Println("  publish --file FILE [NAME]")
+	fmt.Println("  publish --file FILE -m MESSAGE")
 	fmt.Println("  nickname create --title TITLE --subject_id ID --is_public true|false NAME")
     fmt.Println("  nickname import ARTICLE_ID NAME")
     fmt.Println("  nickname import-content [--markdown] ARTICLE_ID NAME")
@@ -971,7 +972,7 @@ func usage() {
 	fmt.Println("  nickname remove [--sync] NAME")
     fmt.Println("  nickname list")
     fmt.Println("  nickname rename OLD_NAME NEW_NAME")
-    fmt.Println("  file upload FILE...")
+    fmt.Println("  file upload -m MESSAGE FILE...")
     fmt.Println("  file delete FILE")
     fmt.Println("  file list")
 	fmt.Println("  articles")
@@ -1018,7 +1019,14 @@ func main() {
     case "publish":
     	cmd := flag.NewFlagSet("publish", flag.ExitOnError)
     	file := cmd.String("file", "", "HTML/MD file path")
-    	cmd.Parse(os.Args[2:])
+        message := cmd.String("m", 
+	    		              "update files", // default value
+			                  "commit message") // help message
+
+	    if err := cmd.Parse(os.Args[2:]); err != nil {
+	        fmt.Println("Flag parse error:", err)
+	        return
+	    }
     
     	if *file == "" {
     		fmt.Println("Missing --file")
@@ -1027,12 +1035,8 @@ func main() {
     
     	var name string
     
-    	if cmd.NArg() >= 1 {
-    		name = cmd.Arg(0)
-    	} else {
-    		name = nicknameFromFile(*file)
-    		fmt.Println("Auto-detected nickname:", name)
-    	}
+    	name = nicknameFromFile(*file)
+    	fmt.Println("Auto-detected nickname:", name)
 	
         if strings.HasSuffix(strings.ToLower(*file), ".md") {
         	fmt.Println("Detected Markdown → converting to Statix HTML")
@@ -1059,7 +1063,7 @@ func main() {
 				fmt.Println("Error:", err)
 				return
 			}
-			fmt.Println("Article updated.")
+			fmt.Println("Article updated - No git changes.")
 			return
 		}
 
@@ -1075,6 +1079,35 @@ func main() {
 		}
 
 		fmt.Println("Article published and nickname updated.")
+
+		gitCmd := exec.Command("git", "add", *file)
+                gitCmd.Stdout = os.Stdout
+                gitCmd.Stderr = os.Stderr
+
+                if err := gitCmd.Run(); err != nil {
+                    fmt.Println("Error:", err)
+                    return
+                }
+
+                gitCmd = exec.Command("git", "commit", "-m", *message)
+                gitCmd.Stdout = os.Stdout
+                gitCmd.Stderr = os.Stderr
+
+                if err := gitCmd.Run(); err != nil {
+                    fmt.Println("Error:", err)
+                    return
+                }
+
+                gitCmd = exec.Command("git", "push")
+                gitCmd.Stdout = os.Stdout
+                gitCmd.Stderr = os.Stderr
+
+                if err := gitCmd.Run(); err != nil {
+                    fmt.Println("Error:", err)
+                    return
+                }
+
+                fmt.Println("Article uploaded on git.")
 
 	// ---------------- nickname ----------------
 
@@ -1377,22 +1410,61 @@ func main() {
     
     	switch os.Args[2] {
     
-    	case "upload":
-    		cmd := flag.NewFlagSet("file upload", flag.ExitOnError)
-    		cmd.Parse(os.Args[3:])
-    
-    		if cmd.NArg() < 1 {
-    			fmt.Println("Usage: stx file upload FILE...")
-    			return
-    		}
-    
-    		if err := uploadFiles(cmd.Args()); err != nil {
-    			fmt.Println("Error:", err)
-    			return
-    		}
-    
-    		fmt.Println("Files uploaded successfully.")
-    
+        case "upload":
+            // parses into 2 groups -> flags and args, here -m "message" is in flag group
+            fs := flag.NewFlagSet("file upload", flag.ExitOnError)
+
+            message := fs.String("m", 
+	    			             "update files", // default value
+				                 "commit message") // help message
+
+            fs.Parse(os.Args[3:])
+
+            files := fs.Args()
+
+            if len(files) < 1 {
+                fmt.Println("Usage: stx file upload -m \"message\" FILE...")
+                return
+            }
+
+            // Upload files
+            if err := uploadFiles(files); err != nil {
+                fmt.Println("Error:", err)
+                return
+            }
+
+            fmt.Println("Files uploaded successfully on blog.")
+
+            // git add
+            cmd := exec.Command("git", append([]string{"add"}, files...)...)
+            cmd.Stdout = os.Stdout
+            cmd.Stderr = os.Stderr
+
+            if err := cmd.Run(); err != nil {
+                fmt.Println("Error:", err)
+                return
+            }
+
+            cmd = exec.Command("git", "commit", "-m", *message)
+            cmd.Stdout = os.Stdout
+            cmd.Stderr = os.Stderr
+
+            if err := cmd.Run(); err != nil {
+                fmt.Println("Error:", err)
+                return
+            }
+
+            cmd = exec.Command("git", "push")
+            cmd.Stdout = os.Stdout
+            cmd.Stderr = os.Stderr
+
+            if err := cmd.Run(); err != nil {
+                fmt.Println("Error:", err)
+                return
+            }
+
+            fmt.Println("Files uploaded on git.")
+
         case "delete":
 		    cmd := flag.NewFlagSet("file delete", flag.ExitOnError)
 		    cmd.Parse(os.Args[3:])
