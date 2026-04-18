@@ -969,7 +969,7 @@ func usage() {
     fmt.Println("  nickname import ARTICLE_ID NAME")
     fmt.Println("  nickname import-content [--markdown] ARTICLE_ID NAME")
     fmt.Println("  nickname edit [--title TITLE] [--subject_id ID] [--is_public true|false] NAME")
-	fmt.Println("  nickname remove NAME [--sync] [-m MESSAGE]")
+	fmt.Println("  nickname remove [--sync] [-m MESSAGE] NAME")
     fmt.Println("  nickname list")
     fmt.Println("  nickname rename OLD_NAME NEW_NAME")
     fmt.Println("  file upload -m MESSAGE FILE...")
@@ -1243,7 +1243,7 @@ func main() {
         	cmd.Parse(os.Args[3:])
         
         	if cmd.NArg() < 1 {
-        		fmt.Println("Usage: stx nickname remove NAME [-m MESSAGE] [--sync]")
+        		fmt.Println("Usage: stx nickname remove [-m MESSAGE] [--sync] NAME")
         		return
         	}
         
