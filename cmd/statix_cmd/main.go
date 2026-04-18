@@ -1235,7 +1235,11 @@ func main() {
 
         case "remove":
         	cmd := flag.NewFlagSet("nickname remove", flag.ExitOnError)
+
         	syncFlag := cmd.Bool("sync", false, "Delete remote article too")
+
+        	message := cmd.String("m", "remove article", "Commit message")
+
         	cmd.Parse(os.Args[3:])
         
         	if cmd.NArg() < 1 {
@@ -1252,11 +1256,41 @@ func main() {
         	}
         
         	if *syncFlag && meta.ArticleID != 0 {
+
+                gitCmd := exec.Command("git", "rm", "-r", name)
+                gitCmd.Stdout = os.Stdout
+                gitCmd.Stderr = os.Stderr
+
+                if err := gitCmd.Run(); err != nil {
+                    fmt.Println("Error:", err)
+                    return
+                }
+
+                gitCmd = exec.Command("git", "commit", "-m", *message)
+                gitCmd.Stdout = os.Stdout
+                gitCmd.Stderr = os.Stderr
+
+                if err := gitCmd.Run(); err != nil {
+                    fmt.Println("Warning: git commit skipped (no changes?)")
+                }
+
+                gitCmd = exec.Command("git", "push")
+                gitCmd.Stdout = os.Stdout
+                gitCmd.Stderr = os.Stderr
+
+                if err := gitCmd.Run(); err != nil {
+                    fmt.Println("Error:", err)
+                    return
+                }
+
+        		fmt.Println("Article removed and pushed on git.")
+
         		if err := deleteRemoteArticle(meta.ArticleID); err != nil {
         			fmt.Println("Remote deletion failed:", err)
         			return
         		}
-        		fmt.Println("Remote article deleted.")
+        		fmt.Println("Remote article deleted on blog.")
+
         	}
         
         	if err := removeNickname(name); err != nil {
