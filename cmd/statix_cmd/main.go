@@ -1257,10 +1257,19 @@ func main() {
         
         	if *syncFlag && meta.ArticleID != 0 {
 
-                gitCmd := exec.Command("git", "rm", "-r", name)
+                mdPath := meta.Title + ".md"
+                htmlPath := meta.Title + ".html"
+                
+                target := mdPath
+                
+                if _, err := os.Stat(mdPath); os.IsNotExist(err) {
+                    target = htmlPath
+                }
+                
+                gitCmd := exec.Command("git", "rm", "-r", target)
                 gitCmd.Stdout = os.Stdout
                 gitCmd.Stderr = os.Stderr
-
+                
                 if err := gitCmd.Run(); err != nil {
                     fmt.Println("Error:", err)
                     return
