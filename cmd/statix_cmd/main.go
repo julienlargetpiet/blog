@@ -973,7 +973,7 @@ func usage() {
     fmt.Println("  nickname list")
     fmt.Println("  nickname rename OLD_NAME NEW_NAME")
     fmt.Println("  file upload -m MESSAGE FILE...")
-    fmt.Println("  file delete FILE")
+    fmt.Println("  file delete [-m MESSAGE] FILE")
     fmt.Println("  file list")
 	fmt.Println("  articles")
 	fmt.Println("  subjects")
@@ -1063,7 +1063,38 @@ func main() {
 				fmt.Println("Error:", err)
 				return
 			}
-			fmt.Println("Article updated - No git changes.")
+
+			fmt.Println("Article updated on blog.")
+
+		    gitCmd := exec.Command("git", "add", ".statix_articles.json")
+            gitCmd.Stdout = os.Stdout
+            gitCmd.Stderr = os.Stderr
+
+            if err := gitCmd.Run(); err != nil {
+                fmt.Println("Error:", err)
+                return
+            }
+
+            gitCmd = exec.Command("git", "commit", "-m", *message)
+            gitCmd.Stdout = os.Stdout
+            gitCmd.Stderr = os.Stderr
+
+            if err := gitCmd.Run(); err != nil {
+                fmt.Println("Error:", err)
+                return
+            }
+
+            gitCmd = exec.Command("git", "push")
+            gitCmd.Stdout = os.Stdout
+            gitCmd.Stderr = os.Stderr
+
+            if err := gitCmd.Run(); err != nil {
+                fmt.Println("Error:", err)
+                return
+            }
+
+            fmt.Println("Metadatas uploaded on git.")
+
 			return
 		}
 
@@ -1080,34 +1111,34 @@ func main() {
 
 		fmt.Println("Article published and nickname updated.")
 
-		gitCmd := exec.Command("git", "add", *file)
-                gitCmd.Stdout = os.Stdout
-                gitCmd.Stderr = os.Stderr
+		gitCmd := exec.Command("git", "add", *file, ".statix_articles.json")
+        gitCmd.Stdout = os.Stdout
+        gitCmd.Stderr = os.Stderr
 
-                if err := gitCmd.Run(); err != nil {
-                    fmt.Println("Error:", err)
-                    return
-                }
+        if err := gitCmd.Run(); err != nil {
+            fmt.Println("Error:", err)
+            return
+        }
 
-                gitCmd = exec.Command("git", "commit", "-m", *message)
-                gitCmd.Stdout = os.Stdout
-                gitCmd.Stderr = os.Stderr
+        gitCmd = exec.Command("git", "commit", "-m", *message)
+        gitCmd.Stdout = os.Stdout
+        gitCmd.Stderr = os.Stderr
 
-                if err := gitCmd.Run(); err != nil {
-                    fmt.Println("Error:", err)
-                    return
-                }
+        if err := gitCmd.Run(); err != nil {
+            fmt.Println("Error:", err)
+            return
+        }
 
-                gitCmd = exec.Command("git", "push")
-                gitCmd.Stdout = os.Stdout
-                gitCmd.Stderr = os.Stderr
+        gitCmd = exec.Command("git", "push")
+        gitCmd.Stdout = os.Stdout
+        gitCmd.Stderr = os.Stderr
 
-                if err := gitCmd.Run(); err != nil {
-                    fmt.Println("Error:", err)
-                    return
-                }
+        if err := gitCmd.Run(); err != nil {
+            fmt.Println("Error:", err)
+            return
+        }
 
-                fmt.Println("Article uploaded on git.")
+        fmt.Println("Article uploaded on git.")
 
 	// ---------------- nickname ----------------
 
@@ -1266,7 +1297,7 @@ func main() {
                     target = htmlPath
                 }
                 
-                gitCmd := exec.Command("git", "rm", "-r", target)
+                gitCmd := exec.Command("git", "rm", "-r", target, ".statix_articles.json")
                 gitCmd.Stdout = os.Stdout
                 gitCmd.Stderr = os.Stderr
                 
@@ -1510,14 +1541,44 @@ func main() {
 
         case "delete":
 		    cmd := flag.NewFlagSet("file delete", flag.ExitOnError)
+            
+            message := cmd.String("m", "delete file", "git file deletion message")
+
 		    cmd.Parse(os.Args[3:])
 
 		    if cmd.NArg() < 1 {
-		    	fmt.Println("Usage: stx file delete NAME")
+		    	fmt.Println("Usage: stx file delete [-m MESSAGE] NAME")
 		    	return
 		    }
 
 		    name := cmd.Arg(0)
+
+		    gitCmd := exec.Command("git", "rm", "-r", name)
+            gitCmd.Stdout = os.Stdout
+            gitCmd.Stderr = os.Stderr
+
+            if err := gitCmd.Run(); err != nil {
+                fmt.Println("Error:", err)
+                return
+            }
+
+		    gitCmd = exec.Command("git", "commit", "-m", *message)
+            gitCmd.Stdout = os.Stdout
+            gitCmd.Stderr = os.Stderr
+
+            if err := gitCmd.Run(); err != nil {
+                fmt.Println("Error:", err)
+                return
+            }
+		    
+            gitCmd = exec.Command("git", "push")
+            gitCmd.Stdout = os.Stdout
+            gitCmd.Stderr = os.Stderr
+
+            if err := gitCmd.Run(); err != nil {
+                fmt.Println("Error:", err)
+                return
+            }
 
 		    if err := deleteFileRemote(name); err != nil {
 		    	fmt.Println("Error:", err)
