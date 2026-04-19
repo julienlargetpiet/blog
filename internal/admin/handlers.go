@@ -1010,7 +1010,6 @@ func (s *Server) handleBuildAll(w http.ResponseWriter, r *http.Request) {
     	return
     }
 
-	// 5️⃣ Redirect back to admin
 	http.Redirect(w, r, "/admin", http.StatusSeeOther)
 }
 
