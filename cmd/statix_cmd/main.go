@@ -1299,8 +1299,8 @@ func main() {
         
         	if *syncFlag && meta.ArticleID != 0 {
 
-                mdPath := meta.Title + ".md"
-                htmlPath := meta.Title + ".html"
+                mdPath := name + ".md"
+                htmlPath := name + ".html"
                 
                 target := mdPath
                 
@@ -1342,12 +1342,14 @@ func main() {
         		}
         		fmt.Println("Remote article deleted on blog.")
 
-        	}
+        	} else {
         
-        	if err := removeNickname(name); err != nil {
-        		fmt.Println("Error:", err)
-        		return
-        	}
+        	    if err := removeNickname(name); err != nil {
+        	    	fmt.Println("Error:", err)
+        	    	return
+        	    }
+            
+            }
         
             fmt.Println("Nickname removed.")
 
@@ -1626,13 +1628,11 @@ func main() {
         cmd.Parse(os.Args[2:])
         
         if cmd.NArg() < 1 {
-            fmt.Println("Usage: stx sync [-m MESSAGE] FOLDER")
+            fmt.Println("Usage: stx rsync [-m MESSAGE] FOLDER")
             return
         }
         
         folderPath := cmd.Arg(0)
-
-        fmt.Println("folder: ", folderPath)
 
         idx := strings.Index(folderPath, "common_files/")
         if idx == -1 {
@@ -1666,7 +1666,10 @@ func main() {
         )
         mkdirCmd.Stdout = os.Stdout
         mkdirCmd.Stderr = os.Stderr
-        _ = mkdirCmd.Run()
+        if err := mkdirCmd.Run(); err != nil {
+            fmt.Println("Error:", err)
+            return
+        }
 
         rsyncCmd := exec.Command(
             "rsync",
