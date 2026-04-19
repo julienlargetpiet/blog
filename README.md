@@ -746,6 +746,7 @@ Commands:
   subject rename OLD_NAME NEW_NAME
   dumpdb
   rsync [-m MESSAGE] FOLDER
+  build
   completion [bash|zsh]
 ```
 
