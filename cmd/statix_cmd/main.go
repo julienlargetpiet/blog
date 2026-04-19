@@ -966,6 +966,39 @@ func dumpDB() error {
 	return nil
 }
 
+func BuildAll() error {
+
+	cfg, err := loadConfig()
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest("POST", cfg.URL+"/admin/build_all", nil)
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("X-Statix-Token", cfg.Token)
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+    if resp.StatusCode != http.StatusOK &&
+       resp.StatusCode != http.StatusSeeOther {
+        return fmt.Errorf("server returned %s:\n%s", resp.Status, string(body))
+    }
+
+    return nil
+}
+
 func usage() {
 	fmt.Println("stx - Statix Publishing CLI")
 	fmt.Println()
@@ -989,6 +1022,7 @@ func usage() {
     fmt.Println("  subject rename OLD_NAME NEW_NAME")
 	fmt.Println("  dumpdb")
     fmt.Println("  rsync [-m MESSAGE] FOLDER")
+    fmt.Println("  build")
 	fmt.Println("  completion [bash|zsh]")
 	fmt.Println()
 }
@@ -1024,6 +1058,14 @@ func main() {
 		}
 
 		fmt.Println("Credentials saved.")
+
+    case "build":
+
+        if err := BuildAll(); err != nil {
+            fmt.Println("Error: ", err)
+            return
+        }
+        fmt.Println("Blog built successfully")
 
 	// ---------------- publish ----------------
 
