@@ -767,7 +767,7 @@ The file is `~/.statix_config`.
 
 # Works With Git
 
-Anywhere you see the `-m` in rovided commands, that comment has an interraction with your git server that supports all your uploaded files and articles.
+Anywhere you see the `-m` in rovided commands, that comment has an interraction with **your git server** that supports all your uploaded files and articles.
 
 See [https://github.com/julienlargetpiet/ArticlesRepo](https://github.com/julienlargetpiet/ArticlesRepo) to get started.
 
