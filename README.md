@@ -727,17 +727,17 @@ This makes it easy to integrate publishing into **scripts, editors, or CI pipeli
 stx - Statix Publishing CLI
 
 Commands:
-  set-credentials --url URL --password TOKEN
-  publish --file FILE -m MESAGE
+  set-credentials --url URL --password TOKEN --server_username SERVERUSERNAME --internal_location BLOGPATHONSERVER
+  publish --file FILE -m MESSAGE
   nickname create --title TITLE --subject_id ID --is_public true|false NAME
   nickname import ARTICLE_ID NAME
   nickname import-content [--markdown] ARTICLE_ID NAME
   nickname edit [--title TITLE] [--subject_id ID] [--is_public true|false] NAME
-  nickname remove [--sync] NAME
+  nickname remove [--sync] [-m MESSAGE] NAME
   nickname list
   nickname rename OLD_NAME NEW_NAME
   file upload -m MESSAGE FILE...
-  file delete FILE
+  file delete [-m MESSAGE] FILE
   file list
   articles
   subjects
@@ -745,6 +745,7 @@ Commands:
   subject delete NAME
   subject rename OLD_NAME NEW_NAME
   dumpdb
+  rsync [-m MESSAGE] FOLDER
   completion [bash|zsh]
 ```
 
@@ -775,16 +776,10 @@ See [https://github.com/julienlargetpiet/ArticlesRepo](https://github.com/julien
 To publish a file directly:
 
 ```bash
-stx publish --file article.md
+stx publish --file article.md [-m MESSAGE]
 ```
 
-You can optionally provide a **nickname** (a unique identifier for the article):
-
-```bash
-stx publish --file article.md my-article
-```
-
-The nickname acts as a **stable handle** for the article and can later be used to update metadata, rename it, or manage it.
+The nickname (`NICKNAME.md` / `NICKNAME.html`) acts as a **stable handle** for the article and can later be used to update metadata, rename it, or manage it.
 
 ---
 
@@ -907,13 +902,13 @@ stx nickname rename old-name new-name
 # Removing a Nickname
 
 ```bash
-stx nickname remove my-article
+stx nickname remove [-m MESSAGE] my-article
 ```
 
 Optionally synchronize deletion with the remote server:
 
 ```bash
-stx nickname remove --sync my-article
+stx nickname remove --sync [-m MESSAGE] my-article
 ```
 
 ---
@@ -925,13 +920,13 @@ Files usually correspond to **assets such as images or attachments**.
 Upload files:
 
 ```bash
-stx file upload image.png
+stx file upload -m "upload one image" image.png
 ```
 
 Upload multiple files:
 
 ```bash
-stx file upload image1.png image2.png
+stx file upload -m "upload multiple img" image1.png image2.png
 ```
 
 List files:
@@ -943,8 +938,22 @@ stx file list
 Delete a file:
 
 ```bash
-stx file delete image.png
+stx file delete -m "delete one img" image.png
 ```
+
+---
+
+# Rsync
+
+When you need to import a whole folder, or you have done noticeable file updates.
+
+You can directly use, for example:
+
+```bash
+stx rsync -m "rsync" common_files/test_up
+```
+
+It will `rsync` with you remote server and commit and puch the modifications done in your git server.
 
 ---
 

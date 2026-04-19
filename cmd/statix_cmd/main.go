@@ -970,7 +970,7 @@ func usage() {
 	fmt.Println("stx - Statix Publishing CLI")
 	fmt.Println()
 	fmt.Println("Commands:")
-	fmt.Println("  set-credentials --url URL --password TOKEN --server_username SERVERUSERNAME --internal_location PATHOFBLOG")
+	fmt.Println("  set-credentials --url URL --password TOKEN --server_username SERVERUSERNAME --internal_location BLOGPATHONSERVER")
 	fmt.Println("  publish --file FILE -m MESSAGE")
 	fmt.Println("  nickname create --title TITLE --subject_id ID --is_public true|false NAME")
     fmt.Println("  nickname import ARTICLE_ID NAME")
