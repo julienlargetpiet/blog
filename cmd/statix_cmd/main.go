@@ -56,6 +56,8 @@ func nicknameFromFile(path string) string {
 type Config struct {
 	URL   string
 	Token string
+    ServerUsername string
+    InternalLocation string
 }
 
 func configPath() string {
@@ -63,8 +65,11 @@ func configPath() string {
 	return filepath.Join(home, ".statix_config")
 }
 
-func saveConfig(urlStr, token string) error {
-	content := fmt.Sprintf("%s\n%s\n", urlStr, token)
+func saveConfig(urlStr, 
+                token, 
+                server_username, 
+                internal_location string) error {
+	content := fmt.Sprintf("%s\n%s\n%s\n%s\n", urlStr, token, server_username, internal_location)
 	return os.WriteFile(configPath(), []byte(content), 0600)
 }
 
@@ -80,6 +85,8 @@ func loadConfig() (*Config, error) {
 	return &Config{
 		URL:   lines[0],
 		Token: lines[1],
+        ServerUsername: lines[2],
+        InternalLocation: lines[3],
 	}, nil
 }
 
@@ -963,7 +970,7 @@ func usage() {
 	fmt.Println("stx - Statix Publishing CLI")
 	fmt.Println()
 	fmt.Println("Commands:")
-	fmt.Println("  set-credentials --url URL --password TOKEN")
+	fmt.Println("  set-credentials --url URL --password TOKEN --server_username SERVERUSERNAME --internal_location PATHOFBLOG")
 	fmt.Println("  publish --file FILE -m MESSAGE")
 	fmt.Println("  nickname create --title TITLE --subject_id ID --is_public true|false NAME")
     fmt.Println("  nickname import ARTICLE_ID NAME")
@@ -981,6 +988,7 @@ func usage() {
     fmt.Println("  subject delete NAME")
     fmt.Println("  subject rename OLD_NAME NEW_NAME")
 	fmt.Println("  dumpdb")
+    fmt.Println("  rsync [-m MESSAGE] FOLDER")
 	fmt.Println("  completion [bash|zsh]")
 	fmt.Println()
 }
@@ -1000,14 +1008,17 @@ func main() {
 		cmd := flag.NewFlagSet("set-credentials", flag.ExitOnError)
 		urlStr := cmd.String("url", "", "Base URL")
 		password := cmd.String("password", "", "Token")
+		serverUserName := cmd.String("server_username", "", "Server Username")
+		internalLocation := cmd.String("internal_location", "", "Location of the blog on the remote server")
+
 		cmd.Parse(os.Args[2:])
 
-		if *urlStr == "" || *password == "" {
-			fmt.Println("Missing --url or --password")
+		if *urlStr == "" || *password == "" || *serverUserName == "" || *internalLocation == "" {
+			fmt.Println("Missing --url or --password or --internal_location or --server_username")
 			return
 		}
 
-		if err := saveConfig(*urlStr, *password); err != nil {
+		if err := saveConfig(*urlStr, *password, *serverUserName, *internalLocation); err != nil {
 			fmt.Println("Error:", err)
 			return
 		}
@@ -1066,7 +1077,7 @@ func main() {
 
 			fmt.Println("Article updated on blog.")
 
-		    gitCmd := exec.Command("git", "add", ".statix_articles.json")
+		    gitCmd := exec.Command("git", "add", *file, ".statix_articles.json")
             gitCmd.Stdout = os.Stdout
             gitCmd.Stderr = os.Stderr
 
@@ -1093,7 +1104,7 @@ func main() {
                 return
             }
 
-            fmt.Println("Metadatas uploaded on git.")
+            fmt.Println("Updated on git.")
 
 			return
 		}
@@ -1605,6 +1616,92 @@ func main() {
 	    }
 
     // ------------- Completion Script --------
+
+    case "rsync":
+
+        cmd := flag.NewFlagSet("sync", flag.ExitOnError)
+        
+        message := cmd.String("m", "uploaded folder", "git upload folder message")
+        
+        cmd.Parse(os.Args[2:])
+        
+        if cmd.NArg() < 1 {
+            fmt.Println("Usage: stx sync [-m MESSAGE] FOLDER")
+            return
+        }
+        
+        folderPath := cmd.Arg(0)
+
+        fmt.Println("folder: ", folderPath)
+
+        idx := strings.Index(folderPath, "common_files/")
+        if idx == -1 {
+            fmt.Println("Error: path must contain common_files/")
+            return
+        }
+        
+        cleanFolderPath := folderPath[idx+len("common_files/"):]
+        
+        cfg, err := loadConfig()
+        if err != nil {
+            fmt.Println("Error:", err)
+            return
+        }
+        
+        u, err := url.Parse(cfg.URL)
+        if err != nil {
+            fmt.Println("Error:", err)
+            return
+        }
+        
+        domain := u.Host
+        
+        remote := cfg.ServerUsername + "@" + domain + ":" +
+                  cfg.InternalLocation + "/assets/common_files/" + cleanFolderPath + "/"
+       
+        mkdirCmd := exec.Command(
+            "ssh",
+            cfg.ServerUsername+"@"+domain,
+            "mkdir -p "+cfg.InternalLocation+"/assets/common_files/"+cleanFolderPath,
+        )
+        mkdirCmd.Stdout = os.Stdout
+        mkdirCmd.Stderr = os.Stderr
+        _ = mkdirCmd.Run()
+
+        rsyncCmd := exec.Command(
+            "rsync",
+            "-av",
+            "--delete",
+            folderPath+"/",
+            remote,
+        )
+        
+        rsyncCmd.Stdout = os.Stdout
+        rsyncCmd.Stderr = os.Stderr
+        
+        if err := rsyncCmd.Run(); err != nil {
+            fmt.Println("Error:", err)
+            return
+        }
+        
+        gitCmd := exec.Command("git", "add", folderPath)
+        gitCmd.Stdout = os.Stdout
+        gitCmd.Stderr = os.Stderr
+        _ = gitCmd.Run()
+        
+        gitCmd = exec.Command("git", "commit", "-m", *message)
+        gitCmd.Stdout = os.Stdout
+        gitCmd.Stderr = os.Stderr
+        _ = gitCmd.Run()
+        
+        gitCmd = exec.Command("git", "push")
+        gitCmd.Stdout = os.Stdout
+        gitCmd.Stderr = os.Stderr
+        
+        if err := gitCmd.Run(); err != nil {
+            fmt.Println("Error:", err)
+            return
+        }
 
     case "completion":
         if len(os.Args) < 3 {
