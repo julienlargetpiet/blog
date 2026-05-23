@@ -44,6 +44,7 @@
           >
             {{ .Title }}
           </a>
+
       {{ end }}
     {{ end }}
 
@@ -58,13 +59,20 @@
 
     {{ range $i, $a := .Articles }}
       {{ if $a.IsPublic }}
+
           <a
             href="/articles/{{ $a.TitleURL }}.html"
             class="doc-card card-variant-{{ add (mod $i 4) 1 }}"
           >
+
+            <span class="subject-bookmark">
+              {{ $a.Slug }}
+            </span>
+
             <h3>{{ $a.Title }}</h3>
 
             <p>{{ excerpt $a.HTML 22 }}</p>
+
           </a>
       {{ end }}
     {{ end }}
