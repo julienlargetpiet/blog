@@ -6,18 +6,11 @@ function(input, output, session) {
   )
 
   observeEvent(input$time_unit, ignoreInit = TRUE, {
-    updateSelectInput(session, "time_unit_2", selected = input$time_unit)
-  })
-  observeEvent(input$time_unit_2, ignoreInit = TRUE, {
-    updateSelectInput(session, "time_unit", selected = input$time_unit_2)
+    updateSelectInput(session, "time_unit", selected = input$time_unit)
   })
 
   observeEvent(input$last_n, ignoreInit = TRUE, {
-    updateNumericInput(session, "last_n_2", value = input$last_n)
-  })
-  
-  observeEvent(input$last_n_2, ignoreInit = TRUE, {
-    updateNumericInput(session, "last_n", value = input$last_n_2)
+    updateNumericInput(session, "last_n", value = input$last_n)
   })
 
   mmdb_bump <- reactiveVal(0)
@@ -85,244 +78,170 @@ function(input, output, session) {
   observe({
     session$sendCustomMessage("getTimezone", list())
   })
-
-  #observeEvent(input$dark_mode, ignoreInit = TRUE, {
-  #
-  #  session$setCurrentTheme(
-  #    if (isTRUE(input$dark_mode)) {
-  #      bs_theme(
-  #        version = 5,
-  #        bootswatch = "darkly",
-  #        base_font = font_google("Nunito"),
-  #        code_font = font_google("Nunito")
-  #      )
-  #    } else {
-  #      bs_theme(
-  #        version = 5,
-  #        bootswatch = "litera",
-  #        base_font = font_google("Nunito"),
-  #        code_font = font_google("Nunito")
-  #      )
-  #    }
-  #  )
-  #
-  #})
-
-  theme_reactive <- reactive({
-    if (isTRUE(input$dark_mode)) {
-      bs_theme(
-        version = 5,
-        bootswatch = "darkly",
-        base_font = font_google("Nunito"),
-        code_font = font_google("Nunito")
-      )
-    } else {
-      bs_theme(
-        version = 5,
-        bootswatch = "litera",
-        base_font = font_google("Nunito"),
-        code_font = font_google("Nunito")
-      )
-    }
-  })
-
-  observeEvent(input$dark_mode, {
-    session$setCurrentTheme(theme_reactive())
-  }, ignoreInit = TRUE)
-
-  file_path <- "/var/log/nginx/statix.log"
-
-  raw_data <- reactive({
-    fp <- file_path
-    req(!is.null(fp))
   
-    df <- read_delim(
-      fp,
-      delim = " ",
-      quote = '"',
-      col_names = FALSE,
-      trim_ws = TRUE,
-      progress = FALSE,
-      col_types = cols(
-        .default = col_character(),
-        X7 = col_double(),
-        X8 = col_double()
-      )
-    )
-  
-    # Safety: ensure we have enough columns
-    req(ncol(df) >= 2)
-  
-    parsed <- tibble(
-      ip = df[[1]],
-      date_raw = paste(df[[4]], df[[5]]),
-      request_raw = df[[6]],
-      ua = df[[ncol(df) - 1]],        # second to last
-      x_prefetch = df[[ncol(df)]]     # last column
-    )
-  
-    parsed <- parsed %>%
-      mutate(
-        date = as.POSIXct(
-          gsub("\\[|\\]", "", date_raw),
-          format = "%d/%b/%Y:%H:%M:%S %z",
-          tz = "UTC"
-        ),
-        target = extract_url(request_raw),
-        is_prefetch = x_prefetch == "1"
-      ) %>%
-      select(ip, date, target, ua, is_prefetch)
-  
-    parsed %>% 
-      filter(!is.na(date), !is.na(target))
-  })
-
   filtered_data <- reactive({
 
     mmdb_bump()
 
     req(input$time_unit, input$last_n)
 
-    df <- raw_data()
+    df <- raw_data_static
     req(nrow(df) > 0)
-  
-    # -----------------------------
-    # BOT DETECTION
-    # -----------------------------
-    if (!isTRUE(input$show_bots)) {
-    
-      # 1️⃣ Remove prefetch first
-      df <- df %>%
-        filter(!is_prefetch)
-    
-      # 2️⃣ UA detection
-      df <- df %>%
-        mutate(is_bot_ua = grepl(bot_regex, ua,
-                                 ignore.case = TRUE,
-                                 perl = TRUE))
-    
-      # 3️⃣ Asset heuristic
-      df <- df %>%
-        group_by(ip) %>%
-        mutate(
-          total_requests = n(),
-          html_requests = sum(grepl("\\.html$|/$", target)),
-          asset_ratio = html_requests / total_requests,
-          is_bot_asset = asset_ratio > 0.9
-        ) %>%
-        ungroup()
-    
-      # 4️⃣ Rate heuristic
-      df <- df %>%
-        group_by(ip, sec = floor_date(date, "second")) %>%
-        mutate(req_per_sec = n()) %>%
-        ungroup() %>%
-        mutate(is_bot_rate = req_per_sec > 10)
-   
-      # 5️⃣ Reading-time heuristic (aggressive)
-      df <- df %>%
-        arrange(ip, date) %>%
-        group_by(ip) %>%
-        mutate(
-          next_date = lead(date),
-          time_on_page = as.numeric(difftime(next_date, date, units = "secs")),
-          is_article = grepl(
-            "^/articles/[^/]*[A-Za-z][^/]*\\.html$",
-            target
-          ),
-          is_bot_readtime = is_article &
-                            !is.na(time_on_page) &
-                            time_on_page < 30
-        ) %>%
-        ungroup()
 
-      cat("\n OK \n")
-
-      # 6 Final bot flag
-      df <- df %>%
-        mutate(is_bot = is_bot_ua | is_bot_rate | is_bot_asset | is_bot_readtime) %>%
-        filter(!is_bot) %>%
-        select(-is_bot_ua, -req_per_sec, -is_bot_rate,
-               -is_bot_asset, -asset_ratio,
-               -total_requests, -html_requests,
-               -next_date,
-               -is_article, -is_bot_readtime,
-               -is_bot)
-    }
-    # -----------------------------
-    # STATIC ASSET FILTER
-    # -----------------------------
-    if (!isTRUE(input$show_static)) {
-      df <- df %>%
-        filter(!grepl(
-          "\\.(css|js|png|jpg|jpeg|gif|svg|ico|woff2?|ttf)(\\?|$)",
-          target,
-          ignore.case = TRUE
-        ))
-    }
-
-    df <- df %>%
-      mutate(target = sub("\\?.*$", "", target),
-	     target = trimws(target))
-
-    article_regex <- "^/articles/[^/]*[A-Za-z][^/]*\\.html$"
-    
-    df <- df %>%
-      filter(
-        grepl(article_regex, target) |
-        (!input$only_articles & target == "/")
-      )
-
-    if (length(ip_exclude) > 0 && any(nzchar(ip_exclude))) {
-      ip_exclude_regex <- paste(ip_exclude[nzchar(ip_exclude)], collapse="|")
-      df <- df %>% filter(!grepl(ip_exclude_regex, ip))
-    }
+    t <- Sys.time()
 
     # -----------------------------
     # TIME WINDOW FILTER
     # -----------------------------
     last <- input$last_n * mult_map[[input$time_unit]]
-
-    if (nrow(df) == 0) return(df)
     cutoff <- max(df$date) - last
   
-    # --- ASN enrichment (minimal) ---
+    df <- df %>% filter(date >= cutoff)
+
+    log_step("Time Window", t, df)
+    t <- Sys.time()
+
+    ua_unique <- unique(df$ua)
+    
+    ua_is_bot <- setNames(
+      grepl(
+        bot_regex,
+        ua_unique,
+        ignore.case = TRUE,
+        perl = TRUE
+      ),
+      ua_unique
+    )
+    
+    df <- df %>%
+      filter(!ua_is_bot[ua])
+    
+    log_step("UA AGENT", t, df)
+    t <- Sys.time()
+
+    # Asset heuristic
+
+    css_clients <- df %>% 
+            filter(endsWith(tolower(target), ".css")) %>%
+            distinct(ip) %>%
+            pull(ip)
+
+    df <- df %>% filter(ip %in% css_clients)
+
+    log_step("Asset heuristic", t, df)
+    t <- Sys.time()
+
+    if (nrow(df) == 0) return(df)
+
+    df <- df %>%
+      filter(grepl("^/articles/.*\\.html$", target, ignore.case=TRUE))
+
+    log_step("Aticle filtering", t, df)
+    t <- Sys.time()
+
+    if (nrow(df) == 0) return(df)
+
+    # Rate heuristic
+    df <- df %>%
+      group_by(ip, sec = floor_date(date, "second")) %>%
+      mutate(req_per_sec = n()) %>%
+      filter(req_per_sec < 10) %>%
+      ungroup() %>%
+      select(-req_per_sec)
+
+    log_step("Rate heuristic", t, df)
+    t <- Sys.time()
+
+    if (nrow(df) == 0) return(df)
+
+    # Reading-time heuristic
+    df <- df %>%
+      arrange(ip, date) %>%
+      group_by(ip) %>%
+      mutate(
+        next_date = lead(date),
+        time_on_page = as.numeric(difftime(next_date, date, units = "secs")),
+        time_on_page = coalesce(time_on_page, -1)
+      ) %>%
+      ungroup() %>%
+      filter(time_on_page == -1 | time_on_page > 5 & time_on_page < 3600) %>%
+      select(-next_date)
+
+    log_step("Read time heuristic", t, df)
+    t <- Sys.time()
+
+    if (nrow(df) == 0) return(df)
+
+    #--- ASN enrichment (minimal)
     ips <- sort(unique(df$ip))
   
-    asn_data <- lookup_asns(
-      ips,
-      db_path = asn_db_path
+    asn_data <- lookup_asns(ips, 
+                            db_path = asn_db_path
     )
 
     df <- df %>% left_join(asn_data, by = "ip")
 
+    log_step("ASN Enrichment", t, df)
+    t <- Sys.time()
+
+    #df <- df %>%
+    #  group_by(ip) %>%
+    #  mutate(total_requests = n()) %>%
+    #  ungroup() %>%
+    #  mutate(
+    #    is_cloud_asn = grepl(cloud_asn_regex, asn_org, ignore.case = TRUE),
+    #    is_residential = grepl(residential_regex, asn_org, ignore.case = TRUE)
+    #  ) %>%
+    #  filter(!(is_cloud_asn & total_requests > 3)) %>%
+    #  select(-is_cloud_asn, -is_residential)
+
+    # cloud ASN repeated range burst
+
     df <- df %>%
-      group_by(ip) %>%
-      mutate(total_requests = n()) %>%
-      ungroup() %>%
+      arrange(date) %>%
       mutate(
         is_cloud_asn = grepl(cloud_asn_regex, asn_org, ignore.case = TRUE),
-        is_bot_asn = is_cloud_asn & total_requests > 3,
-        is_residential = grepl(residential_regex, asn_org, ignore.case = TRUE)
-    )
+        asn_org_clean = coalesce(asn_org, "UNKNOWN_ASN"),
+        ip_16 = sub("\\.[0-9]+\\.[0-9]+$", "", ip),
+        asn_changed = asn_org_clean != lag(asn_org_clean, default = first(asn_org_clean)),
+        asn_bucket = cumsum(asn_changed) + 1
+      ) %>%
+      group_by(asn_bucket, ip_16) %>%
+      mutate(ip_16_occ = n()) %>%
+      ungroup() %>%
+      filter(ip_16_occ == 1 | !is_cloud_asn) %>%
+      select(-asn_org_clean, 
+             -ip_16, -asn_changed, 
+             -asn_bucket, 
+             -ip_16_occ,
+             -is_cloud_asn
+      )
 
-    df <- switch(
-      input$strict,
-      "low" = df,
-      "medium" = df %>% filter(!is_bot_asn),
-      "high" = df %>% filter(!is_cloud_asn),
-      "very_high" = df %>% filter(is_residential)
-    )
+    log_step("ASN filtering", t, df)
+    t <- Sys.time()
 
-    df %>% filter(date >= cutoff)
+    df <- df %>% filter(!grepl(ip_exclude, ip))
+
+    log_step("IP Exclusion", t, df)
+    t <- Sys.time()
+
+    good_ip <- df %>%
+               filter(!(target %in% honey_pots)) %>%
+               pull(ip)
+
+    df <- df %>% filter(ip %in% good_ip)
+
+    log_step("HONEY POTS", t, df)
+
+    df
 
   })  
- 
+
   geo_cache_reactive <- reactiveVal(NULL)
   last_ips <- reactiveVal(character())
   
   observeEvent(filtered_data(), {
-  
+
     ips <- sort(unique(filtered_data()$ip))
   
     if (!identical(ips, last_ips())) {
@@ -335,12 +254,12 @@ function(input, output, session) {
       geo_cache_reactive(geo_data)
       last_ips(ips)
     }
-  
+ 
   }, ignoreInit = FALSE)
 
   geo_enriched_data <- reactive({
  
-    cat("GEO_ENRICHED_DATA CALLED\n")
+    t <- Sys.time()
 
     df  <- filtered_data()
     geo <- geo_cache_reactive()
@@ -349,6 +268,8 @@ function(input, output, session) {
       df <- df %>% left_join(geo, by = "ip")
     }
  
+    log_step("GEO Enrichment", t, df)
+
     df
 
   })
@@ -370,30 +291,52 @@ function(input, output, session) {
   })
 
   article_readtime_stats <- reactive({
-  
+ 
     df <- filtered_data()
+
+    t <- Sys.time()
+
     req(nrow(df) > 0)
   
-    df %>%
-      mutate(valid_read = !is.na(time_on_page) &
-                          time_on_page > 0 &
-                          time_on_page < 1500) %>%
-      group_by(target) %>%
-      summarise(
-        median_readtime = median(time_on_page[valid_read], na.rm = TRUE),
-        valid_reads = sum(valid_read),
-        .groups = "drop"
-      ) %>%
-      filter(valid_reads > 0) %>%   
-      arrange(desc(median_readtime))
+    df <- df %>%
+             filter(
+                   time_on_page > 3 & time_on_page < 3600
+                   ) %>%
+             group_by(target) %>%
+             summarise(median_readtime = median(time_on_page),
+                       valid_reads = n(),
+                       .groups = "drop") %>%
+             arrange(desc(median_readtime))
+
+    log_step("READTIME STATS", t, df)
+
+    print(df)
+
+    df
+
   })
 
   output$kpi_med_readtime <- renderText({
   
     df <- filtered_data()
-  
+ 
+    t <- Sys.time()
+
     req(nrow(df) > 0)
-  
+
+    # computes one median over the whole filtered table, assuming df was not already grouped with group_by(...).
+
+    # So after summarise, you get a tibble like:
+    # 
+    # # A tibble: 1 × 1
+    #     med
+    #   <dbl>
+    # 1  42.5
+    # 
+    # Then:
+    # 
+    # 42.5
+
     median_time <- df %>%
       filter(
         !is.na(time_on_page),
@@ -407,7 +350,9 @@ function(input, output, session) {
   
     mins <- floor(median_time / 60)
     secs <- round(median_time %% 60)
-  
+ 
+    log_step("KPI MEDIAN READTIME", t, df)
+
     sprintf("%02d:%02d", mins, secs)
   })
 
@@ -454,7 +399,6 @@ function(input, output, session) {
       )
   })
 
-  # ✅ FIXED REGEX GROUPING LOGIC
   output$graph <- renderPlotly({
 
     input$dark_mode
@@ -551,7 +495,7 @@ function(input, output, session) {
       df %>% 
         arrange(desc(date)) %>% 
         mutate(target = paste0(
-          '<a href=\"https://domain.com', 
+          '<a href=\"https://julienlargetpiet.tech', 
           target,
           '\" target=\"_blank\">',
           target,

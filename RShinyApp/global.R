@@ -16,16 +16,16 @@ library(shinyjs)
 cat("GLOBAL LOADED\n")
 
 credentials <- data.frame(
-  user = c("admin"),
-  password = c("adminpass"),
-  admin = c(TRUE),
+  user = "admin",
+  password = "PASSWORD",
+  admin = TRUE,
   stringsAsFactors = FALSE
 )
 
 Sys.setlocale("LC_TIME", "C")
 options(shiny.maxRequestSize = 300 * 1024^2)
 
-ip_exclude <- c("")
+ip_exclude <- c("86.242.190.96")
 
 bot_keywords <- unique(c(
   # Core bot terms
@@ -284,12 +284,6 @@ cloud_asn_patterns <- c(
 cloud_asn_regex <- paste(cloud_asn_patterns, collapse = "|")
 
 ## Extract URL from a typical request string: "GET /path HTTP/1.1"
-#extract_url <- function(request_col) {
-#  # Works even if method differs, and avoids brittle space indexing
-#  url <- str_match(request_col, '^"\\S+\\s+([^\\s]+)')[,2]
-#  # fallback if malformed
-#  ifelse(is.na(url), request_col, url)
-#}
 
 extract_url <- function(request_col) {
   sapply(strsplit(request_col, " "), function(x) {
@@ -338,8 +332,6 @@ save_asn_cache <- function(cache) {
 geo_db_path <- "geo/GeoLite2-City.mmdb"
 asn_db_path <- "geo/GeoLite2-ASN.mmdb"
 
-`%||%` <- function(a, b) if (!is.null(a)) a else b
-
 lookup_ip <- function(ip, db_path) {
 
   safe_empty <- tibble(
@@ -350,29 +342,6 @@ lookup_ip <- function(ip, db_path) {
     lon = NA_real_,
     timezone = NA_character_
   )
-
-  ##get_field <- function(...) {
-  ##  res <- tryCatch(
-  ##    system2(
-  ##      "mmdblookup",
-  ##      args = c("--file", db_path, "--ip", ip, ...),
-  ##      stdout = TRUE,
-  ##      stderr = FALSE
-  ##    ),
-  ##    error = function(e) NULL
-  ##  )
-
-  ##  #print(paste("IP:", ip))
-  ##  #print(res)
-
-  ##  if (is.null(res) || length(res) == 0) return(NA)
-
-  ##  # Extract quoted value if present
-  ##  line <- res[grepl('"', res)][1]
-  ##  if (is.na(line)) return(NA)
-
-  ##  sub('.*"([^"]+)".*', '\\1', line)
-  ##}
 
   get_field <- function(...) {
   
@@ -388,13 +357,11 @@ lookup_ip <- function(ip, db_path) {
   
     if (is.null(res) || length(res) == 0) return(NA)
   
-    # 1️⃣ Try quoted string (country, timezone)
     quoted_line <- grep('"', res, value = TRUE)
     if (length(quoted_line) > 0) {
       return(sub('.*"([^"]+)".*', '\\1', quoted_line[1]))
     }
   
-    # 2️⃣ Try numeric double (lat/lon)
     double_line <- grep("<double>", res, value = TRUE)
     if (length(double_line) > 0) {
       # Extract numeric value before <double>
@@ -513,6 +480,95 @@ clear_ip_caches <- function() {
   if (file.exists(geo_cache_path)) file.remove(geo_cache_path)
   if (file.exists(asn_cache_path)) file.remove(asn_cache_path)
 }
+
+file_path <- "/var/log/nginx/statix.log"
+
+load_raw_data <- function(file_path) {
+  df <- read_delim(
+    file_path,
+    delim = " ",
+    quote = '"',
+    col_names = FALSE,
+    trim_ws = TRUE,
+    progress = FALSE,
+    col_types = cols(
+      .default = col_character(),
+      X7 = col_integer(),
+      X8 = col_double()
+    )
+  )
+
+  parsed <- tibble(
+    ip = df[[1]],
+    date_raw = paste(df[[4]], df[[5]]),
+    request_raw = df[[6]],
+    status = df[[7]],
+    ua = df[[ncol(df)]]
+  )
+
+  parsed %>%
+    mutate(
+      date = as.POSIXct(
+        gsub("\\[|\\]", "", date_raw),
+        format = "%d/%b/%Y:%H:%M:%S %z",
+        tz = "UTC"
+      ),
+      target = extract_url(request_raw)
+    ) %>%
+    select(ip, date, target, status, ua) %>%
+    filter(
+      !is.na(date),
+      !is.na(target),
+      !is.na(status),
+      status == 200
+    ) %>%
+    select(-status)
+}
+
+raw_data_static <- load_raw_data(file_path)
+
+log_step <- function(name, start, df = NULL) {
+  elapsed <- as.numeric(difftime(Sys.time(), start, units = "secs"))
+
+  if (!is.null(df)) {
+    cat(sprintf("[filtered_data] %-25s %.4f sec | rows: %s\n",
+                name,
+                elapsed,
+                format(nrow(df), big.mark = " ")))
+  } else {
+    cat(sprintf("[filtered_data] %-25s %.4f sec\n",
+                name,
+                elapsed))
+  }
+}
+
+honey_pots <- c(
+    "/articles/initialize-a-model-and-tokenizer.html",
+    "/articles/ai-agents-in-2026-revolutionizing-industries.html",
+    "/articles/the-future-of-autonomous-systems.html",
+    "/articles/limits-of-artificial-intelligence.html",
+    "/articles/use-of-for-subheaders.html",
+    "/articles/llms-and-the-future-of-software-engineering.html",
+    "/articles/autonomous-systems-the-future-of-transportation-and-beyond.html",
+    "/articles/how-llms-change-software-engineering.html",
+    "/articles/bold-and-italic-supported.html",
+    "/articles/image-links-are-not-allowed-use-image-description-instead.html",
+    "/articles/no-in-the-text.html",
+    "/articles/use-of-emojis-to-enhance-readability.html",
+    "/articles/threading-and-performance-in-ai-inference-engines.html",
+    "/articles/a-minimum-of-3-subheadings.html",
+    "/articles/title-must-be-the-death-of-traditional-blogging.html",
+    "/articles/understanding-kv-cache-and-memory-bottlenecks.html",
+    "/articles/dfdfdf.html",
+    "/articles/can-ai-systems-be-exploited.html",
+    "/articles/and-header-will-be.html",
+    "/articles/this-is-a-valid-markdown-header.html",
+    "/articles/and-for-all-other-headers.html",
+    "/articles/journal-april-2026.html",
+    "/articles/clap-de-fin.html",
+    "/articles/header.html"
+)
+
 
 
 

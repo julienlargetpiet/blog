@@ -1,15 +1,8 @@
 ui <- fluidPage(
 
-  #theme = bs_theme(
-  #  version = 5,
-  #  bootswatch = "flatly",   # light theme
-  #  base_font = font_google("Lexend"),
-  #  code_font = font_google("Lexend")
-  #),
-
   theme = bs_theme(
      version = 5,
-     bootswatch = "litera",   # same as your light mode default
+     bootswatch = "litera",  
      base_font = font_google("Nunito"),
      code_font = font_google("Nunito")
   ),
@@ -23,42 +16,24 @@ ui <- fluidPage(
     });
   ")),
 
-  checkboxInput("dark_mode", "Dark mode", value = FALSE),
-
   navset_tab(
     nav_panel(
       title = "Most Visited Pages",
       page_sidebar(
-        title = "Input Log File",
+        title = "Main Dashboard",
         sidebar = tagList(
           selectInput(
             inputId = "time_unit",
             label = "Time Unit",
             choices = c("h", "d", "w", "m", "y"),
-            selected = "h"
+            selected = "d"
           ),
           numericInput(
             inputId = "last_n",
             label = "Last n units",
-            value = 15,
+            value = 72,
             min = 1,
             step = 1
-          ),
-          selectInput(
-            inputId = "strict",
-            label = "Bot Filtering Level",
-            choices = c(
-              "Low" = "low",
-              "Medium" = "medium",
-              "High" = "high",
-              "Very High" = "very_high"
-            ),
-            selected = "low"
-          ),
-          checkboxInput(
-            inputId = "only_articles",
-            label = "Only articles",
-            value = TRUE
           ),
           fileInput(
             inputId = "upload_asn_mmdb",
@@ -102,19 +77,6 @@ ui <- fluidPage(
             value = "articles",
             placeholder = "Example: ^/$--^/blog"
           ),
-          selectInput(
-            inputId = "time_unit_2",
-            label = "Time Unit",
-            choices = c("h", "d", "w", "m", "y"),
-            selected = "h"
-          ),
-          numericInput(
-            inputId = "last_n_2",
-            label = "Last n units",
-            value = 15,
-            min = 1,
-            step = 1
-          )
         ),
         value_box(
           title = NULL,
@@ -148,7 +110,7 @@ ui <- fluidPage(
       page_sidebar(
         title = "Traffic Map",
         sidebar = tagList(
-          checkboxInput("map_cluster", "Cluster markers", value = TRUE)
+          checkboxInput("map_cluster", "Cluster markers", value = FALSE)
         ),
         card(
           withSpinner(
