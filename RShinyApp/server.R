@@ -78,14 +78,20 @@ function(input, output, session) {
   observe({
     session$sendCustomMessage("getTimezone", list())
   })
-  
+
+  t <- Sys.time()
+
+  raw_data <- load_raw_data(file_path)
+ 
+  log_step("Read First", t, raw_data)
+
   filtered_data <- reactive({
 
     mmdb_bump()
 
     req(input$time_unit, input$last_n)
 
-    df <- raw_data_static
+    df <- raw_data
     req(nrow(df) > 0)
 
     t <- Sys.time()
@@ -184,17 +190,6 @@ function(input, output, session) {
     log_step("ASN Enrichment", t, df)
     t <- Sys.time()
 
-    #df <- df %>%
-    #  group_by(ip) %>%
-    #  mutate(total_requests = n()) %>%
-    #  ungroup() %>%
-    #  mutate(
-    #    is_cloud_asn = grepl(cloud_asn_regex, asn_org, ignore.case = TRUE),
-    #    is_residential = grepl(residential_regex, asn_org, ignore.case = TRUE)
-    #  ) %>%
-    #  filter(!(is_cloud_asn & total_requests > 3)) %>%
-    #  select(-is_cloud_asn, -is_residential)
-
     # cloud ASN repeated range burst
 
     df <- df %>%
@@ -239,13 +234,17 @@ function(input, output, session) {
 
   geo_cache_reactive <- reactiveVal(NULL)
   last_ips <- reactiveVal(character())
+ 
+  geo_enriched_data <- reactive({
   
-  observeEvent(filtered_data(), {
-
-    ips <- sort(unique(filtered_data()$ip))
+    t <- Sys.time()
+  
+    df <- filtered_data()
+    req(nrow(df) > 0)
+  
+    ips <- sort(unique(df$ip))
   
     if (!identical(ips, last_ips())) {
-  
       geo_data <- lookup_ips(
         ips,
         db_path = geo_db_path
@@ -254,30 +253,21 @@ function(input, output, session) {
       geo_cache_reactive(geo_data)
       last_ips(ips)
     }
- 
-  }, ignoreInit = FALSE)
-
-  geo_enriched_data <- reactive({
- 
-    t <- Sys.time()
-
-    df  <- filtered_data()
+  
     geo <- geo_cache_reactive()
   
     if (!is.null(geo)) {
       df <- df %>% left_join(geo, by = "ip")
     }
- 
+  
     log_step("GEO Enrichment", t, df)
-
+  
     df
-
   })
 
-  # KPIs
   output$kpi_hits <- renderText({
     df <- filtered_data()
-    format(nrow(df), big.mark = " ")
+    format(nrow(df), big.mark = " ") # big.mark -> spaces as thousands -> each 3 characters
   })
 
   output$kpi_ips <- renderText({
@@ -341,7 +331,7 @@ function(input, output, session) {
       filter(
         !is.na(time_on_page),
         time_on_page > 0,
-        time_on_page < 1500   # safety cap (1 hour max)
+        time_on_page < 3600   # safety cap (1 hour max)
       ) %>%
       summarise(med = median(time_on_page)) %>%
       pull(med)
@@ -364,9 +354,15 @@ function(input, output, session) {
     df <- filtered_data()
     req(nrow(df) > 0)
 
+    #agg <- df %>%
+    #  count(target, name = "hits") %>%
+    #  arrange(desc(hits))
+
+    # OR
     agg <- df %>%
-      count(target, name = "hits") %>%
-      arrange(desc(hits))
+        group_by(target) %>%
+        summarize(hits=n(), .groups="drop") %>%
+        arrange(desc(hits))
 
     topn <- 5
     top <- head(agg, topn)
@@ -378,8 +374,6 @@ function(input, output, session) {
                               hits = other_hits))
     }
 
-    dark <- isTRUE(input$dark_mode)
-
     plot_ly(
       data = top,
       labels = ~target,
@@ -389,7 +383,7 @@ function(input, output, session) {
       insidetextorientation = "radial"
     ) %>%
       layout(
-        template = if (dark) "plotly_dark" else "plotly_white",
+        template = "plotly_white",
         title = list(
           text = "Most visited targets (Top 5 + Other)"
         ),
@@ -401,84 +395,30 @@ function(input, output, session) {
 
   output$graph <- renderPlotly({
 
-    input$dark_mode
-
     df <- filtered_data()
     req(nrow(df) > 0)
 
-    patterns <- input$webpages
-
-    if (!is.null(patterns) && nzchar(patterns)) {
-
-      pats <- strsplit(patterns, "--", fixed = TRUE)[[1]]
-
-      # Create empty grouping column
-      df$target_group <- NA_character_
-
-      # FIRST MATCH WINS (no reassignment)
-      for (p in pats) {
-        idx <- is.na(df$target_group) & grepl(p, df$target)
-        df$target_group[idx] <- p
-      }
-
-      # Remove rows that matched none
-      df <- df[!is.na(df$target_group), ]
-
-      req(nrow(df) > 0)
-
-    } else {
-      df$target_group <- df$target
-    }
-
     interval <- interval_map[[input$time_unit]]
 
+    target_group <- df %>%
+                    count(target, name="hits", sort = TRUE) %>%
+                    head(n = 5) %>%
+                    pull(target)
+
     df <- df %>%
+      filter(target %in% target_group) %>%
       mutate(date_bucket = floor_date(date, unit = interval)) %>%
-      count(target_group, date_bucket, name = "hits")
-
-    dark <- isTRUE(input$dark_mode)
+      count(target, date_bucket, name = "hits")
    
-    text_col <- if (dark) "#F5F5F5" else "#000000"
-    grid_col <- if (dark) "#333333" else "#E5E5E5"
-
     plot_ly(
       data = df,
       x = ~date_bucket,
       y = ~hits,
-      color = ~target_group,
+      color = ~target,
       type = "scatter",
       mode = "lines+markers"
-    ) %>%
-      layout(
-        template = "none",  # 🔥 critical
-
-        title = list(
-          text = "Traffic by URL (regex buckets — first match wins)",
-          font = list(color = text_col)
-        ),
-
-        paper_bgcolor = "rgba(0,0,0,0)",
-        plot_bgcolor  = "rgba(0,0,0,0)",
-
-        font = list(color = text_col),
-
-        legend = list(
-          font = list(color = text_col),
-          bgcolor = "rgba(0,0,0,0)"
-        ),
-
-        xaxis = list(
-          title = list(text = "Date", font = list(color = text_col)),
-          tickfont = list(color = text_col),
-          gridcolor = grid_col
-        ),
-
-        yaxis = list(
-          title = list(text = "Number of requests", font = list(color = text_col)),
-          tickfont = list(color = text_col),
-          gridcolor = grid_col
-        )
-    )  
+    ) 
+  
   })
 
   output$mytable <- renderDT({
@@ -543,44 +483,47 @@ function(input, output, session) {
     req(nrow(df) > 0)
   
     df <- df %>%
-      filter(!is.na(lat), !is.na(lon))
+      filter(!is.na(lat), !is.na(lon), !is.na(country))
   
     req(nrow(df) > 0)
-  
+
+    cat("\n MISSING COUNTRIES \n")
+
+    missing_countries <- df %>%
+      distinct(country) %>%
+      left_join(country_coords, by = "country") %>%
+      filter(is.na(country_lat) | is.na(country_lon)) %>%
+      pull(country)
+    
+    cat(paste(missing_countries, collapse = "\n"), "\n")
+
     agg <- df %>%
       group_by(country) %>%
       summarise(
         hits = n(),
         unique_ips = n_distinct(ip),
-        lat = mean(lat),
-        lon = mean(lon),
         .groups = "drop"
-      )
-  
-    dark <- isTRUE(input$dark_mode)
+      ) %>%
+      left_join(country_coords, by="country") %>%
+      filter(!is.na(country_lat), !is.na(country_lon))
   
     leaflet(agg) %>%
       addProviderTiles(
-        if (dark)
-          providers$CartoDB.DarkMatter
-        else
           providers$CartoDB.Positron
       ) %>%
       setView(lng = 0, lat = 20, zoom = 2) %>%
       addCircleMarkers(
-        lng = ~lon,
-        lat = ~lat,
+        lng = ~country_lon,
+        lat = ~country_lat,
         radius = ~pmin(25, pmax(5, sqrt(hits) * 3)),
         stroke = FALSE,
         fillOpacity = 0.75,
         popup = ~paste0(
           "<b>Country:</b> ", country, "<br>",
           "<b>Total hits:</b> ", hits, "<br>",
-          "<b>Unique IPs:</b> ", unique_ips
+          "<b>Unique IPs:</b> <span style='color:red;'>", unique_ips, "</span>"
         ),
-        clusterOptions = if (isTRUE(input$map_cluster))
-          markerClusterOptions()
-        else NULL
+        clusterOptions = NULL
       )
   
   })

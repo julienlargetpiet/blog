@@ -15,6 +15,21 @@ library(shinyjs)
 
 cat("GLOBAL LOADED\n")
 
+log_step <- function(name, start, df = NULL) {
+  elapsed <- as.numeric(difftime(Sys.time(), start, units = "secs"))
+
+  if (!is.null(df)) {
+    cat(sprintf("[filtered_data] %-25s %.4f sec | rows: %s\n",
+                name,
+                elapsed,
+                format(nrow(df), big.mark = " ")))
+  } else {
+    cat(sprintf("[filtered_data] %-25s %.4f sec\n",
+                name,
+                elapsed))
+  }
+}
+
 credentials <- data.frame(
   user = "admin",
   password = "PASSWORD",
@@ -76,109 +91,6 @@ bot_keywords <- unique(c(
 ))
 
 bot_regex <- paste(bot_keywords, collapse = "|")
-
-residential_isp <- c(
-
-# --- 🇫🇷 France ---
-"Orange", # Orange S.A.
-"SFR", # SFR / Numericable
-"Bouygues Telecom", # Bbox
-"Free", # Free / Iliad
-"Iliad", # Free Mobile
-"Proxad", # Free anciennement Proxad
-"Nordnet", # Fournisseur secondaire
-"Wanadoo", # Anciennement Orange
-
-# --- 🇩🇪 Allemagne ---
-"Deutsche Telekom",
-"Vodafone Germany",
-"Telefonica Germany",
-"O2 Germany",
-"1&1 Versatel",
-
-# --- 🇬🇧 Royaume-Uni ---
-"BT",
-"Openreach",
-"Sky Broadband",
-"Virgin Media",
-"TalkTalk",
-"EE Limited",
-
-# --- 🇪🇸 Espagne ---
-"Telefonica",
-"Movistar",
-"Orange Spain",
-"Vodafone Spain",
-"MasMovil",
-
-# --- 🇮🇹 Italie ---
-"TIM",
-"Telecom Italia",
-"Vodafone Italia",
-"Wind Tre",
-"Fastweb",
-
-# --- 🇳🇱 Pays-Bas ---
-"KPN",
-"Ziggo",
-"T-Mobile Netherlands",
-"Odido",
-
-# --- 🇧🇪 Belgique ---
-"Proximus",
-"Telenet",
-"Orange Belgium",
-
-# --- 🇨🇭 Suisse ---
-"Swisscom",
-"Sunrise",
-"Salt Mobile",
-
-# --- 🇺🇸 États-Unis ---
-"Comcast",
-"Xfinity",
-"AT&T",
-"Verizon",
-"Charter Communications",
-"Spectrum",
-"Cox Communications",
-"Frontier Communications",
-"CenturyLink",
-"Windstream",
-
-# --- 🇨🇦 Canada ---
-"Bell Canada",
-"Rogers Communications",
-"Shaw Communications",
-"Telus",
-"Videotron",
-
-# --- 🇦🇺 Australie ---
-"Telstra",
-"Optus",
-"TPG Telecom",
-"iiNet",
-
-# --- 🇯🇵 Japon ---
-"NTT",
-"NTT Communications",
-"SoftBank",
-"KDDI",
-"au by KDDI",
-
-# --- 🇰🇷 Corée du Sud ---
-"KT Corporation",
-"SK Broadband",
-"LG Uplus",
-
-# --- 🇧🇷 Brésil ---
-"Vivo",
-"Claro Brasil",
-"TIM Brasil",
-"Oi"
-)
-
-residential_regex <- paste(residential_isp, collapse="|")
 
 mult_map <- c(
   h = 3600,
@@ -484,36 +396,20 @@ clear_ip_caches <- function() {
 file_path <- "/var/log/nginx/statix.log"
 
 load_raw_data <- function(file_path) {
-  df <- read_delim(
+  readr::read_tsv(
     file_path,
-    delim = " ",
-    quote = '"',
-    col_names = FALSE,
-    trim_ws = TRUE,
-    progress = FALSE,
-    col_types = cols(
-      .default = col_character(),
-      X7 = col_integer(),
-      X8 = col_double()
-    )
-  )
-
-  parsed <- tibble(
-    ip = df[[1]],
-    date_raw = paste(df[[4]], df[[5]]),
-    request_raw = df[[6]],
-    status = df[[7]],
-    ua = df[[ncol(df)]]
-  )
-
-  parsed %>%
+    col_names = c("ip", "ts", "target", "status", "ua"),
+    col_types = readr::cols(
+      ip = readr::col_character(),
+      ts = readr::col_double(),
+      target = readr::col_character(),
+      status = readr::col_integer(),
+      ua = readr::col_character()
+    ),
+    progress = FALSE
+  ) %>%
     mutate(
-      date = as.POSIXct(
-        gsub("\\[|\\]", "", date_raw),
-        format = "%d/%b/%Y:%H:%M:%S %z",
-        tz = "UTC"
-      ),
-      target = extract_url(request_raw)
+      date = as.POSIXct(ts, origin = "1970-01-01", tz = "UTC")
     ) %>%
     select(ip, date, target, status, ua) %>%
     filter(
@@ -523,23 +419,6 @@ load_raw_data <- function(file_path) {
       status == 200
     ) %>%
     select(-status)
-}
-
-raw_data_static <- load_raw_data(file_path)
-
-log_step <- function(name, start, df = NULL) {
-  elapsed <- as.numeric(difftime(Sys.time(), start, units = "secs"))
-
-  if (!is.null(df)) {
-    cat(sprintf("[filtered_data] %-25s %.4f sec | rows: %s\n",
-                name,
-                elapsed,
-                format(nrow(df), big.mark = " ")))
-  } else {
-    cat(sprintf("[filtered_data] %-25s %.4f sec\n",
-                name,
-                elapsed))
-  }
 }
 
 honey_pots <- c(
@@ -567,6 +446,132 @@ honey_pots <- c(
     "/articles/journal-april-2026.html",
     "/articles/clap-de-fin.html",
     "/articles/header.html"
+)
+
+country_coords <- tibble::tribble(
+  ~country, ~country_lat, ~country_lon,
+
+  # Europe
+  "France", 48.8566, 2.3522,
+  "Germany", 52.5200, 13.4050,
+  "United Kingdom", 51.5074, -0.1278,
+  "Netherlands", 52.3676, 4.9041,
+  "Belgium", 50.8503, 4.3517,
+  "Switzerland", 46.9480, 7.4474,
+  "Spain", 40.4168, -3.7038,
+  "Italy", 41.9028, 12.4964,
+  "Portugal", 38.7223, -9.1393,
+  "Ireland", 53.3498, -6.2603,
+  "Austria", 48.2082, 16.3738,
+  "Poland", 52.2297, 21.0122,
+  "Czechia", 50.0755, 14.4378,
+  "Sweden", 59.3293, 18.0686,
+  "Norway", 59.9139, 10.7522,
+  "Denmark", 55.6761, 12.5683,
+  "Finland", 60.1699, 24.9384,
+  "Romania", 44.4268, 26.1025,
+  "Bulgaria", 42.6977, 23.3219,
+  "Greece", 37.9838, 23.7275,
+  "Hungary", 47.4979, 19.0402,
+  "Ukraine", 50.4501, 30.5234,
+  "Russia", 55.7558, 37.6173,
+  "Turkey", 39.9334, 32.8597,
+
+  # North America
+  "United States", 38.9072, -77.0369,
+  "Canada", 45.4215, -75.6972,
+  "Mexico", 19.4326, -99.1332,
+
+  # South America
+  "Brazil", -15.7939, -47.8828,
+  "Argentina", -34.6037, -58.3816,
+  "Chile", -33.4489, -70.6693,
+  "Colombia", 4.7110, -74.0721,
+  "Peru", -12.0464, -77.0428,
+  "Venezuela", 10.4806, -66.9036,
+  "Uruguay", -34.9011, -56.1645,
+  "Trinidad and Tobago", 10.6549, -61.5019,
+
+  # Asia
+  "Singapore", 1.3521, 103.8198,
+  "Japan", 35.6762, 139.6503,
+  "India", 28.6139, 77.2090,
+  "China", 39.9042, 116.4074,
+  "Hong Kong", 22.3193, 114.1694,
+  "Taiwan", 25.0330, 121.5654,
+  "South Korea", 37.5665, 126.9780,
+  "Indonesia", -6.2088, 106.8456,
+  "Malaysia", 3.1390, 101.6869,
+  "Thailand", 13.7563, 100.5018,
+  "Vietnam", 21.0278, 105.8342,
+  "Philippines", 14.5995, 120.9842,
+  "Pakistan", 33.6844, 73.0479,
+  "Bangladesh", 23.8103, 90.4125,
+  "United Arab Emirates", 24.4539, 54.3773,
+  "Saudi Arabia", 24.7136, 46.6753,
+  "Israel", 31.7683, 35.2137,
+  "Iran", 35.6892, 51.3890,
+
+  # Oceania
+  "Australia", -35.2809, 149.1300,
+  "New Zealand", -41.2865, 174.7762,
+
+  # Africa
+  "South Africa", -25.7479, 28.2293,
+  "Egypt", 30.0444, 31.2357,
+  "Morocco", 34.0209, -6.8416,
+  "Algeria", 36.7538, 3.0588,
+  "Tunisia", 36.8065, 10.1815,
+  "Nigeria", 9.0765, 7.3986,
+  "Kenya", -1.2921, 36.8219,
+  "Ethiopia", 9.0300, 38.7400,
+  "Ghana", 5.6037, -0.1870,
+  "Ivory Coast", 5.3600, -4.0083,
+
+  "Angola", -8.8390, 13.2894,
+  "Benin", 6.4969, 2.6289,
+  "Botswana", -24.6282, 25.9231,
+  "Burkina Faso", 12.3714, -1.5197,
+  "Burundi", -3.3614, 29.3599,
+  "Cameroon", 3.8480, 11.5021,
+  "Cape Verde", 14.9330, -23.5133,
+  "Central African Republic", 4.3947, 18.5582,
+  "Chad", 12.1348, 15.0557,
+  "Comoros", -11.7172, 43.2473,
+  "Democratic Republic of the Congo", -4.4419, 15.2663,
+  "Republic of the Congo", -4.2634, 15.2429,
+  "Djibouti", 11.5721, 43.1456,
+  "Equatorial Guinea", 3.7500, 8.7833,
+  "Eritrea", 15.3229, 38.9251,
+  "Eswatini", -26.3054, 31.1367,
+  "Gabon", 0.4162, 9.4673,
+  "Gambia", 13.4549, -16.5790,
+  "Guinea", 9.6412, -13.5784,
+  "Guinea-Bissau", 11.8817, -15.6170,
+  "Lesotho", -29.3158, 27.4869,
+  "Liberia", 6.3156, -10.8074,
+  "Libya", 32.8872, 13.1913,
+  "Madagascar", -18.8792, 47.5079,
+  "Malawi", -13.9626, 33.7741,
+  "Mali", 12.6392, -8.0029,
+  "Mauritania", 18.0735, -15.9582,
+  "Mauritius", -20.1609, 57.5012,
+  "Mozambique", -25.9692, 32.5732,
+  "Namibia", -22.5609, 17.0658,
+  "Niger", 13.5116, 2.1254,
+  "Rwanda", -1.9441, 30.0619,
+  "São Tomé and Príncipe", 0.3365, 6.7273,
+  "Senegal", 14.7167, -17.4677,
+  "Seychelles", -4.6191, 55.4513,
+  "Sierra Leone", 8.4657, -13.2317,
+  "Somalia", 2.0469, 45.3182,
+  "South Sudan", 4.8594, 31.5713,
+  "Sudan", 15.5007, 32.5599,
+  "Tanzania", -6.1630, 35.7516,
+  "Togo", 6.1725, 1.2314,
+  "Uganda", 0.3476, 32.5825,
+  "Zambia", -15.3875, 28.3228,
+  "Zimbabwe", -17.8292, 31.0522
 )
 
 

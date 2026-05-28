@@ -560,6 +560,20 @@ To be comfortable uploading file when it comes to their size add this in `http {
 client_max_body_size 200M;
 ```
 
+Also, you must add this log format at the top in the `http{...}` block:
+
+```
+
+log_format statix_tsv '$remote_addr\t'
+                      '$msec\t'
+                      '$uri\t'
+                      '$status\t'
+                      '$http_user_agent';
+
+```
+
+This is the TSV format the RShiny App expects.
+
 Create:
 
     /etc/nginx/sites-available/example.com

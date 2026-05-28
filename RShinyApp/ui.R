@@ -26,7 +26,7 @@ ui <- fluidPage(
             inputId = "time_unit",
             label = "Time Unit",
             choices = c("h", "d", "w", "m", "y"),
-            selected = "d"
+            selected = "h"
           ),
           numericInput(
             inputId = "last_n",
@@ -67,57 +67,34 @@ ui <- fluidPage(
     ),
 
     nav_panel(
-      title = "WebPages",
-      page_sidebar(
-        title = "Specific WebPages",
-        sidebar = tagList(
-          textInput(
-            inputId = "webpages",
-            label = "RegEx expression(s) (separate with --)",
-            value = "articles",
-            placeholder = "Example: ^/$--^/blog"
-          ),
-        ),
-        value_box(
-          title = NULL,
-          value = withSpinner(plotlyOutput("graph"), type = 5, size = 1.3)
-        )
+      title = "WebPages Accross time",
+      value_box(
+        title = NULL,
+        value = withSpinner(plotlyOutput("graph"), type = 5, size = 1.3)
       )
     ),
 
     nav_panel(
       title = "Data Page",
-      page_sidebar(
-        title = "Raw data (filtered)",
-        card(
-          withSpinner(DTOutput("mytable"), type = 5, size = 1.0)
-        )
+      card(
+        withSpinner(DTOutput("mytable"), type = 5, size = 1.0)
       )
     ),
 
     nav_panel(
       title = "ReadTime Page",
-      page_sidebar(
-        title = "Read Time Median (filtered)",
-        card(
-          withSpinner(DTOutput("read_time"), type = 5, size = 1.0)
-        )
+      card(
+        withSpinner(DTOutput("read_time"), type = 5, size = 1.0)
       )
     ),
 
     nav_panel(
       title = "Geo Map",
-      page_sidebar(
-        title = "Traffic Map",
-        sidebar = tagList(
-          checkboxInput("map_cluster", "Cluster markers", value = FALSE)
-        ),
-        card(
-          withSpinner(
-            leafletOutput("map", height = 650),
-            type = 5,
-            size = 1.2
-          )
+      card(
+        withSpinner(
+          leafletOutput("map", height = 650),
+          type = 5,
+          size = 1.2
         )
       )
     )
