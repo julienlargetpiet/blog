@@ -220,11 +220,13 @@ function(input, output, session) {
     log_step("IP Exclusion", t, df)
     t <- Sys.time()
 
-    good_ip <- df %>%
-               filter(!(target %in% honey_pots)) %>%
-               pull(ip)
-
-    df <- df %>% filter(ip %in% good_ip)
+    bad_ip <- df %>%
+      filter(target %in% honey_pots) %>%
+      distinct(ip) %>%
+      pull(ip)
+    
+    df <- df %>%
+      filter(!(ip %in% bad_ip))
 
     log_step("HONEY POTS", t, df)
 
