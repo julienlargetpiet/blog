@@ -615,32 +615,31 @@ enable_nginx() {
 # Apply config
 ########################################
 
-if [[ "$ENABLE_TLS" -eq 1 && -f "$CERT_FULLCHAIN" ]]; then
-    write_nginx_https
-else
-    write_nginx_http
-fi
-
-enable_nginx
-
-########################################
-# TLS (idempotent)
-########################################
 if [[ "$ENABLE_TLS" -eq 1 ]]; then
   apt install -y certbot
 
   if [[ -f "$CERT_FULLCHAIN" && -f "$CERT_PRIVKEY" ]]; then
     warn "Certificates already exist. Skipping certbot."
+
+    write_nginx_https
+    enable_nginx
   else
+    # First expose HTTP so certbot webroot challenge can work
+    write_nginx_http
+    enable_nginx
+
     mkdir -p "${STATIC_ROOT}/.well-known/acme-challenge"
-    
+
     certbot certonly --webroot \
       -w "${STATIC_ROOT}" \
       -d "$DOMAIN" -d "www.$DOMAIN" \
       --agree-tos --email "$TLS_EMAIL" --non-interactive
-  fi
 
-  write_nginx_https
+    write_nginx_https
+    enable_nginx
+  fi
+else
+  write_nginx_http
   enable_nginx
 fi
 
