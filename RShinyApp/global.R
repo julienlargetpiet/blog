@@ -3,7 +3,6 @@ library(plotly)
 library(dplyr)
 library(lubridate)
 library(bslib)
-library(readr)
 library(shinymanager)
 library(shinycssloaders)
 library(DT)
@@ -12,6 +11,7 @@ library(scales)
 library(leaflet)
 library(purrr)
 library(shinyjs)
+library(data.table)
 
 cat("GLOBAL LOADED\n")
 
@@ -426,29 +426,54 @@ clear_ip_caches <- function() {
 file_path <- "/var/log/nginx/statix.log"
 
 load_raw_data <- function(file_path) {
-  readr::read_tsv(
-    file_path,
-    col_names = c("ip", "ts", "target", "status", "ua"),
-    col_types = readr::cols(
-      ip = readr::col_character(),
-      ts = readr::col_double(),
-      target = readr::col_character(),
-      status = readr::col_integer(),
-      ua = readr::col_character()
-    ),
-    progress = FALSE
-  ) %>%
-    mutate(
-      date = as.POSIXct(ts, origin = "1970-01-01", tz = "UTC")
-    ) %>%
-    select(ip, date, target, status, ua) %>%
-    filter(
-      !is.na(date),
-      !is.na(target),
-      !is.na(status),
-      status == 200
-    ) %>%
-    select(-status)
+   
+  #readr::read_tsv(
+  #  file_path,
+  #  col_names = c("ip", "ts", "target", "status", "ua"),
+  #  col_types = readr::cols(
+  #    ip = readr::col_character(),
+  #    ts = readr::col_double(),
+  #    target = readr::col_character(),
+  #    status = readr::col_integer(),
+  #    ua = readr::col_character()
+  #  ),
+  #  progress = FALSE
+  #) %>%
+  #  mutate(
+  #    date = as.POSIXct(ts, origin = "1970-01-01", tz = "UTC")
+  #  ) %>%
+  #  select(ip, date, target, status, ua) %>%
+  #  filter(
+  #    !is.na(date),
+  #    !is.na(target),
+  #    !is.na(status),
+  #    status == 200
+  #  ) %>%
+  #  select(-status)
+
+    data.table::fread(input = file_path,
+                      sep="\t",
+                      col.names = c("ip", "ts", "target", "status", "ua"),
+                      header = FALSE,
+                      colClasses = list(
+                                        character = c(1, 3, 5),
+                                        integer = 2,
+                                        double = 4
+                                       ),
+                      showProgress = FALSE
+                ) %>%
+                 mutate(
+                   date = as.POSIXct(ts, origin = "1970-01-01", tz = "UTC")
+                 ) %>%
+                 select(ip, date, target, status, ua) %>%
+                 filter(
+                   !is.na(date),
+                   !is.na(target),
+                   !is.na(status),
+                   status == 200
+                 ) %>%
+                 select(-status)
+
 }
 
 honey_pots <- c(

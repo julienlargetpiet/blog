@@ -1176,7 +1176,7 @@ install.packages(c(
   "dplyr",
   "lubridate",
   "bslib",
-  "readr",
+  "data.table",
   "shinymanager",
   "shinycssloaders",
   "DT",

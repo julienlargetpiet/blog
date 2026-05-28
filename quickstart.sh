@@ -392,7 +392,7 @@ if [[ "$ENABLE_SHINY" -eq 1 ]]; then
   sudo -u "$APP_USER" R --no-save --no-restore -e "
     .libPaths('$RLIBS_DIR');
     pkgs <- c('Rcpp','s2','sf','leaflet','shiny','plotly','dplyr','lubridate','bslib',
-              'readr','shinymanager','shinycssloaders','DT','stringr','purrr','shinyjs');
+              'data.table','shinymanager','shinycssloaders','DT','stringr','purrr','shinyjs');
     missing <- pkgs[!pkgs %in% rownames(installed.packages())];
     if(length(missing)) install.packages(missing, repos='https://cloud.r-project.org');
   "
