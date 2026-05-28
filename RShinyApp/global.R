@@ -109,19 +109,6 @@ interval_map <- c(
 )
 
 cloud_asn_patterns <- c(
-
-  # --- Hyperscalers ---
-  "Amazon",
-  "AWS",
-  "Google",
-  "Microsoft",
-  "Azure",
-  "Alibaba",
-  "Tencent",
-  "Oracle",
-  "IBM Cloud",
-
-  # --- Major Hosting / VPS ---
   "OVH",
   "OVHcloud",
   "DigitalOcean",
@@ -134,29 +121,6 @@ cloud_asn_patterns <- c(
   "Leaseweb",
   "LeaseWeb",
   "Online SAS",
-  "Ionos",
-  "1&1",
-  "GoDaddy",
-  "Namecheap",
-  "DreamHost",
-  "Hostinger",
-  "Bluehost",
-  "SiteGround",
-  "A2 Hosting",
-  "HostGator",
-
-  # --- CDN / Edge ---
-  "Cloudflare",
-  "Fastly",
-  "Akamai",
-  "StackPath",
-  "Bunny.net",
-  "CDN77",
-  "Edgecast",
-  "G-Core",
-  "Imperva",
-
-  # --- Cheap / Bot-heavy infra ---
   "Choopa",
   "ColoCrossing",
   "Quadranet",
@@ -167,31 +131,97 @@ cloud_asn_patterns <- c(
   "Datacamp",
   "Hostwinds",
   "EUserv",
-
-  # --- SEO / Crawlers infra ---
-  "Babbar",
-  "Ahrefs",
-  "Semrush",
-  "MJ12",
-  "Majestic",
-  "Dotbot",
-
-  # --- Asian cloud infra ---
-  "Huawei",
-  "China Telecom",
-  "China Unicom",
-  "China Mobile",
-
-  # --- Misc infra providers ---
-  "Digital Realty",
-  "Equinix",
-  "CoreWeave",
-  "Packet",
   "Vercel",
   "Heroku",
   "Render",
-  "Fly.io"
+  "Fly.io",
+  "CoreWeave"
 )
+
+#cloud_asn_patterns <- c(
+#
+#  # --- Hyperscalers ---
+#  "Amazon",
+#  "AWS",
+#  "Google",
+#  "Microsoft",
+#  "Azure",
+#  "Alibaba",
+#  "Tencent",
+#  "Oracle",
+#  "IBM Cloud",
+#
+#  # --- Major Hosting / VPS ---
+#  "OVH",
+#  "OVHcloud",
+#  "DigitalOcean",
+#  "Hetzner",
+#  "Linode",
+#  "Vultr",
+#  "Scaleway",
+#  "UpCloud",
+#  "Contabo",
+#  "Leaseweb",
+#  "LeaseWeb",
+#  "Online SAS",
+#  "Ionos",
+#  "1&1",
+#  "GoDaddy",
+#  "Namecheap",
+#  "DreamHost",
+#  "Hostinger",
+#  "Bluehost",
+#  "SiteGround",
+#  "A2 Hosting",
+#  "HostGator",
+#
+#  # --- CDN / Edge ---
+#  "Cloudflare",
+#  "Fastly",
+#  "Akamai",
+#  "StackPath",
+#  "Bunny.net",
+#  "CDN77",
+#  "Edgecast",
+#  "G-Core",
+#  "Imperva",
+#
+#  # --- Cheap / Bot-heavy infra ---
+#  "Choopa",
+#  "ColoCrossing",
+#  "Quadranet",
+#  "Psychz",
+#  "Sharktech",
+#  "BuyVM",
+#  "M247",
+#  "Datacamp",
+#  "Hostwinds",
+#  "EUserv",
+#
+#  # --- SEO / Crawlers infra ---
+#  "Babbar",
+#  "Ahrefs",
+#  "Semrush",
+#  "MJ12",
+#  "Majestic",
+#  "Dotbot",
+#
+#  # --- Asian cloud infra ---
+#  "Huawei",
+#  "China Telecom",
+#  "China Unicom",
+#  "China Mobile",
+#
+#  # --- Misc infra providers ---
+#  "Digital Realty",
+#  "Equinix",
+#  "CoreWeave",
+#  "Packet",
+#  "Vercel",
+#  "Heroku",
+#  "Render",
+#  "Fly.io"
+#)
 
 cloud_asn_regex <- paste(cloud_asn_patterns, collapse = "|")
 
