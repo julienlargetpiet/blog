@@ -454,17 +454,19 @@ write_nginx_http() {
 cat > "$NGINX_SITE" <<EOF
 
 # --- Statix custom log format ---
-log_format statix_main '\$remote_addr - \$remote_user [\$time_local] '
-                        '"\$request" \$status \$body_bytes_sent '
-                        '"\$http_referer" "\$http_user_agent" '
-                        '"\$http_x_prefetch"';
+log_format statix_tsv '$remote_addr\t'
+                      '$msec\t'
+                      '$uri\t'
+                      '$status\t'
+                      '$http_user_agent';
+
 
 server {
     listen 80;
     server_name ${DOMAIN} www.${DOMAIN};
 
     # --- Custom access log for Statix ---
-    access_log /var/log/nginx/statix.log statix_main;
+    access_log /var/log/nginx/statix.log statix_tsv;
 
     # --- Go admin backend ---
     location /admin {
@@ -526,10 +528,11 @@ write_nginx_https() {
 cat > "$NGINX_SITE" <<EOF
 
 # --- Statix custom log format ---
-log_format statix_main '\$remote_addr - \$remote_user [\$time_local] '
-                        '"\$request" \$status \$body_bytes_sent '
-                        '"\$http_referer" "\$http_user_agent" '
-                        '"\$http_x_prefetch"';
+log_format statix_tsv '$remote_addr\t'
+                      '$msec\t'
+                      '$uri\t'
+                      '$status\t'
+                      '$http_user_agent';
 
 server {
     listen 80;
@@ -545,7 +548,7 @@ server {
     ssl_certificate_key ${CERT_PRIVKEY};
 
     # --- Custom access log for Statix ---
-    access_log /var/log/nginx/statix.log statix_main;
+    access_log /var/log/nginx/statix.log statix_tsv;
 
     # --- Go admin backend ---
     location /admin {
