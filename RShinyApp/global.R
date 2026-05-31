@@ -352,6 +352,7 @@ load_raw_data <- function(file_path) {
    
     df <- data.table::fread(input = file_path,
                       sep="\t",
+                      quote = "\"",
                       col.names = c("ip", "ts", "target", "status", "ua"),
                       header = FALSE,
                       colClasses = list(
