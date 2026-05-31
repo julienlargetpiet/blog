@@ -5,18 +5,18 @@
   <img src="logo.png" alt="Statix Logo" width="220">
 </p>
 
-👉 **[Quickstart](#quickstart)** — Deploy Statix in seconds
+**[Quickstart](#quickstart)** — Deploy Statix in seconds
 
-👉 **[CLI](#cli)** — Command Line Interface
+**[CLI](#cli)** — Command Line Interface
 
-👉 **[NeoVim](#neovim-integration)** — WorkFlow with NeoVim
+**[NeoVim](#neovim-integration)** — WorkFlow with NeoVim
 
-👉 **[Example](https://julienlargetpiet.tech)** — Running Statix Blog Example
+**[Example](https://julienlargetpiet.tech)** — Running Statix Blog Example
 
 ## Presentation
 
 <details>
-  <summary><b>📝 Blog</b> — screenshots (Dark Theme / Default)</summary>
+  <summary><b>Blog</b> — screenshots (Dark Theme / Default)</summary>
   <br/>
 
   <p align="center">
@@ -54,7 +54,7 @@
 </details>
 
 <details>
-  <summary><b>✨ Shiny</b> — screenshots</summary>
+  <summary><b>Shiny</b> — screenshots</summary>
   <br/>
 
   <p align="center">
@@ -68,208 +68,6 @@
 </details>
 
 # Statix — Deterministic Static Publishing with Infrastructure-Aware Analytics
-
-## Philosophy
-
-Statix is built around a simple idea:
-
-> Publishing should be deterministic, atomic, and observable.
-
-Modern blog platforms often mix:
-- runtime rendering
-- partial deployments
-- third-party tracking
-- opaque analytics pipelines
-
-Statix deliberately avoids that.
-
-### 1️⃣ Deterministic Builds
-
-Every build produces a fully isolated, immutable output.
-
-- No partial states
-- No in-place mutation
-- No runtime rendering
-- No dependency on application availability
-
-A build either succeeds and is promoted — or it does not exist.
-
-Production never sees intermediate artifacts.
-
----
-
-### 2️⃣ Atomic Promotion
-
-Generated output is promoted to production **only after full success**.
-
-This guarantees:
-
-- No broken deploy windows
-- No half-built pages
-- No inconsistent state
-- No race conditions between content and serving
-
-Statix treats publishing as a controlled state transition, not a file overwrite.
-
----
-
-### 3️⃣ Clear Separation of Concerns
-
-Statix separates responsibilities cleanly:
-
-- **Go admin backend** → content orchestration & build control
-- **NGINX** → static file serving
-- **MySQL/MariaDB** → structured content storage
-- **R Shiny module (optional)** → infrastructure-level analytics
-
-Each component has a single responsibility.
-
----
-
-### 4️⃣ Privacy-Respecting Analytics
-
-The optional analytics module is:
-
-- Log-based
-- Server-side
-- Infrastructure-aware
-- JS-free
-- Cookie-free
-
-Instead of tracking users, Statix analyzes:
-
-- Request behavior
-- ASN infrastructure
-- Bot patterns
-- Median read-time estimation (log-derived)
-
-Analytics are derived from server logs — not client-side surveillance.
-
----
-
-### 5️⃣ Infrastructure Awareness
-
-Statix does not treat all traffic equally.
-
-It can distinguish:
-
-- Residential ISP traffic
-- Cloud / hosting providers
-- Data center infrastructure
-- Suspicious behavioral patterns
-
-This allows infrastructure-level filtering and realistic engagement analysis.
-
-### 6️⃣ First-Class Writing & Reading Experience
-
-Statix ships with **prebuilt authoring support** designed for frictionless content creation.
-
-Writers are not forced to fight tooling.
-
-Included out of the box:
-
-- **CodeMirror 6** → modern, extensible in-browser editor  
-- **KaTeX** → fast, deterministic LaTeX math rendering  
-- **Prism.js** → zero-runtime syntax highlighting  
-
-This enables:
-
-- Structured article writing  
-- Code Language awareness  
-- Mathematical typesetting without client-side heavy engines  
-- Consistent, static-safe rendering  
-
-All rendering is deterministic and build-time resolved.
-
-There is no runtime interpretation layer.  
-There is no client-side compilation step.
-
-You can also **preview** your articles in the editing window.
-
-The output remains static, immutable, and production-safe.
-
-Statix does not compromise build guarantees to support rich content.
-
-It integrates expressive tooling — without sacrificing determinism.
-
-### 7️⃣ Personalization — Without Compromise
-
-Statix allows visual customization without breaking determinism.
-
-Themes and Fonts are prebuilt, curated, and fully versioned.  
-Switching a theme is an atomic state transition — not a file mutation.
-
-- No in-place CSS edits  
-- No partial writes  
-- No runtime rendering  
-- No rebuild required  
-
-A theme change is promoted the same way content is:
-
-Deterministically. Atomically. Safely.
-
-Express identity freely —  
-without sacrificing infrastructure integrity.
-
----
-
-## Architecture Overview
-
-### Publishing Pipeline
-
-```
-Editor / Admin
-        ↓
-Go Admin Backend (127.0.0.1:8080)
-        ↓
-Atomic Build Engine
-        ↓
-Isolated Immutable Output (dist/)
-        ↓
-Promotion to Production
-        ↓
-NGINX Static Serving
-        ↓
-End Users
-```
-
-Key properties:
-
-- Static output only
-- No runtime page rendering
-- NGINX serves files directly
-- Admin backend never exposed publicly
-- Promotion replaces state atomically
-
----
-
-### Analytics Pipeline (Optional Module)
-
-```
-NGINX access.log
-        ↓
-R Shiny Log Analyzer
-        ↓
-GeoLite2 (ASN + City)
-        ↓
-Infrastructure Classification
-        ↓
-Behavioral Heuristics
-        ↓
-Engagement Metrics (Median Read Time)
-        ↓
-Interactive Dashboard
-```
-
-Key properties:
-
-- No client-side tracking
-- No third-party analytics
-- ASN-based traffic classification
-- Bot filtering via UA + behavior + infrastructure
-- Engagement estimated from inter-request deltas
-
----
 
 ## What Statix Is
 
@@ -285,10 +83,155 @@ Key properties:
 - A JavaScript-based tracking system  
 - A marketing analytics suite  
 
-Statix prioritizes clarity, control, and system-level correctness over feature sprawl.
+## Philosophy
 
-# Statix (Go) — Production Deployment Guide  
-NGINX + MySQL/MariaDB + systemd
+Statix is built around a simple idea:
+
+> Publishing should be deterministic, atomic, and observable.
+
+Modern blog platforms often mix:
+- runtime rendering
+- partial deployments
+- third-party tracking
+- opaque analytics pipelines
+
+Statix deliberately avoids that.
+
+### Deterministic Builds
+
+Every build produces a fully isolated, immutable output.
+
+A build either succeeds and is promoted, or it does not exist.
+
+Production never sees intermediate artifacts.
+
+---
+
+### Clear Separation of Concerns
+
+Statix separates responsibilities cleanly:
+
+- **Go admin backend** -> content orchestration & build control
+- **NGINX** -> static file serving
+- **MySQL/MariaDB** -> structured content storage
+- **R Shiny module (optional)** -> infrastructure-level analytics
+
+Each component has a single responsibility.
+
+---
+
+### Analytics
+
+The optional analytics module is:
+
+- Log-based
+- Server-side
+- JS-free
+
+Instead of tracking users, Statix analyzes:
+
+- Request behavior
+- ASN infrastructure
+- Bot patterns
+- Median read-time estimation (log-derived)
+
+Analytics are derived from server logs, not client-side surveillance.
+
+Statix does not treat all traffic equally.
+
+It can distinguish:
+
+- Residential ISP traffic
+- Cloud / hosting providers
+- Data center infrastructure
+- Suspicious behavioral patterns
+
+This allows infrastructure-level filtering and realistic engagement analysis.
+
+### First-Class Writing & Reading Experience
+
+Statix ships with **prebuilt authoring support** designed for frictionless content creation.
+
+Writers are not forced to fight tooling.
+
+Included out of the box:
+
+- **CodeMirror 6** -> modern, extensible in-browser editor  
+- **KaTeX** -> fast, deterministic LaTeX math rendering  
+- **Prism.js** -> zero-runtime syntax highlighting  
+
+This enables:
+
+- Structured article writing  
+- Code Language awareness  
+- Mathematical typesetting without client-side heavy engines  
+- Consistent, static-safe rendering  
+
+You can also **preview** your articles in the editing window.
+
+
+
+### Personalization — Without Compromise
+
+Statix allows visual customization.
+
+Themes and Fonts are prebuilt, curated, and fully versioned.  
+Switching a theme is an atomic state transition, not a file mutation ( underneath it is done via sylinks ) 
+
+## Architecture Overview
+
+### Publishing Pipeline
+
+```
+Editor / Admin
+        |
+        V
+Go Admin Backend (127.0.0.1:8080)
+        |
+        V
+Atomic Build Engine
+        |
+        V
+Isolated Immutable Output (dist/)
+        |
+        V
+Promotion to Production
+        |
+        V
+NGINX Static Serving
+        |
+        V
+End Users
+```
+
+
+### Analytics Pipeline (Optional Module)
+
+```
+NGINX access.log
+        |
+        V
+R Shiny Log Analyzer
+        |
+        V
+GeoLite2 (ASN + City)
+        |
+        V
+Infrastructure Classification
+        |
+        V
+Behavioral Heuristics
+        |
+        V
+Engagement Metrics (Median Read Time)
+        |
+        V
+Interactive Dashboard
+```
+
+# Production Deployment Guide  
+
+`NGINX + MySQL/MariaDB + systemd`
 
 Statix provides a build engine that operates in either localized or global mode. In localized mode, each page set or instance executes its build process independently. In global mode, a centralized engine orchestrates builds across multiple page sets or environments.
 
