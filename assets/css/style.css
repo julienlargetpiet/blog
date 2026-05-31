@@ -866,6 +866,67 @@ tbody tr:nth-child(even) {
   background: var(--bg-hover);
 }
 
+/* CODE PANELS */
+
+.code-tabs {
+  margin: 1.8em 0;
+
+  background: var(--bg-soft);
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+
+  overflow: hidden;
+}
+
+.code-tabs-header {
+  display: flex;
+
+  background: var(--bg-main);
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.code-tab {
+  padding: 0.65em 1em;
+
+  background: transparent;
+  border: none;
+  border-right: 1px solid var(--border-soft);
+
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.9rem;
+
+  cursor: pointer;
+}
+
+.code-tab:hover {
+  background: var(--bg-hover);
+  color: var(--text-main);
+}
+
+.code-tab.active {
+  background: var(--code-bg);
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+.code-tab-panel {
+  display: none;
+}
+
+.code-tab-panel.active {
+  display: block;
+}
+
+.code-tabs .code-block {
+  margin: 0;
+}
+
+.code-tabs .code-block pre {
+  border: none;
+  border-radius: 0;
+}
+
 /* =========================
    Login page
    ========================= */

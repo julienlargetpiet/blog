@@ -237,4 +237,33 @@ document.addEventListener("DOMContentLoaded", function () {
   updateScrollProgress();
 });
 
+document.addEventListener("DOMContentLoaded", function () {
+
+  document.querySelectorAll(".code-tabs").forEach((tabs) => {
+    const buttons = tabs.querySelectorAll(".code-tab");
+    const panels = tabs.querySelectorAll(".code-tab-panel");
+  
+    buttons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const target = button.dataset.tab;
+  
+        buttons.forEach((btn) => {
+          btn.classList.remove("active");
+        });
+  
+        panels.forEach((panel) => {
+          panel.classList.remove("active");
+        });
+  
+        button.classList.add("active");
+  
+        tabs
+          .querySelector(`[data-panel="${target}"]`)
+          .classList.add("active");
+      });
+    });
+  });
+
+});
+
 
