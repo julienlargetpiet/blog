@@ -9,8 +9,6 @@
 
 **[CLI](#cli)** — Command Line Interface
 
-**[NeoVim](#neovim-integration)** — WorkFlow with NeoVim
-
 **[Example](https://julienlargetpiet.tech)** — Running Statix Blog Example
 
 ## Presentation
@@ -67,7 +65,7 @@
   </p>
 </details>
 
-# Deployment Guide  
+# Quickstart
 
 ```
 
@@ -168,28 +166,93 @@ It can distinguish:
 
 This allows infrastructure-level filtering and realistic engagement analysis.
 
-### First-Class Writing & Reading Experience
+### CLI
 
-Statix ships with **prebuilt authoring support** designed for frictionless content creation.
+You can write your article in Markdown in your favorite text editor and directly push articles via a command, such as (Neovim):
 
-Writers are not forced to fight tooling.
+```
 
-Included out of the box:
+vim.api.nvim_create_user_command("Publish", function()
+  vim.cmd("write")
 
-- **CodeMirror 6** -> modern, extensible in-browser editor  
-- **KaTeX** -> fast, deterministic LaTeX math rendering  
-- **Prism.js** -> zero-runtime syntax highlighting  
+  local file = vim.api.nvim_buf_get_name(0)
 
-This enables:
+  vim.cmd("!" .. "stx publish --file " .. file)
+end, {})
 
-- Structured article writing  
-- Code Language awareness  
-- Mathematical typesetting without client-side heavy engines  
-- Consistent, static-safe rendering  
+```
 
-You can also **preview** your articles in the editing window.
+The command above is jst a wrapper arround the `publish` command of Statix.
 
+Its whole CLI is:
 
+```
+
+stx - Statix Publishing CLI
+
+Commands:
+  set-credentials --url URL --password TOKEN --server_username SERVERUSERNAME --internal_location BLOGPATHONSERVER
+  publish --file FILE -m MESSAGE
+  nickname create --title TITLE --subject_id ID --is_public true|false NAME
+  nickname import ARTICLE_ID NAME
+  nickname import-content [--markdown] ARTICLE_ID NAME
+  nickname edit [--title TITLE] [--subject_id ID] [--is_public true|false] NAME
+  nickname remove [--sync] [-m MESSAGE] NAME
+  nickname list
+  nickname rename OLD_NAME NEW_NAME
+  file upload -m MESSAGE FILE...
+  file delete [-m MESSAGE] FILE
+  file list
+  articles
+  subjects
+  subject add NAME
+  subject delete NAME
+  subject rename OLD_NAME NEW_NAME
+  dumpdb
+  rsync [-m MESSAGE] FOLDER
+  build
+  completion [bash|zsh]
+
+```
+
+## Note on `code blocks`
+
+Of course yo can write normal code blocks with \`\`\` ... \`\`\` synthax.
+
+But if you need to compare code -> have different code tabs on one code block, you can do it via this synthax:
+
+```
+
+<div class="code-tabs">
+  <div class="code-tabs-header">
+    <button class="code-tab active" data-tab="rust">Rust</button>
+    <button class="code-tab" data-tab="cpp">C++</button>
+  </div>
+
+  <div class="code-tab-panel active" data-panel="rust">
+
+\`\`\`rust
+fn main() {
+    println!("Hello");
+}
+\`\`\`
+
+  </div>
+
+  <div class="code-tab-panel" data-panel="cpp">
+
+\`\`\`cpp
+#include &lt;iostream&gt;
+
+int main() {
+    std::cout &lt;&lt; "Hello\n";
+}
+\`\`\`
+
+  </div>
+</div>
+
+```
 
 ### Personalization — Without Compromise
 
