@@ -67,7 +67,7 @@
   </p>
 </details>
 
-# Production Deployment Guide  
+# Deployment Guide  
 
 ```
 
