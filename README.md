@@ -86,87 +86,7 @@ Statix should now be accessible at:
 
 ```
 
-## What Statix Is
-
-- Deterministic static publishing engine  
-- Production-first deployment model  
-- Infrastructure-aware analytics system  
-- Self-hosted and transparent  
-
-## What Statix Is Not
-
-- A dynamic CMS  
-- A SaaS blogging platform  
-- A JavaScript-based tracking system  
-- A marketing analytics suite  
-
-
-## Philosophy
-
-Statix is built around a simple idea:
-
-> Publishing should be deterministic, atomic, and observable.
-
-Modern blog platforms often mix:
-- runtime rendering
-- partial deployments
-- third-party tracking
-- opaque analytics pipelines
-
-Statix deliberately avoids that.
-
-### Deterministic Builds
-
-Every build produces a fully isolated, immutable output.
-
-A build either succeeds and is promoted, or it does not exist.
-
-Production never sees intermediate artifacts.
-
----
-
-### Clear Separation of Concerns
-
-Statix separates responsibilities cleanly:
-
-- **Go admin backend** -> content orchestration & build control
-- **NGINX** -> static file serving
-- **MySQL/MariaDB** -> structured content storage
-- **R Shiny module (optional)** -> infrastructure-level analytics
-
-Each component has a single responsibility.
-
----
-
-### Analytics
-
-The optional analytics module is:
-
-- Log-based
-- Server-side
-- JS-free
-
-Instead of tracking users, Statix analyzes:
-
-- Request behavior
-- ASN infrastructure
-- Bot patterns
-- Median read-time estimation (log-derived)
-
-Analytics are derived from server logs, not client-side surveillance.
-
-Statix does not treat all traffic equally.
-
-It can distinguish:
-
-- Residential ISP traffic
-- Cloud / hosting providers
-- Data center infrastructure
-- Suspicious behavioral patterns
-
-This allows infrastructure-level filtering and realistic engagement analysis.
-
-### CLI
+# CLI
 
 You can write your article in Markdown in your favorite text editor and directly push articles via a command, such as (Neovim):
 
@@ -254,16 +174,97 @@ int main() {
 
 ```
 
-### Personalization — Without Compromise
+
+# What Statix Is
+
+- Deterministic static publishing engine  
+- Production-first deployment model  
+- Infrastructure-aware analytics system  
+- Self-hosted and transparent  
+
+# What Statix Is Not
+
+- A dynamic CMS  
+- A SaaS blogging platform  
+- A JavaScript-based tracking system  
+- A marketing analytics suite  
+
+
+# Philosophy
+
+Statix is built around a simple idea:
+
+> Publishing should be deterministic, atomic, and observable.
+
+Modern blog platforms often mix:
+- runtime rendering
+- partial deployments
+- third-party tracking
+- opaque analytics pipelines
+
+Statix deliberately avoids that.
+
+## Deterministic Builds
+
+Every build produces a fully isolated, immutable output.
+
+A build either succeeds and is promoted, or it does not exist.
+
+Production never sees intermediate artifacts.
+
+---
+
+## Clear Separation of Concerns
+
+Statix separates responsibilities cleanly:
+
+- **Go admin backend** -> content orchestration & build control
+- **NGINX** -> static file serving
+- **MySQL/MariaDB** -> structured content storage
+- **R Shiny module (optional)** -> infrastructure-level analytics
+
+Each component has a single responsibility.
+
+---
+
+# Analytics
+
+The optional analytics module is:
+
+- Log-based
+- Server-side
+- JS-free
+
+Instead of tracking users, Statix analyzes:
+
+- Request behavior
+- ASN infrastructure
+- Bot patterns
+- Median read-time estimation (log-derived)
+
+Analytics are derived from server logs, not client-side surveillance.
+
+Statix does not treat all traffic equally.
+
+It can distinguish:
+
+- Residential ISP traffic
+- Cloud / hosting providers
+- Data center infrastructure
+- Suspicious behavioral patterns
+
+This allows infrastructure-level filtering and realistic engagement analysis.
+
+# Personalization 
 
 Statix allows visual customization.
 
 Themes and Fonts are prebuilt, curated, and fully versioned.  
 Switching a theme is an atomic state transition, not a file mutation ( underneath it is done via sylinks ) 
 
-## Architecture Overview
+# Architecture Overview
 
-### Publishing Pipeline
+## Publishing Pipeline
 
 ```
 Editor / Admin
@@ -288,7 +289,7 @@ End Users
 ```
 
 
-### Analytics Pipeline (Optional Module)
+## Analytics Pipeline (Optional Module)
 
 ```
 NGINX access.log
