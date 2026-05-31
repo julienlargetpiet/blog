@@ -102,7 +102,7 @@ function(input, output, session) {
     last <- input$last_n * mult_map[[input$time_unit]]
     cutoff <- max(df$date) - last
   
-    df <- df %>% filter(date >= cutoff)
+    df <- df[date >= cutoff]
 
     log_step("Time Window", t, df)
     t <- Sys.time()
@@ -119,28 +119,43 @@ function(input, output, session) {
       ua_unique
     )
     
-    df <- df %>%
-      filter(!ua_is_bot[ua])
-    
+    df <- df[!ua_is_bot[ua]]
+
     log_step("UA AGENT", t, df)
     t <- Sys.time()
 
     # Asset heuristic
 
-    css_clients <- df %>% 
-            filter(endsWith(tolower(target), ".css")) %>%
-            distinct(ip) %>%
-            pull(ip)
+    css_clients <- df[endsWith(tolower(target), ".css"), 
+                      unique(ip)
+                      ]
 
-    df <- df %>% filter(ip %in% css_clients)
+    #css_clients <- df[endsWith(tolower(target), ".css"), ip]
+    #css_clients <- unique(css_clients)
+
+    #css_clients <- df[endsWith(tolower(target), ".css")]
+    #css_clients <- unique(css_clients, by="ip")
+    #css_clients <- css_clients$ip
+
+    df <- df[ip %in% css_clients]
+
+    #df <- df[
+    #  ,
+    #  if (any(endsWith(tolower(target), ".css"))) .SD else NULL,
+    #  by = ip
+    #]
+    #df <- df[
+    #  ,
+    #  if (any(endsWith(tolower(target), ".css"))) .SD,
+    #  by = ip
+    #]
 
     log_step("Asset heuristic", t, df)
     t <- Sys.time()
 
     if (nrow(df) == 0) return(df)
 
-    df <- df %>%
-      filter(grepl("^/articles/.*\\.html$", target, ignore.case=TRUE))
+    df <- df[grepl("^/articles/.*\\.html$", target, ignore.case=TRUE)]
 
     log_step("Aticle filtering", t, df)
     t <- Sys.time()
@@ -148,12 +163,15 @@ function(input, output, session) {
     if (nrow(df) == 0) return(df)
 
     # Rate heuristic
-    df <- df %>%
-      group_by(ip, sec = floor_date(date, "second")) %>%
-      mutate(req_per_sec = n()) %>%
-      filter(req_per_sec < 10) %>%
-      ungroup() %>%
-      select(-req_per_sec)
+
+    #df[, sec := lubridate::floor_date(date, unit="second")]
+    #df[, req_per_sec := .N, by = .(ip, sec)]
+    #df <- df[req_per_sec < 10] 
+    #df[, c("sec", "req_per_sec") := NULL]
+
+    df[, sec := lubridate::floor_date(date, unit="second")]
+    df <- df[df[, .I[.N < 10], by = .(ip, sec)]$V1]
+    df[, sec := NULL]
 
     log_step("Rate heuristic", t, df)
     t <- Sys.time()
@@ -161,17 +179,17 @@ function(input, output, session) {
     if (nrow(df) == 0) return(df)
 
     # Reading-time heuristic
-    df <- df %>%
-      arrange(ip, date) %>%
-      group_by(ip) %>%
-      mutate(
-        next_date = lead(date),
-        time_on_page = as.numeric(difftime(next_date, date, units = "secs")),
-        time_on_page = coalesce(time_on_page, -1)
-      ) %>%
-      ungroup() %>%
-      filter(time_on_page == -1 | time_on_page > 5 & time_on_page < 3600) %>%
-      select(-next_date)
+    data.table::setorder(df, ip, date)
+    df[, next_date := shift(date, type="lead"), by = ip]
+    df[, time_on_page := data.table::fcoalesce(
+                                        as.numeric(difftime(next_date, date, units = "secs")), 
+                                        -1
+                                     )
+    ]
+    df <- df[time_on_page == -1 | 
+             (time_on_page > 5 & time_on_page < 3600)
+    ]
+    df[, next_date := NULL]
 
     log_step("Read time heuristic", t, df)
     t <- Sys.time()
@@ -185,48 +203,83 @@ function(input, output, session) {
                             db_path = asn_db_path
     )
 
-    df <- df %>% left_join(asn_data, by = "ip")
+    df <- asn_data[df, on = "ip"] # left join
 
     log_step("ASN Enrichment", t, df)
     t <- Sys.time()
 
     # cloud ASN repeated range burst
 
-    df <- df %>%
-      arrange(date) %>%
-      mutate(
-        is_cloud_asn = grepl(cloud_asn_regex, asn_org, ignore.case = TRUE),
-        asn_org_clean = coalesce(asn_org, "UNKNOWN_ASN"),
-        ip_16 = sub("\\.[0-9]+\\.[0-9]+$", "", ip),
-        asn_changed = asn_org_clean != lag(asn_org_clean, default = first(asn_org_clean)),
-        asn_bucket = cumsum(asn_changed) + 1
-      ) %>%
-      group_by(asn_bucket, ip_16) %>%
-      mutate(ip_16_occ = n()) %>%
-      ungroup() %>%
-      filter(ip_16_occ == 1 | !is_cloud_asn) %>%
-      select(-asn_org_clean, 
-             -ip_16, -asn_changed, 
-             -asn_bucket, 
-             -ip_16_occ,
-             -is_cloud_asn
-      )
+    data.table::setorder(df, date) # sorts by ref
+    df[, is_cloud_asn := grepl(cloud_asn_regex, asn_org, ignore.case = TRUE)]
+    df[, asn_org_clean := data.table::fcoalesce(asn_org, "UNKNOWN_ASN")]
+    df[, ip_16 := sub("\\.[0-9]+\\.[0-9]+$", "", ip)]
+    df[, asn_changed := asn_org_clean != shift(asn_org_clean, 
+                                               type = "lag",
+                                               fill = first(asn_org_clean)
+                                              )
+    ]
+    df[, asn_bucket := cumsum(asn_changed)]
+    
+    #df[, ip_16_occ := .N, by = .(asn_bucket, ip_16)]
+    #df <- df[ip_16_occ == 1 | !is_cloud_asn]
 
-    log_step("ASN filtering", t, df)
+    #df[, if (!first(is_cloud_asn) || .N == 1L) .SD, 
+    #     by = .(asn_bucket, ip_16)
+    #]
+
+    df <- df[df[, if (!first(is_cloud_asn) || .N == 1L) .I, 
+                  by = .(asn_bucket, ip_16)
+               ]$V1
+    ]
+
+    df[, c("asn_org_clean",
+           "ip_16",
+           "asn_changed",
+           "asn_bucket") := NULL
+    ]
+
+    log_step("ASN filtering 1", t, df)
     t <- Sys.time()
 
-    df <- df %>% filter(!grepl(ip_exclude, ip))
+    df[, ip_24 := sub("\\.[0-9]+$", "", ip)]
+    df[, half_hour_bucket := lubridate::floor_date(date, unit = "30 minutes")]
+    
+    #df[, ip_24_occ := .N, by = .(half_hour_bucket, ip_24)]
+    #df <- df[ip_24_occ == 1 | !is_cloud_asn]
+
+    #df <- df[
+    #         df[, if (.N == 1L) .I else .I[!is_cloud_asn], 
+    #            by = .(half_hour_bucket, ip_24)
+    #           ]$V1
+    #]
+
+    # Because scalar and vector logical operations can be combined
+    # > FALSE | c(TRUE, FALSE)
+    # [1]  TRUE FALSE
+    # so we can do
+
+    df <- df[
+             df[, .I[.N == 1L | !is_cloud_asn], 
+                by = .(half_hour_bucket, ip_24)
+               ]$V1
+    ]
+
+    df[, c("ip_24",
+           "is_cloud_asn",
+           "half_hour_bucket") := NULL
+    ]
+
+    log_step("ASN filtering 2", t, df)
+    t <- Sys.time()
+
+    df <- df[!grepl(ip_exclude, ip)]
 
     log_step("IP Exclusion", t, df)
     t <- Sys.time()
 
-    bad_ip <- df %>%
-      filter(target %in% honey_pots) %>%
-      distinct(ip) %>%
-      pull(ip)
-    
-    df <- df %>%
-      filter(!(ip %in% bad_ip))
+    bad_ip <- df[target %in% honey_pots, unique(ip)]
+    df <- df[!(ip %in% bad_ip)]
 
     log_step("HONEY POTS", t, df)
 
@@ -259,7 +312,7 @@ function(input, output, session) {
     geo <- geo_cache_reactive()
   
     if (!is.null(geo)) {
-      df <- df %>% left_join(geo, by = "ip")
+      df <- geo[df, on = "ip"]
     }
   
     log_step("GEO Enrichment", t, df)
@@ -290,15 +343,14 @@ function(input, output, session) {
 
     req(nrow(df) > 0)
   
-    df <- df %>%
-             filter(
-                   time_on_page > 3 & time_on_page < 3600
-                   ) %>%
-             group_by(target) %>%
-             summarise(median_readtime = median(time_on_page),
-                       valid_reads = n(),
-                       .groups = "drop") %>%
-             arrange(desc(median_readtime))
+    df <- df[time_on_page > 3 & time_on_page < 3600] 
+    df <- df[, .(
+           median_readtime = median(time_on_page),
+           valid_reads = .N
+          ), 
+       by = target
+    ]
+    data.table::setorder(df, -median_readtime)
 
     log_step("READTIME STATS", t, df)
 
@@ -316,28 +368,14 @@ function(input, output, session) {
 
     req(nrow(df) > 0)
 
-    # computes one median over the whole filtered table, assuming df was not already grouped with group_by(...).
+    median_time <- df[!is.na(time_on_page) & time_on_page > 0 & time_on_page < 3600,
+                      median(time_on_page)]
 
-    # So after summarise, you get a tibble like:
-    # 
-    # # A tibble: 1 × 1
-    #     med
-    #   <dbl>
-    # 1  42.5
-    # 
-    # Then:
-    # 
-    # 42.5
+    # order of computation is:
+    # 1. i   -> choose rows
+    # 2. by  -> split those rows into groups
+    # 3. j   -> compute inside each group
 
-    median_time <- df %>%
-      filter(
-        !is.na(time_on_page),
-        time_on_page > 0,
-        time_on_page < 3600   # safety cap (1 hour max)
-      ) %>%
-      summarise(med = median(time_on_page)) %>%
-      pull(med)
-  
     if (is.na(median_time)) return("—")
   
     mins <- floor(median_time / 60)
@@ -356,24 +394,27 @@ function(input, output, session) {
     df <- filtered_data()
     req(nrow(df) > 0)
 
-    #agg <- df %>%
-    #  count(target, name = "hits") %>%
-    #  arrange(desc(hits))
+    #df <- df[, .(hits = .N), by = target][order(-hits)] # .() as j = summary value
+    # and not
+    #df <- df[, hits := .N, by = target] 
 
-    # OR
-    agg <- df %>%
-        group_by(target) %>%
-        summarize(hits=n(), .groups="drop") %>%
-        arrange(desc(hits))
+    df <- df[, .(hits = .N), by = target]
+    data.table::setorder(df, -hits)
 
-    topn <- 5
-    top <- head(agg, topn)
+    n <- nrow(df)
+    topn <- 5L
+    top <- df[seq_len(min(n, topn))]
 
-    if (nrow(agg) > topn) {
-      other_hits <- sum(agg$hits[(topn + 1):nrow(agg)])
-      top <- bind_rows(top,
-                       tibble(target = "Other",
-                              hits = other_hits))
+    if (n > topn) {
+        other_hits <- df[(topn + 1):n, sum(hits)]
+        top <- data.table::rbindlist(
+                    list(
+                        top,
+                        data.table::data.table(target="Other", hits = other_hits)
+                    ),
+                    use.names = TRUE, # bind columns by col name and not by position
+                    fill = TRUE # NAs the cells of the missing cols
+               )
     }
 
     plot_ly(
@@ -381,7 +422,7 @@ function(input, output, session) {
       labels = ~target,
       values = ~hits,
       type = "pie",
-      textinfo = "label+percent",
+      textinfo = "none",
       insidetextorientation = "radial"
     ) %>%
       layout(
@@ -402,16 +443,14 @@ function(input, output, session) {
 
     interval <- interval_map[[input$time_unit]]
 
-    target_group <- df %>%
-                    count(target, name="hits", sort = TRUE) %>%
-                    head(n = 5) %>%
-                    pull(target)
+    target_group <- df[, .(hits = .N), by = target]
+    data.table::setorder(target_group, -hits)
+    target_group <- target_group[min(5L, .N), target]
 
-    df <- df %>%
-      filter(target %in% target_group) %>%
-      mutate(date_bucket = floor_date(date, unit = interval)) %>%
-      count(target, date_bucket, name = "hits")
-   
+    df <- df[target %in% target_group]
+    df[, date_bucket := lubridate::floor_date(date, unit = interval)]
+    df <- df[, .(hits = .N), by = .(target, date_bucket)] # sumarizaton does not mutate in place
+
     plot_ly(
       data = df,
       x = ~date_bucket,
@@ -427,23 +466,30 @@ function(input, output, session) {
     df <- geo_enriched_data()
     req(input$client_tz)
   
-    df <- df %>%
-      mutate(
-        date = lubridate::with_tz(date, tzone = input$client_tz),
-        date = format(date, "%Y-%m-%d %H:%M:%S")
-      )
-  
-    datatable(
-      df %>% 
-        arrange(desc(date)) %>% 
-        mutate(target = paste0(
+    df[, date := format(
+                        lubridate::with_tz(date, tzone = input$client_tz), 
+                        "%Y-%m-%d %H:%M:%S"
+                       )
+    ]
+
+    data.table::setorder(df, -date)
+    df[, target := paste0(
           '<a href=\"https://julienlargetpiet.tech', 
           target,
           '\" target=\"_blank\">',
           target,
           "</a>"
-        )) %>%
-        select(country, asn_org, ip, date, target, time_on_page),
+        )
+    ]
+    datatable(
+        df[, .(country,
+               asn_org,
+               ip,
+               date,
+               target,
+               time_on_page
+              )
+        ],
       options = list(
         pageLength = 100,
         scrollX = TRUE,
@@ -452,31 +498,29 @@ function(input, output, session) {
       rownames = FALSE,
       escape = FALSE
     )
+
   })
 
   output$read_time <- renderDT({
   
-    stats <- article_readtime_stats()
-    req(nrow(stats) > 0)
+    df <- article_readtime_stats()
+    req(nrow(df) > 0)
   
-    stats <- stats %>%
-      mutate(
-        median_seconds = median_readtime,
-        median_readtime = sprintf(
-          "%02d:%02d",
-          floor(median_readtime / 60),
-          round(median_readtime %% 60)
-        )
-      )
-  
+    df[, 
+       median_readtime := sprintf("%02d:%02d",
+                                  floor(median_readtime / 60),
+                                  round(median_readtime %% 60)
+                                 )
+    ]
+
     datatable(
-      stats %>%
-        select(target, median_readtime, valid_reads),
-      options = list(
-        pageLength = 20
-      ),
-      rownames = FALSE
+        df[, .(target, median_readtime, valid_reads)],
+        options = list(
+          pageLength = 20
+        ),
+        rownames = FALSE
     )
+
   })
 
   output$map <- renderLeaflet({
@@ -484,32 +528,29 @@ function(input, output, session) {
     df <- geo_enriched_data()
     req(nrow(df) > 0)
   
-    df <- df %>%
-      filter(!is.na(lat), !is.na(lon), !is.na(country))
-  
+    df <- df[!is.na(lat) & !is.na(lon) & !is.na(country)]
+
     req(nrow(df) > 0)
 
     cat("\n MISSING COUNTRIES \n")
 
-    missing_countries <- df %>%
-      distinct(country) %>%
-      left_join(country_coords, by = "country") %>%
-      filter(is.na(country_lat) | is.na(country_lon)) %>%
-      pull(country)
-    
+    missing_countries <- country_coords[
+                                        unique(df[, .(country)]), 
+                                        on = "country"
+                         ][is.na(country_lat) | is.na(country_lon), country]
+
     cat(paste(missing_countries, collapse = "\n"), "\n")
 
-    agg <- df %>%
-      group_by(country) %>%
-      summarise(
-        hits = n(),
-        unique_ips = n_distinct(ip),
-        .groups = "drop"
-      ) %>%
-      left_join(country_coords, by="country") %>%
-      filter(!is.na(country_lat), !is.na(country_lon))
-  
-    leaflet(agg) %>%
+    df <- df[, .(
+                 hits = .N, 
+                 unique_ips = data.table::uniqueN(ip)
+               ), 
+             by = country
+    ]
+    df <- country_coords[df, on = "country"]
+    df <- df[!is.na(country_lat) & !is.na(country_lon)]
+
+    leaflet(df) %>%
       addProviderTiles(
           providers$CartoDB.Positron
       ) %>%
