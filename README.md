@@ -67,20 +67,6 @@
   </p>
 </details>
 
-## What Statix Is
-
-- Deterministic static publishing engine  
-- Production-first deployment model  
-- Infrastructure-aware analytics system  
-- Self-hosted and transparent  
-
-## What Statix Is Not
-
-- A dynamic CMS  
-- A SaaS blogging platform  
-- A JavaScript-based tracking system  
-- A marketing analytics suite  
-
 # Production Deployment Guide  
 
 ```
@@ -101,6 +87,20 @@ Statix should now be accessible at:
     https://example.com/admin
 
 ```
+
+## What Statix Is
+
+- Deterministic static publishing engine  
+- Production-first deployment model  
+- Infrastructure-aware analytics system  
+- Self-hosted and transparent  
+
+## What Statix Is Not
+
+- A dynamic CMS  
+- A SaaS blogging platform  
+- A JavaScript-based tracking system  
+- A marketing analytics suite  
 
 
 ## Philosophy
