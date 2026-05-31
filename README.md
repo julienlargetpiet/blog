@@ -67,8 +67,6 @@
   </p>
 </details>
 
-# Statix — Deterministic Static Publishing with Infrastructure-Aware Analytics
-
 ## What Statix Is
 
 - Deterministic static publishing engine  
@@ -82,6 +80,28 @@
 - A SaaS blogging platform  
 - A JavaScript-based tracking system  
 - A marketing analytics suite  
+
+# Production Deployment Guide  
+
+```
+
+> git clone https://github.com/julienlargetpiet/Statix
+
+> cd Statix
+
+> bash quickstart.sh
+
+```
+
+Statix should now be accessible at:
+
+```
+
+    https://example.com
+    https://example.com/admin
+
+```
+
 
 ## Philosophy
 
@@ -227,28 +247,6 @@ Engagement Metrics (Median Read Time)
         |
         V
 Interactive Dashboard
-```
-
-# Production Deployment Guide  
-
-```
-
-> git clone https://github.com/julienlargetpiet/Statix
-
-> cd Statix
-
-> bash quickstart.sh
-
-```
-
-
-Statix should now be accessible at:
-
-```
-
-    https://example.com
-    https://example.com/admin
-
 ```
 
 <p align="center">
